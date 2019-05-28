@@ -1,4 +1,4 @@
-CREATE TYPE IF NOT EXISTS langtype AS ENUM ('OL', 'JP', 'EN');
+CREATE TYPE langtype AS ENUM ('OL', 'JP', 'EN');
 
 CREATE TABLE IF NOT EXISTS guilds(
   guild_id BIGINT UNIQUE PRIMARY KEY,
@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS guilds(
   clock_category BIGINT,
   clock_format TEXT,
   watched_users BIGINT[],
-  enabled_modules TEXT[],
+  enabled_modules TEXT[]
 );
 
 CREATE TABLE IF NOT EXISTS messages(
@@ -27,7 +27,7 @@ CREATE TABLE IF NOT EXISTS messages(
   user_id BIGINT NOT NULL,
   lang LANGTYPE NOT NULL, -- 0 = ol, 1 = jp, 2 = en
   utc_date DATE NOT NULL,
-  message_count INT NOT NULL DEFAULT(1)
+  message_count INT NOT NULL,
 );
 ALTER TABLE messages ADD CONSTRAINT messages_pk PRIMARY KEY (guild_id, channel_id, user_id, lang, utc_date);
 
@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS line_notifiers(
 CREATE TABLE IF NOT EXISTS command_aliases(
   guild_id BIGINT NOT NULL REFERENCES guilds(guild_id),
   alias TEXT NOT NULL,
-  command TEXT NOT NULL,
+  command TEXT NOT NULL
 );
 ALTER TABLE command_aliases ADD CONSTRAINT alias_pk PRIMARY KEY (guild_id, alias);
 

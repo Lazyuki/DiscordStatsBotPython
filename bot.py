@@ -70,7 +70,7 @@ class Ciri(commands.Bot):
         print('resumed...')
 
     async def on_guild_join(self, guild):
-        await self.db.fetch('''
+        await self.db.execute('''
           INSERT INTO guilds (guild_id) VALUES ($1)
         ''', guild.id)
 

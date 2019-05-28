@@ -21,5 +21,3 @@ DiscordStatsBot (Ciri) migrated from Javascript to Python because why not.
 1. `GRANT ALL PRIVILEGES ON DATABASE your_db_name TO your_shell_name;`
 1. `\connect your_db_name`
 1. `\i path_to_your_.sql_file`
-
-

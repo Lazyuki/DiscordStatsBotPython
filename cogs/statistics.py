@@ -296,7 +296,6 @@ class Stats(commands.Cog):
       return
     emoji = str(reaction.emoji)
     today = datetime.utcnow().date()
-    print(emoji)
     self._temp_emojis[(reaction.message.guild.id, user.id, today)][emoji] += 1
       
   # Not sure if I should remove emojis when I don't do that for deleting messages
