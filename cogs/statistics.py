@@ -17,10 +17,21 @@ class Stats(commands.Cog):
     self.config = bot.config
     self.in_vc = defaultdict(dict)
     self._batch_lock = asyncio.Lock(loop=bot.loop)
+    self._msg_lock = asyncio.Lock()
+    self._emj_lock = asyncio.Lock()
+    self._vc_lock = asyncio.Lock()
     self._temp_messages = defaultdict(int)
     self._temp_emojis = defaultdict(Counter)
     self._temp_voice = defaultdict(int)
     self._task = bot.loop.create_task(self.bulk_insert_loop())
+    if bot.is_ready():
+      print('cog loaded && bot is ready')
+      for guild in bot.guilds:
+        vc = self.in_vc[guild.id]
+        for vcs in guild.voice_channels:
+          for member in vcs.members:
+            if is_vc(member.voice):
+              vc[member.id] = datetime.utcnow()
   
   @commands.command(aliases=['u', 'uinfo'])
   async def user(self, ctx):
@@ -71,12 +82,15 @@ class Stats(commands.Cog):
     # Lang usage
     langs = { r['lang'] : r['count'] for r in message_data[-4:-1] }
     is_jp = member and self.config.guilds[ctx.guild.id].get(['jp_role'], None) in member.roles
+    EN = langs.get('EN', 0)
+    JP = langs.get('JP', 0)
+    BOTH = EN + JP
     if is_jp:
       usage_name = 'English usage'
-      usage = langs['EN'] / (langs['EN'] + langs['JP']) * 100
+      usage = EN / (BOTH) * 100 if BOTH > 0 else 0
     else:
       usage_name = 'Japanese usage'
-      usage = langs['JP'] / (langs['EN'] + langs['JP']) * 100
+      usage = JP / (BOTH) * 100 if BOTH > 0 else 0
 
     # Voice usage
     voice = 0 if voice is None else voice
@@ -96,7 +110,7 @@ class Stats(commands.Cog):
 
     # Emoji usage
     emojis = { r['emoji'] : r['count'] for r in emoji_data }
-    emoji_str = '\n'.join([f'{e}: {count} times' for e, count in emojis.items()])
+    emoji_str = '\n'.join([f'{e} {count} times' for e, count in emojis.items()])
 
     # Build embed
     embed = discord.Embed(colour=0x3A8EDB)
@@ -131,31 +145,35 @@ class Stats(commands.Cog):
   async def leaderboard(self, ctx):
     user_id = ctx.author.id
     lb = await self.db.fetch('''
-        WITH lb AS (
-            SELECT user_id, SUM(message_count) as count, rank() OVER ()
+        WITH ranked AS (
+          SELECT *, RANK() OVER(ORDER BY count DESC)
+          FROM (
+            SELECT user_id, SUM(message_count) AS count
             FROM messages
             WHERE guild_id = $1
             GROUP BY user_id
-            ORDER BY count DESC
-          ), user_record AS (
-            SELECT * FROM lb WHERE user_id = $2
-          )
+          ) AS lb
+        )
         (
-          SELECT * FROM user_record
+          SELECT * FROM ranked LIMIT 25
         ) UNION ALL
         (
-          SELECT NULL, NULL, NULL 
-          WHERE NOT EXISTS (SELECT * FROM user_record)
-        ) UNION ALL
-        (
-          SELECT * FROM lb LIMIT 25
+          SELECT * FROM ranked WHERE user_id = $2
         )
         ''', ctx.guild.id, user_id)
     # No messages in the server
     if not lb:
       await ctx.send('No messages found')
       return
-    embed = self.build_leaderboard(lb[1:], user_record=lb[0])
+
+    if lb[-1]['user_id'] != user_id:
+      records = lb 
+      user_record = None
+    else:
+      records = lb[:-1]
+      user_record = lb[-1] 
+
+    embed = self.build_leaderboard(records, user_record=user_record)
     await ctx.send(embed=embed)
 
   @commands.command(aliases=['chlb', 'cl'])
@@ -164,27 +182,27 @@ class Stats(commands.Cog):
     channel_id = ctx.channel.id
     channel_ids = [ channel_id ]
     chlb = await self.db.fetch('''
-        WITH chlb AS (
-            SELECT user_id, SUM(message_count) as count, rank() OVER ()
-            FROM messages
-            WHERE guild_id = $1 AND channel_id IN ($2::BIGNINT[])
-            GROUP BY user_id
-            ORDER BY count DESC
-          ), user_record AS (
-            SELECT * FROM chlb WHERE user_id = $3
+        WITH  ranked AS (
+          SELECT *, RANK() OVER (ORDER BY count DESC)
+            FROM (
+              SELECT user_id, SUM(message_count) as count
+              FROM messages
+              WHERE guild_id = $1 AND channel_id IN ($2::BIGINT[])
+              GROUP BY user_id
+              ORDER BY count DESC
+            ) AS cl
           )
         (
-          SELECT * FROM user_record
+          SELECT * FROM ranked LIMIT 25
         ) UNION ALL
         (
-          SELECT NULL, NULL, NULL WHERE NOT EXISTS (SELECT FROM user_record)
-        ) UNION ALL
-        (
-          SELECT * FROM chlb LIMIT 25
+          SELECT * FROM ranked WHERE user_id = $3
         )
-        
         ''', ctx.guild.id, channel_ids, user_id)
-    
+    if not chlb:
+      await ctx.send('No messages found')
+      return
+
     title = 'Channel Leaderboard for '
     channel_names = []
     for ch_id in channel_ids:
@@ -196,42 +214,57 @@ class Stats(commands.Cog):
       channel_names.append(ch_name)
     title += ','.join(channel_names)
 
-    embed = self.build_leaderboard(chlb[1:], title=title[:256], user_record=chlb[0])
+    if chlb[-1]['user_id'] != user_id:
+      records = chlb 
+      user_record = None
+    else:
+      records = chlb[:-1]
+      user_record = chlb[-1] 
+
+    embed = self.build_leaderboard(records, title=title[:256], user_record=user_record)
     await ctx.send(embed=embed)
 
-  @commands.command(aliases=['jplb', 'jl'])
+  @commands.command(aliases=['jplb', 'jpl'])
   async def japanese_leaderboard(self, ctx):
     pass
 
-  @commands.command(aliases=['enlb', 'el'])
+  @commands.command(aliases=['enlb', 'enl'])
   async def english_leaderboard(self, ctx):
     pass
   
-  @commands.command(aliases=['vclb', 'vl'])
+  @commands.command(aliases=['vclb', 'vl', 'v'])
   async def voice_leaderboard(self, ctx):
     user_id = ctx.author.id
     vl = await self.db.fetch('''
-        WITH vl AS (
-            SELECT user_id, SUM(minute_count) as count, rank() OVER ()
-            FROM voice
-            WHERE guild_id = $1
-            GROUP BY user_id
-            ORDER BY count DESC
-          ), user_record AS (
-            SELECT * FROM vl WHERE user_id = $2
+        WITH  ranked AS (
+          SELECT *, RANK() OVER (ORDER BY count DESC)
+            FROM (
+              SELECT user_id, SUM(minute_count) as count
+              FROM voice
+              WHERE guild_id = $1
+              GROUP BY user_id
+              ORDER BY count DESC
+            ) AS vl
           )
         (
-          SELECT * FROM user_record
+          SELECT * FROM ranked LIMIT 25
         ) UNION ALL
         (
-          SELECT NULL, NULL, NULL WHERE NOT EXISTS (SELECT FROM user_record)
-        ) UNION ALL
-        (
-          SELECT * FROM vl LIMIT 25
+          SELECT * FROM ranked WHERE user_id = $2
         )
-        
         ''', ctx.guild.id, user_id)
-    embed = self.build_leaderboard(vl[1:], title='Voice Leaderboard', user_record=vl[0])
+    if not vl:
+      await ctx.send('No voice usage data found')
+      return
+    
+    if vl[-1]['user_id'] != user_id:
+      records = vl 
+      user_record = None
+    else:
+      records = vl[:-1]
+      user_record = vl[-1] 
+
+    embed = self.build_leaderboard(records, title='Voice Leaderboard', user_record=user_record)
     await ctx.send(embed=embed)
 
   @commands.command(aliases=['ac', 'uac'])
@@ -280,13 +313,13 @@ class Stats(commands.Cog):
       # TODO: Unmute people who are in the unmute queue?
     elif is_vc(before) and not is_vc(after):
       if member.id in vc:
-        self.add_to_temp_vc(member.id, member.guild.id, vc)
+        await self.add_to_temp_vc(member.id, member.guild.id, vc)
 
   @commands.Cog.listener()
   async def on_member_remove(self, member):
     vc = self.in_vc[member.guild.id]
     if member.id in vc:
-      self.add_to_temp_vc(member.id, member.guild.id, vc)
+      await self.add_to_temp_vc(member.id, member.guild.id, vc)
   
   @commands.Cog.listener()
   async def on_reaction_add(self, reaction, user):
@@ -296,7 +329,8 @@ class Stats(commands.Cog):
       return
     emoji = str(reaction.emoji)
     today = datetime.utcnow().date()
-    self._temp_emojis[(reaction.message.guild.id, user.id, today)][emoji] += 1
+    async with self._emj_lock:
+      self._temp_emojis[(reaction.message.guild.id, user.id, today)][emoji] += 1
       
   # Not sure if I should remove emojis when I don't do that for deleting messages
   # @commands.Cog.listener()
@@ -313,6 +347,7 @@ class Stats(commands.Cog):
   # Add current members in VC
   @commands.Cog.listener()
   async def on_ready(self):
+    print('statistics on_ready')
     for guild in self.bot.guilds:
       vc = self.in_vc[guild.id]
       for vcs in guild.voice_channels:
@@ -323,15 +358,17 @@ class Stats(commands.Cog):
   @commands.Cog.listener()
   async def on_disconnect(self):
     # flush people in VC now
+    print('statistics on_disconnect')
     for guild_id, vc in self.in_vc.items():
       for mem_id in vc:
-        self.add_to_temp_vc(mem_id, guild_id, vc)
+        await self.add_to_temp_vc(mem_id, guild_id, vc)
 
-  def add_to_temp_vc(self, member_id, guild_id, vc):
+  async def add_to_temp_vc(self, member_id, guild_id, vc):
     now = datetime.utcnow()
     elapsed_mins = (now - vc[member_id]).total_seconds() / 60
     del vc[member_id]
-    self._temp_voice[(guild_id, member_id, now.date())] += elapsed_mins 
+    async with self._vc_lock:
+      self._temp_voice[(guild_id, member_id, now.date())] += elapsed_mins 
 
   # Build leaderboard
   # Records must contain user_id, count, and rank fields
@@ -361,13 +398,14 @@ class Stats(commands.Cog):
 
 
   def cog_unload(self):
+    print('statistics unloading')
     # cancel the task we have looping
     self._task.cancel()
 
     # flush people in VC
     for guild_id, vc in self.in_vc.items():
       for mem_id in vc:
-        self.add_to_temp_vc(mem_id, guild_id, vc)
+        self.bot.loop.create_task(self.add_to_temp_vc(mem_id, guild_id, vc))
 
     # flush the temporary data
     self.bot.loop.create_task(self.bulk_insert())
@@ -376,47 +414,53 @@ class Stats(commands.Cog):
   async def bulk_insert(self):
     if self._temp_messages.items():
       messages = []
-      for (guild_id, channel_id, user_id, lang, date), count in self._temp_messages.items():
-        messages.append({
-          'guild_id': guild_id,
-          'channel_id': channel_id,
-          'user_id': user_id,
-          'lang': lang,
-          'utc_date': date,
-          'message_count': count
-          })
+      async with self._msg_lock:
+        for (guild_id, channel_id, user_id, lang, date), count in self._temp_messages.items():
+          messages.append({
+            'guild_id': guild_id,
+            'channel_id': channel_id,
+            'user_id': user_id,
+            'lang': lang,
+            'utc_date': date,
+            'message_count': count
+            })
+        self._temp_messages.clear()
       await self.db.add_messages(messages)
-      self._temp_messages.clear()
+      
+
     if self._temp_emojis.items():
       emojis = []
-      for (guild_id, user_id, date), emoji_counter in self._temp_emojis.items():
-        for emoji, emoji_count in emoji_counter.items():
-          emojis.append({
-            'guild_id': guild_id,
-            'user_id': user_id,
-            'emoji': emoji,
-            'utc_date': date,
-            'emoji_count': emoji_count
-          })
+      async with self._emj_lock:
+        for (guild_id, user_id, date), emoji_counter in self._temp_emojis.items():
+          for emoji, emoji_count in emoji_counter.items():
+            emojis.append({
+              'guild_id': guild_id,
+              'user_id': user_id,
+              'emoji': emoji,
+              'utc_date': date,
+              'emoji_count': emoji_count
+            })
+        self._temp_emojis.clear()
       await self.db.add_emojis(emojis)
-      self._temp_emojis.clear()
+      
+    
     if self._temp_voice.items():
       voices = []
-      for (guild_id, user_id, date), minutes in self._temp_voice.items():
-        voices.append({
-          'guild_id': guild_id,
-          'user_id': user_id,
-          'utc_date': date,
-          'minute_count': minutes
-        })
+      async with self._vc_lock:
+        for (guild_id, user_id, date), minutes in self._temp_voice.items():
+          voices.append({
+            'guild_id': guild_id,
+            'user_id': user_id,
+            'utc_date': date,
+            'minute_count': minutes
+          })
+        self._temp_voice.clear()
       await self.db.add_voice(voices)
-      self._temp_voice.clear()
 
   async def bulk_insert_loop(self):
     try:
       while not self.bot.is_closed():
-        async with self._batch_lock:
-          await self.bulk_insert()
+        await self.bulk_insert()  
         await asyncio.sleep(10)
       else:
         print('Bot is closed. Terminating bulk_insert_loop...')

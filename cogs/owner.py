@@ -23,6 +23,8 @@ class Stats(commands.Cog):
       self.bot.reload_extension(module)
     except commands.ExtensionError as e:
       await ctx.send(f'{e.__class__.__name__}: {e}')
+    except e:
+      await ctx.send(str(e))
     else:
       await ctx.send('\N{OK HAND SIGN}')
 
