@@ -4,5 +4,6 @@ __pycache__/
 *$py.class
 
 config.py
+nohup.out
 *.log
 *.json

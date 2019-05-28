@@ -58,9 +58,10 @@ class Ciri(commands.Bot):
         self.config.guilds = { c['guild_id'] : c for c in guild_configs }
         for guild in self.guilds:
           if guild.id not in self.config.guilds:
-            await self.db.fetch('''
+            row = await self.db.fetch('''
               INSERT INTO guilds (guild_id) VALUES ($1)
             ''', guild.id)
+            self.config.guilds[guild.id] = row
 
         print(f'Ready: {self.user} (ID: {self.user.id})')
         print(f'Servers: {len(self.guilds)}')
@@ -70,10 +71,10 @@ class Ciri(commands.Bot):
         print('resumed...')
 
     async def on_guild_join(self, guild):
-        await self.db.execute('''
+        row = await self.db.execute('''
           INSERT INTO guilds (guild_id) VALUES ($1)
         ''', guild.id)
-
+        self.config.guilds[guild.id] = row
 
     async def on_message(self, message):
         if message.author.bot: # no bots
