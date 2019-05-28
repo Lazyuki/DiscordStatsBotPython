@@ -4,6 +4,7 @@ import logging
 import asyncio
 import asyncpg
 import subprocess
+import re
 
 class Stats(commands.Cog):
   def __init__(self, bot):
@@ -38,6 +39,28 @@ class Stats(commands.Cog):
     await ctx.send('Restarting...')
     subprocess.call('sleep 3 && . ~/.venv/ciri/bin/activate && nohup python3 bot.py &', shell=True)
     await self.bot.close()
+
+  @commands.command()
+  async def update(self, ctx):
+    async with ctx.typing():
+      stdout = str(subprocess.check_output(['git', 'pull']), 'utf-8')
+      if 'bot.py' in stdout:
+        await self.restart(ctx)
+      else:
+        cogs = re.findall(r'cogs/(.+?)\.py', stdout)
+        if not cogs:
+          await ctx.send('Nothing to update')
+          return
+        try:
+          for cog in cogs:
+            self.bot.reload_extension(f'cogs.{cog}')          
+        except commands.ExtensionError as e:
+          await ctx.send(f'{e.__class__.__name__}: {e}')
+        except e:
+          await ctx.send(str(e))
+        else:
+          await ctx.send('\N{OK HAND SIGN} Updated cogs {}'.format(', '.join(cogs)))
+        
 
   @commands.command(aliases=['sh'])
   async def shell(self, ctx, *, script):
