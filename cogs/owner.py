@@ -36,7 +36,7 @@ class Stats(commands.Cog):
   @commands.command(aliases=['rs'])
   async def restart(self, ctx):
     await ctx.send('Restarting...')
-    subprocess.call('sleep 3 && source ~/.venv/ciri/bin/activate && nohup python3 bot.py &', shell=True)
+    subprocess.call('sleep 3 && . ~/.venv/ciri/bin/activate && nohup python3 bot.py &', shell=True)
     await self.bot.close()
 
   @commands.command(aliases=['sh'])

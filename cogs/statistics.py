@@ -359,7 +359,7 @@ class Stats(commands.Cog):
   async def on_disconnect(self):
     # flush people in VC now
     print('statistics on_disconnect')
-    for guild_id, vc in self.in_vc.items():
+    for guild_id, vc in list(self.in_vc):
       for mem_id in vc:
         await self.add_to_temp_vc(mem_id, guild_id, vc)
 
@@ -403,7 +403,7 @@ class Stats(commands.Cog):
     self._task.cancel()
 
     # flush people in VC
-    for guild_id, vc in self.in_vc.items():
+    for guild_id, vc in list(self.in_vc):
       for mem_id in vc:
         self.bot.loop.create_task(self.add_to_temp_vc(mem_id, guild_id, vc))
 
