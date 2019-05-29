@@ -34,6 +34,15 @@ class Stats(commands.Cog):
       stdout = subprocess.check_output(['git', 'pull'])
       await ctx.send(str(stdout, 'utf-8'))
 
+  @commands.command(aliases=['db'])
+  async def db_fetch(self, ctx, *, query):
+    async with ctx.typing():
+      res = await self.db.fetch(query)
+      if res:
+        await ctx.send([tuple(r) for r in res])
+      else:
+        await ctx.send('No rows returned')
+
   @commands.command(aliases=['rs'])
   async def restart(self, ctx):
     await ctx.send('Restarting...')
