@@ -59,14 +59,18 @@ class Stats(commands.Cog):
             WHERE guild_id = $1 AND user_id = $2
           )
         (
-          SELECT channel_id, lang, SUM(message_count) AS count
+          SELECT NULL::BIGINT AS channel_id, NULL::LANGTYPE AS lang, SUM(message_count) AS count
           FROM records
-          GROUP BY 
-            GROUPING SETS (
-              (),
-              (channel_id),
-              (lang)
-            )
+        ) UNION ALL
+        (
+          SELECT NULL, lang, SUM(message_count) AS count
+          FROM records
+          GROUP BY lang
+        ) UNION ALL
+        (
+          SELECT channel_id, NULL, SUM(message_count) AS count
+          FROM records
+          GROUP BY channel_id
         ) UNION ALL 
         (
           SELECT NULL, NULL, SUM(message_count) as count
@@ -75,12 +79,32 @@ class Stats(commands.Cog):
         )
         ''', ctx.guild.id, user.id)
     )
+
+    # Prepare embed
+    embed = discord.Embed(colour=0x3A8EDB)
+    nick = ''
+    if member:
+      if member.nick:
+        nick = f' aka {member.nick}'
+      embed.set_footer(text='Joined this server')
+      embed.timestamp = member.joined_at
+    else:
+      embed.set_footer(text='Already left the server')
+
+    embed.set_author(name=f'Stats for {user}{nick}', icon_url=user.avatar_url)
+
+    # NO records
+    if len(message_data) == 0:
+      embed.description = "Hasn't said anything in the past 30 days"
+      await ctx.send(embed=embed)
+      return
+
     # Message total
     month_total = message_data[0]['count']
-    week_total = message_data[-1]['count']
+    week_total = message_data[-1]['count'] if message_data[-1]['channel_id'] is None else 0
 
     # Lang usage
-    langs = { r['lang'] : r['count'] for r in message_data[-4:-1] }
+    langs = { r['lang'] : r['count'] for r in message_data[1:4] if r['lang'] }
     is_jp = member and self.config.guilds[ctx.guild.id].get(['jp_role'], None) in member.roles
     EN = langs.get('EN', 0)
     JP = langs.get('JP', 0)
@@ -99,7 +123,7 @@ class Stats(commands.Cog):
     voice_str = (f'{hrs}hr ' if hrs else '') + f'{mns}min'
     
     # Channel usage
-    channels = Counter({ r['channel_id'] : r['count'] for r in message_data[1:-4] }).most_common(3)
+    channels = Counter({ r['channel_id'] : r['count'] for r in message_data[2:] if r['channel_id']}).most_common(3)
     channel_str = ''
     for ch_id, count in channels:
       perc = count / month_total * 100
@@ -114,17 +138,7 @@ class Stats(commands.Cog):
 
     # Build embed
     embed = discord.Embed(colour=0x3A8EDB)
-    nick = ''
-    if member:
-      if member.nick:
-        nick = f' aka {member.nick}'
-      embed.set_footer(text='Joined this server')
-      embed.timestamp = member.joined_at
-    else:
-      embed.set_footer(text='Already left the server')
     
-    # if no records 
-    embed.set_author(name=f'Stats for {user}{nick}', icon_url=user.avatar_url)
     embed.add_field(name='Messages Month | Week', value=f'{month_total} | {week_total}')
     embed.add_field(name=usage_name, value=f'{round(usage, 2)}%')
     if voice_str:
@@ -305,9 +319,9 @@ class Stats(commands.Cog):
     emojis = custom_emoji_matches + kwargs['emojis']
     async with self._msg_lock:
       self._temp_messages[(m.guild.id, m.channel.id, m.author.id, lang, m.created_at.date())] += 1
-    async with self._emj_lock:
-      if emojis:
-        self._temp_emojis[(m.guild.id, m.author.id, m.created_at)] += Counter(emojis)
+    if emojis:
+      async with self._emj_lock:
+          self._temp_emojis[(m.guild.id, m.author.id, m.created_at)] += Counter(emojis)
 
   @commands.Cog.listener()
   async def on_voice_state_update(self, member, before, after):
@@ -337,18 +351,6 @@ class Stats(commands.Cog):
     today = datetime.utcnow().date()
     async with self._emj_lock:
       self._temp_emojis[(reaction.message.guild.id, user.id, today)][emoji] += 1
-      
-  # Not sure if I should remove emojis when I don't do that for deleting messages
-  # @commands.Cog.listener()
-  # async def on_reaction_remove(self, reaction, user):
-  #   if user.bot:
-  #     return
-  #   if reaction.message.guild is None:
-  #     return
-  #   emoji = str(reaction.emoji)
-  #   today = datetime.utcnow().date()
-  #   print(emoji)
-  #   await self.db.remove_emoji(reaction.message.guild.id, user.id, today, emoji)
 
   # Add current members in VC
   @commands.Cog.listener()
