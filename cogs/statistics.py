@@ -136,9 +136,7 @@ class Stats(commands.Cog):
     emojis = { r['emoji'] : r['count'] for r in emoji_data }
     emoji_str = '\n'.join([f'{e} {count} times' for e, count in emojis.items()])
 
-    # Build embed
-    embed = discord.Embed(colour=0x3A8EDB)
-    
+    # Build embed    
     embed.add_field(name='Messages Month | Week', value=f'{month_total} | {week_total}')
     embed.add_field(name=usage_name, value=f'{round(usage, 2)}%')
     if voice_str:
