@@ -127,9 +127,12 @@ class Stats(commands.Cog):
     embed.set_author(name=f'Stats for {user}{nick}', icon_url=user.avatar_url)
     embed.add_field(name='Messages Month | Week', value=f'{month_total} | {week_total}')
     embed.add_field(name=usage_name, value=f'{round(usage, 2)}%')
-    embed.add_field(name='Time spent in VC', value=voice_str)
-    embed.add_field(name='Most active channels', value=channel_str)
-    embed.add_field(name='Most used emojis', value=emoji_str)
+    if voice_str:
+      embed.add_field(name='Time spent in VC', value=voice_str)
+    if channel_str:
+      embed.add_field(name='Most active channels', value=channel_str)
+    if emoji_str:
+      embed.add_field(name='Most used emojis', value=emoji_str)
 
     await ctx.send(embed=embed)
 
@@ -187,7 +190,7 @@ class Stats(commands.Cog):
             FROM (
               SELECT user_id, SUM(message_count) as count
               FROM messages
-              WHERE guild_id = $1 AND channel_id IN ($2::BIGINT[])
+              WHERE guild_id = $1 AND channel_id = ANY ($2)
               GROUP BY user_id
               ORDER BY count DESC
             ) AS cl
@@ -300,27 +303,30 @@ class Stats(commands.Cog):
       lang = 'OL'
     custom_emoji_matches = REGEX_CUSTOM_EMOJIS.findall(m.content)
     emojis = custom_emoji_matches + kwargs['emojis']
-    async with self._batch_lock:
+    async with self._msg_lock:
       self._temp_messages[(m.guild.id, m.channel.id, m.author.id, lang, m.created_at.date())] += 1
+    async with self._emj_lock:
       if emojis:
         self._temp_emojis[(m.guild.id, m.author.id, m.created_at)] += Counter(emojis)
 
   @commands.Cog.listener()
   async def on_voice_state_update(self, member, before, after):
-    vc = self.in_vc[member.guild.id]
-    if not is_vc(before) and is_vc(after):
-      vc[member.id] = datetime.utcnow()
-      # TODO: Unmute people who are in the unmute queue?
-    elif is_vc(before) and not is_vc(after):
-      if member.id in vc:
-        await self.add_to_temp_vc(member.id, member.guild.id, vc)
+    async with self._vc_lock:
+      vc = self.in_vc[member.guild.id]
+      if not is_vc(before) and is_vc(after):
+        vc[member.id] = datetime.utcnow()
+        # TODO: Unmute people who are in the unmute queue?
+      elif is_vc(before) and not is_vc(after):
+        if member.id in vc:
+          await self.add_to_temp_vc(member.id, member.guild.id, vc)
 
   @commands.Cog.listener()
   async def on_member_remove(self, member):
-    vc = self.in_vc[member.guild.id]
-    if member.id in vc:
-      await self.add_to_temp_vc(member.id, member.guild.id, vc)
-  
+    async with self._vc_lock:
+      vc = self.in_vc[member.guild.id]
+      if member.id in vc:
+        await self.add_to_temp_vc(member.id, member.guild.id, vc)
+    
   @commands.Cog.listener()
   async def on_reaction_add(self, reaction, user):
     if user.bot:
@@ -348,20 +354,22 @@ class Stats(commands.Cog):
   @commands.Cog.listener()
   async def on_ready(self):
     print('statistics on_ready')
-    for guild in self.bot.guilds:
-      vc = self.in_vc[guild.id]
-      for vcs in guild.voice_channels:
-        for member in vcs.members:
-          if is_vc(member.voice):
-            vc[member.id] = datetime.utcnow()
+    async with self._vc_lock:
+      for guild in self.bot.guilds:
+        vc = self.in_vc[guild.id]
+        for vcs in guild.voice_channels:
+          for member in vcs.members:
+            if is_vc(member.voice):
+              vc[member.id] = datetime.utcnow()
 
   @commands.Cog.listener()
   async def on_disconnect(self):
     # flush people in VC now
     print('statistics on_disconnect')
-    for guild_id, vc in list(self.in_vc):
-      for mem_id in vc:
-        await self.add_to_temp_vc(mem_id, guild_id, vc)
+    async with self._vc_lock:
+      for guild_id, vc in list(self.in_vc.items()):
+        for mem_id in vc:
+          await self.add_to_temp_vc(mem_id, guild_id, vc)
 
   async def add_to_temp_vc(self, member_id, guild_id, vc):
     now = datetime.utcnow()
@@ -403,7 +411,7 @@ class Stats(commands.Cog):
     self._task.cancel()
 
     # flush people in VC
-    for guild_id, vc in list(self.in_vc):
+    for guild_id, vc in list(self.in_vc.items()):
       for mem_id in vc:
         self.bot.loop.create_task(self.add_to_temp_vc(mem_id, guild_id, vc))
 

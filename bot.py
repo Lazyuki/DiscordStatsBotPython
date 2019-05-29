@@ -99,8 +99,8 @@ class Ciri(commands.Bot):
       await channel.send(content=content, **kwargs)
 
     async def close(self):
+      print(f'closing...')
       await super().close()
-      await self.db.close()
 
     @property
     def config(self):
