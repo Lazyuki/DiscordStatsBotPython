@@ -9,7 +9,7 @@ import re
 class Stats(commands.Cog):
   def __init__(self, bot):
     self.bot = bot
-    self.db = bot.db
+    self.pool = bot.pool
     self.config = bot.config
   
   @commands.command()
@@ -37,7 +37,7 @@ class Stats(commands.Cog):
   @commands.command(aliases=['db'])
   async def db_fetch(self, ctx, *, query):
     async with ctx.typing():
-      res = await self.db.fetch(query)
+      res = await self.pool.fetch(query)
       if res:
         await ctx.send([tuple(r) for r in res])
       else:
