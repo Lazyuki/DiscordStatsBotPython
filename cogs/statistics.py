@@ -454,7 +454,6 @@ class Stats(commands.Cog):
                 'utc_date': date,
                 'emoji_count': emoji_count
                 })
-            self._temp_emojis.clear()
         voices = []
         for (guild_id, user_id, date), minutes in self._temp_voice.items():
             voices.append({

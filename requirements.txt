@@ -19,6 +19,7 @@ PyNaCl==1.2.1
 regex==2019.5.25
 six==1.11.0
 typed-ast==1.1.0
+uvloop==0.12.2
 websockets==6.0
 wrapt==1.10.11
 yarl==1.2.6
