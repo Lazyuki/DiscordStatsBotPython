@@ -6,7 +6,7 @@ import asyncio
 import asyncpg
 from datetime import datetime, date
 from .utils.parser import REGEX_CUSTOM_EMOJIS, REGEX_BOT_COMMANDS
-from .utils.resolver import get_minimum_channel
+from .utils.resolver import resolve_minimum_channel, resolve_user_id
 
 log = logging.getLogger(__name__)
 
@@ -38,9 +38,14 @@ class Stats(commands.Cog):
 
 
     @commands.command(aliases=['u', 'uinfo'])
-    async def user(self, ctx):
-        user = ctx.author
-        member = ctx.guild.get_member(user.id)
+    async def user(self, ctx, *, arg):
+        user_id = ctx.author.id
+        if arg:
+            user_id = resolve_user_id(ctx, arg)
+            if user_id is None:
+                await ctx.message.add_reaction('\N{BLACK QUESTION MARK ORNAMENT}')
+                return
+        member = ctx.guild.get_member(user_id)
 
         emoji_data, voice, message_data = await asyncio.gather(
             self.pool.fetch('''
@@ -50,12 +55,12 @@ class Stats(commands.Cog):
                 GROUP BY emoji
                 ORDER BY count DESC
                 LIMIT 3
-                ''', ctx.guild.id, user.id),
+                ''', ctx.guild.id, user_id),
             self.pool.fetchval('''
                 SELECT SUM(minute_count) as count
                 FROM voice
                 WHERE guild_id = $1 AND user_id = $2
-                ''', ctx.guild.id, user.id),
+                ''', ctx.guild.id, user_id),
             self.pool.fetch('''
                 WITH records AS (
                     SELECT channel_id, lang, message_count, utc_date
@@ -81,21 +86,21 @@ class Stats(commands.Cog):
                         FROM records
                         WHERE utc_date > (current_date - '7 days'::interval)
                     )
-                ''', ctx.guild.id, user.id)
+                ''', ctx.guild.id, user_id)
         )
 
         # Prepare embed
         embed = discord.Embed(colour=0x3A8EDB)
-        nick = ''
         if member:
+            nick = ''
             if member.nick:
                 nick = f' aka {member.nick}'
             embed.set_footer(text='Joined this server')
             embed.timestamp = member.joined_at
+            embed.set_author(name=f'Stats for {member.name}#{member.discriminator}{nick}', icon_url=member.avatar_url)
         else:
+            embed.set_author(name=f'Stats for {user_id}')
             embed.set_footer(text='Already left the server')
-
-        embed.set_author(name=f'Stats for {user}{nick}', icon_url=user.avatar_url)
 
         # NO records
         if not message_data and not emoji_data and voice is None:
@@ -494,8 +499,6 @@ class Stats(commands.Cog):
 
 
     async def bulk_insert(self, messages, emojis, voices):
-        print(emojis)
-        print(voices)
         await asyncio.gather(
             self.pool.execute('''
                 INSERT INTO messages (guild_id, channel_id, user_id, lang, utc_date, message_count)

@@ -38,7 +38,7 @@ class Cirilla(commands.Bot):
             try:
                 self.load_extension(extension)
             except Exception as e:
-                log.error(f'Failed to load extension {extension}.', file=sys.stderr)
+                log.error(f'Failed to load extension {extension}.')
 
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.DisabledCommand):
@@ -46,9 +46,9 @@ class Cirilla(commands.Bot):
         elif isinstance(error, commands.BotMissingPermissions):
             await ctx.send(f'For this command, I need permissions: {error.missing_perms}')
         elif isinstance(error, commands.CommandInvokeError):
-            log.error(f'In {ctx.command.qualified_name}:', file=sys.stderr)
+            log.error(f'In {ctx.command.qualified_name}:')
             traceback.print_tb(error.original.__traceback__)
-            log.error(f'{error.original.__class__.__name__}: {error.original}', file=sys.stderr)
+            log.error(f'{error.original.__class__.__name__}: {error.original}')
 
     async def on_ready(self):
         if not hasattr(self, 'uptime'):
