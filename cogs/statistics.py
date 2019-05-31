@@ -6,6 +6,7 @@ import asyncio
 import asyncpg
 from datetime import datetime, date
 from .utils.parser import REGEX_CUSTOM_EMOJIS, REGEX_BOT_COMMANDS
+from .utils.resolver import get_minimum_channel
 
 log = logging.getLogger(__name__)
 
@@ -344,8 +345,6 @@ class Stats(commands.Cog):
         async with self._batch_lock:
             vc = self.in_vc[member.guild.id]
             if not is_vc(before) and is_vc(after):
-                log.info('statistics add to in_vc')
-
                 vc[member.id] = datetime.utcnow()
                 # TODO: Unmute people who are in the unmute queue?
             elif is_vc(before) and not is_vc(after):
@@ -467,15 +466,23 @@ class Stats(commands.Cog):
         self._temp_voice.clear()
         return messages, emojis, voices
 
+    
+
     @tasks.loop(seconds=20.0)
     async def batch_update(self):
+        log.info('bath_updateing')
         async with self._batch_lock:
             messages, emojis, voices = self.do_batch()
         await self.bulk_insert(messages, emojis, voices)
 
+    @batch_update.before_loop
+    async def before_batch_update(self):
+         log.info('bath_update starting...')
 
     @batch_update.after_loop
     async def on_batch_update_cancel(self):
+        log.info('bath_update canecelling...')
+
         if self.batch_update.is_being_cancelled():
             for guild_id, vc in self.in_vc.items():
                 for mem_id in vc:
