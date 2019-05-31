@@ -24,6 +24,7 @@ class Stats(commands.Cog):
         self._temp_voice = defaultdict(int)
         self._batch_lock = asyncio.Lock(loop=bot.loop)
         self.batch_update.add_exception_type(asyncpg.PostgresConnectionError)
+        self.batch_update.add_exception_type(asyncpg.CardinalityViolationError) # why
         self.batch_update.start()
 
         if bot.is_ready():
@@ -338,7 +339,7 @@ class Stats(commands.Cog):
         async with self._batch_lock:
             self._temp_messages[(m.guild.id, m.channel.id, m.author.id, lang, m.created_at.date())] += 1
             if emojis:
-                self._temp_emojis[(m.guild.id, m.author.id, m.created_at)] += Counter(emojis)
+                self._temp_emojis[(m.guild.id, m.author.id, m.created_at.date())] += Counter(emojis)
 
     @commands.Cog.listener()
     async def on_voice_state_update(self, member, before, after):
@@ -493,6 +494,8 @@ class Stats(commands.Cog):
 
 
     async def bulk_insert(self, messages, emojis, voices):
+        print(emojis)
+        print(voices)
         await asyncio.gather(
             self.pool.execute('''
                 INSERT INTO messages (guild_id, channel_id, user_id, lang, utc_date, message_count)
