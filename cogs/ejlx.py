@@ -154,7 +154,7 @@ class EJLX(commands.Cog):
             if orig == 'japanese':
                 await message.add_reaction(JP_ROLE)
                 return 
-            elif orig in ['english', 'canadian', 'australian']:
+            elif orig in ['english', 'canadian', 'australian', 'british']:
                 await message.add_reaction(EN_ROLE)
                 return
             elif orig in LANGS:
@@ -162,10 +162,10 @@ class EJLX(commands.Cog):
                 return
         msg = STUDY.sub('', msg)
         msg = STUDYJP.sub('', msg)
-        if 'japanese' in msg or '日本語' in msg:
+        if 'japanese' in msg or '日本語' in msg or '日本人です' in msg:
             await message.add_reaction(JP_ROLE)
             return 
-        elif 'english' in msg or '英語' in msg:
+        elif 'english' in msg or '英語' in msg or 'アメリカ人' in msg or 'イギリス人' in msg or 'カナダ人' in msg or 'オーストラリア人' in msg:
             await message.add_reaction(EN_ROLE)
             return 
 
