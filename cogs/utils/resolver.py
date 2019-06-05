@@ -69,6 +69,3 @@ def resolve_user_id(ctx, arg):
         user_id = int(id_match.group(1))
     return user_id
         
-
-def get_config(guild_id, config_name, default=None):
-    pass

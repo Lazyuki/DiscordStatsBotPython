@@ -17,6 +17,7 @@ Written by @Geralt#0007
 log = logging.getLogger(__name__)
 
 initial_extensions = (
+    'cogs.ejlx',
     'cogs.owner',
     'cogs.statistics',
 )
@@ -38,7 +39,7 @@ class Cirilla(commands.Bot):
             try:
                 self.load_extension(extension)
             except Exception as e:
-                log.error(f'Failed to load extension {extension}.')
+                log.error(f'Failed to load extension {extension}\n{e}.')
 
     async def on_command_error(self, ctx, error):
         if isinstance(error, commands.DisabledCommand):
