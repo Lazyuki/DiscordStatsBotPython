@@ -4,8 +4,14 @@ import asyncio
 import re
 from .utils.resolver import has_role
 
-JHO = 189571157446492161
 INTRO = 395741560840519680
+JHO = 189571157446492161
+JP_CHAT = 189629338142900224
+JP_BEGINNER = 208118574974238721
+LANG_SWITCH = 376574779316109313
+NF = 193966083886153729
+NF_VOICE_TEXT = 390796551796293633
+NF_VOICE = 196684007402897408
 EWBF = 277384105245802497
 
 LANG_ROLES = {
@@ -43,24 +49,23 @@ LANGS = ['german', 'italian', 'french', 'spanish',
 COUNTRIES = ['germany', 'italy', 'france', 'spain', 'portugal', 'brazil', 'korea', 'china',
     'india', 'malaysia', 'netherland', 'russia', 'poland', 'sweden', 'turkey', 'norwey']
 
-NATIVE = re.compile(r'native(?: language is)? (\S+)')
+NATIVE = re.compile(r'native(?: language)?(?: is)? (\S+)')
 NATIVEJP = re.compile(r'母国?語.(.+?)語')
 FROM = re.compile(r"i(?:'?m| am) from (?:the )?(?:united )?(\S+)")
 IM = re.compile(r"i(?:'?m| am)(?: a)? (\S+)")
 STUDY = re.compile(r'(?:learn|study|fluent in)(?:ing)? (?:japanese|english)')
 STUDYJP = re.compile(r'(?:日本語|英語).勉強')
 
-JP_ROLE = '<:japanese:439733745390583819>'
-EN_ROLE = '<:english:439733745591779328>'
-OL_ROLE = '<:other_lang:439733745491116032>'
-
-async def can_tag(ctx):
-    return ctx.author.guild_permissions.manage_roles
+JP_EMOJI = '<:japanese:439733745390583819>'
+EN_EMOJI = '<:english:439733745591779328>'
+OL_EMOJI = '<:other_lang:439733745491116032>'
 
 class EJLX(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
         self.newbies = []
+        self._role_lock = asyncio.Lock()
+        self._recently_tagged = None
 
     async def cog_check(self, ctx):
         return ctx.guild.id == 189571157446492161
@@ -72,7 +77,6 @@ class EJLX(commands.Cog):
         pass
 
     @commands.Cog.listener()
-    @commands.check(can_tag)
     async def on_member_join(self, member):
         self.newbies.append(member.id)
         if len(self.newbies) > 3:
@@ -84,95 +88,133 @@ class EJLX(commands.Cog):
             return
         if reaction.message.guild is None:
             return
+        if self.bot.config.debugging:
+            return
         if not user.guild_permissions.manage_roles:
             return
         emoji = str(reaction.emoji)
         tagged = None
-        if emoji == JP_ROLE:
+        if emoji == JP_EMOJI:
             tagged = 196765998706196480
-        elif emoji == EN_ROLE:
+        elif emoji == EN_EMOJI:
             tagged = 197100137665921024
-        elif emoji == OL_ROLE:
+        elif emoji == OL_EMOJI:
             tagged = 248982130246418433
         else:
             return
-        await reaction.message.author.add_roles(reaction.message.guild.get_role(tagged), reason=f'by {user.name}')
-        await reaction.message.author.remove_roles(reaction.message.guild.get_role(249695630606336000), reason=f'by {user.name}')
+    
+        msg = reaction.message
+        if not has_role(msg.author, 249695630606336000):
+            if msg.channel.id == INTRO:
+                await asyncio.gather(
+                    reaction.remove(),
+                    msg.remove_reaction(tagged, self.bot.user),
+                )
+            else:
+                await msg.clear_reactions()
+            return
 
-        if reaction.message.channel.id != INTRO:
-            await reaction.message.channel.send(f"**{reaction.message.author.name}**, you've been tagged as <@&{tagged}> by {user.name}!")
-            await reaction.message.clear_reactions()
-        else:
+        async with self._role_lock:
+            if msg.author.id == self._recently_tagged:
+                await reaction.remove()
+                return
+            self._recently_tagged == msg.author.id
+            
+        await asyncio.gather(
+            msg.author.add_roles(msg.guild.get_role(tagged), reason=f'by {user.name}'),
+            msg.author.remove_roles(msg.guild.get_role(249695630606336000), reason=f'by {user.name}')
+        )
+
+        if msg.channel.id == INTRO:
             await asyncio.gather(
                 reaction.remove(),
-                reaction.message.remove_reaction(JP_ROLE, self.bot.user),
-                reaction.message.remove_reaction(EN_ROLE, self.bot.user),
-                reaction.message.remove_reaction(OL_ROLE, self.bot.user)
+                msg.remove_reaction(tagged, self.bot.user)
             )
+        else:
+            await asyncio.gather(
+                msg.clear_reactions(),
+                msg.channel.send(f"**{msg.author.name}**, you've been tagged as <@&{tagged}> by {user.name}!")
+            )
+
             
 
     @commands.Cog.listener()
     async def on_safe_message(self, message, **kwargs):
-        if not has_role(message.author, 249695630606336000):
-            return
-        msg =  message.content.lower()
-        m = NATIVE.search(msg)
-        if m:
-            nat = m.group(1)
-            if nat == 'japanese':
-                await message.add_reaction(JP_ROLE)
-            elif nat == 'english':
-                await message.add_reaction(EN_ROLE)
-            else:
-                await message.add_reaction(OL_ROLE)
-            return
-        m = NATIVEJP.search(msg)
-        if m:
-            nat = m.group(1)
-            if nat == '日本':
-                await message.add_reaction(JP_ROLE)
-            elif nat == '英':
-                await message.add_reaction(EN_ROLE)
-            else:
-                await message.add_reaction(OL_ROLE)
-            return
-        m = FROM.search(msg)
-        if m:
-            orig = m.group(1)
-            if orig == 'japan':
-                await message.add_reaction(JP_ROLE)
-                return 
-            elif orig in ['us', 'states', 'kingdom', 'uk', 'canada', 'australia']:
-                await message.add_reaction(EN_ROLE)
-                return
-            elif orig in COUNTRIES:
-                await message.add_reaction(OL_ROLE)
-                return
-        m = IM.search(msg)
-        if m:
-            orig = m.group(1)
-            if orig == 'japanese':
-                await message.add_reaction(JP_ROLE)
-                return 
-            elif orig in ['english', 'canadian', 'australian', 'british']:
-                await message.add_reaction(EN_ROLE)
-                return
-            elif orig in LANGS:
-                await message.add_reaction(OL_ROLE)
-                return
-        msg = STUDY.sub('', msg)
-        msg = STUDYJP.sub('', msg)
-        if 'japanese' in msg or '日本語' in msg or '日本人です' in msg:
-            await message.add_reaction(JP_ROLE)
+        if has_role(message.author, 249695630606336000):
+            guess_lang(message)
+        
+        
+# Helpers
+async def can_tag(ctx):
+    return ctx.author.guild_permissions.manage_roles
+
+
+async def guess_lang(message):
+    msg =  message.content.lower()
+    m = NATIVE.search(msg)
+    if m:
+        nat = m.group(1)
+        if nat == 'japanese':
+            await message.add_reaction(JP_EMOJI)
+        elif nat == 'english':
+            await message.add_reaction(EN_EMOJI)
+        else:
+            await message.add_reaction(OL_EMOJI)
+        return
+    m = NATIVEJP.search(msg)
+    if m:
+        nat = m.group(1)
+        if nat == '日本':
+            await message.add_reaction(JP_EMOJI)
+        elif nat == '英':
+            await message.add_reaction(EN_EMOJI)
+        else:
+            await message.add_reaction(OL_EMOJI)
+        return
+    m = FROM.search(msg)
+    if m:
+        orig = m.group(1)
+        if orig == 'japan':
+            await message.add_reaction(JP_EMOJI)
             return 
-        elif 'english' in msg or '英語' in msg or 'アメリカ人' in msg or 'イギリス人' in msg or 'カナダ人' in msg or 'オーストラリア人' in msg:
-            await message.add_reaction(EN_ROLE)
+        elif orig in ['us', 'states', 'kingdom', 'uk', 'canada', 'australia']:
+            await message.add_reaction(EN_EMOJI)
+            return
+        elif orig in COUNTRIES:
+            await message.add_reaction(OL_EMOJI)
+            return
+    m = IM.search(msg)
+    if m:
+        orig = m.group(1)
+        if orig == 'japanese':
+            await message.add_reaction(JP_EMOJI)
+            return 
+        elif orig in ['english', 'canadian', 'australian', 'british']:
+            await message.add_reaction(EN_EMOJI)
+            return
+        elif orig in LANGS:
+            await message.add_reaction(OL_EMOJI)
+            return
+    if '日本人です' in msg:
+        await message.add_reaction(JP_EMOJI)
+        return 
+    elif 'アメリカ人' in msg or 'イギリス人' in msg or 'カナダ人' in msg or 'オーストラリア人' in msg:
+        await message.add_reaction(EN_EMOJI)
+        return 
+    msg = STUDY.sub('', msg)
+    msg = STUDYJP.sub('', msg)   
+    if len(msg) < 15:
+        if 'japanese' in msg or '日本語' in msg:
+            await message.add_reaction(JP_EMOJI)
+            return 
+        if 'english' in msg or '英語' in msg:
+            await message.add_reaction(EN_EMOJI)
             return 
 
-        for w in msg.split():
-            if w in LANGS or w in COUNTRIES:
-                await message.add_reaction(OL_ROLE)
-                return
-        
+    for w in msg.split():
+        if w in LANGS or w in COUNTRIES:
+            await message.add_reaction(OL_EMOJI)
+            return
+
 def setup(bot):
     bot.add_cog(EJLX(bot))
