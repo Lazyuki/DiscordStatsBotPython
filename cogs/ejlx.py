@@ -60,6 +60,78 @@ JP_EMOJI = '<:japanese:439733745390583819>'
 EN_EMOJI = '<:english:439733745591779328>'
 OL_EMOJI = '<:other_lang:439733745491116032>'
 
+# Helpers
+async def can_tag(ctx):
+    return ctx.author.guild_permissions.manage_roles
+
+
+async def guess_lang(message):
+    msg =  message.content.lower()
+    m = NATIVE.search(msg)
+    if m:
+        nat = m.group(1)
+        if nat == 'japanese':
+            await message.add_reaction(JP_EMOJI)
+        elif nat == 'english':
+            await message.add_reaction(EN_EMOJI)
+        else:
+            await message.add_reaction(OL_EMOJI)
+        return
+    m = NATIVEJP.search(msg)
+    if m:
+        nat = m.group(1)
+        if nat == '日本':
+            await message.add_reaction(JP_EMOJI)
+        elif nat == '英':
+            await message.add_reaction(EN_EMOJI)
+        else:
+            await message.add_reaction(OL_EMOJI)
+        return
+    m = FROM.search(msg)
+    if m:
+        orig = m.group(1)
+        if orig == 'japan':
+            await message.add_reaction(JP_EMOJI)
+            return 
+        elif orig in ['us', 'states', 'kingdom', 'uk', 'canada', 'australia']:
+            await message.add_reaction(EN_EMOJI)
+            return
+        elif orig in COUNTRIES:
+            await message.add_reaction(OL_EMOJI)
+            return
+    m = IM.search(msg)
+    if m:
+        orig = m.group(1)
+        if orig == 'japanese':
+            await message.add_reaction(JP_EMOJI)
+            return 
+        elif orig in ['english', 'canadian', 'australian', 'british']:
+            await message.add_reaction(EN_EMOJI)
+            return
+        elif orig in LANGS:
+            await message.add_reaction(OL_EMOJI)
+            return
+    if '日本人です' in msg:
+        await message.add_reaction(JP_EMOJI)
+        return 
+    elif 'アメリカ人' in msg or 'イギリス人' in msg or 'カナダ人' in msg or 'オーストラリア人' in msg:
+        await message.add_reaction(EN_EMOJI)
+        return 
+    msg = STUDY.sub('', msg)
+    msg = STUDYJP.sub('', msg)   
+    if len(msg) < 15:
+        if 'japanese' in msg or '日本語' in msg:
+            await message.add_reaction(JP_EMOJI)
+            return 
+        if 'english' in msg or '英語' in msg:
+            await message.add_reaction(EN_EMOJI)
+            return 
+
+    for w in msg.split():
+        if w in LANGS or w in COUNTRIES:
+            await message.add_reaction(OL_EMOJI)
+            return
+
 class EJLX(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -144,77 +216,7 @@ class EJLX(commands.Cog):
             guess_lang(message)
         
         
-# Helpers
-async def can_tag(ctx):
-    return ctx.author.guild_permissions.manage_roles
 
-
-async def guess_lang(message):
-    msg =  message.content.lower()
-    m = NATIVE.search(msg)
-    if m:
-        nat = m.group(1)
-        if nat == 'japanese':
-            await message.add_reaction(JP_EMOJI)
-        elif nat == 'english':
-            await message.add_reaction(EN_EMOJI)
-        else:
-            await message.add_reaction(OL_EMOJI)
-        return
-    m = NATIVEJP.search(msg)
-    if m:
-        nat = m.group(1)
-        if nat == '日本':
-            await message.add_reaction(JP_EMOJI)
-        elif nat == '英':
-            await message.add_reaction(EN_EMOJI)
-        else:
-            await message.add_reaction(OL_EMOJI)
-        return
-    m = FROM.search(msg)
-    if m:
-        orig = m.group(1)
-        if orig == 'japan':
-            await message.add_reaction(JP_EMOJI)
-            return 
-        elif orig in ['us', 'states', 'kingdom', 'uk', 'canada', 'australia']:
-            await message.add_reaction(EN_EMOJI)
-            return
-        elif orig in COUNTRIES:
-            await message.add_reaction(OL_EMOJI)
-            return
-    m = IM.search(msg)
-    if m:
-        orig = m.group(1)
-        if orig == 'japanese':
-            await message.add_reaction(JP_EMOJI)
-            return 
-        elif orig in ['english', 'canadian', 'australian', 'british']:
-            await message.add_reaction(EN_EMOJI)
-            return
-        elif orig in LANGS:
-            await message.add_reaction(OL_EMOJI)
-            return
-    if '日本人です' in msg:
-        await message.add_reaction(JP_EMOJI)
-        return 
-    elif 'アメリカ人' in msg or 'イギリス人' in msg or 'カナダ人' in msg or 'オーストラリア人' in msg:
-        await message.add_reaction(EN_EMOJI)
-        return 
-    msg = STUDY.sub('', msg)
-    msg = STUDYJP.sub('', msg)   
-    if len(msg) < 15:
-        if 'japanese' in msg or '日本語' in msg:
-            await message.add_reaction(JP_EMOJI)
-            return 
-        if 'english' in msg or '英語' in msg:
-            await message.add_reaction(EN_EMOJI)
-            return 
-
-    for w in msg.split():
-        if w in LANGS or w in COUNTRIES:
-            await message.add_reaction(OL_EMOJI)
-            return
 
 def setup(bot):
     bot.add_cog(EJLX(bot))
