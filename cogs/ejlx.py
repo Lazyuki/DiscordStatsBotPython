@@ -117,20 +117,19 @@ async def guess_lang(message):
     elif 'アメリカ人' in msg or 'イギリス人' in msg or 'カナダ人' in msg or 'オーストラリア人' in msg:
         await message.add_reaction(EN_EMOJI)
         return 
-    msg = STUDY.sub('', msg)
-    msg = STUDYJP.sub('', msg)   
-    if len(msg) < 15:
-        if 'japanese' in msg or '日本語' in msg:
-            await message.add_reaction(JP_EMOJI)
-            return 
-        if 'english' in msg or '英語' in msg:
-            await message.add_reaction(EN_EMOJI)
-            return 
-
     for w in msg.split():
         if w in LANGS or w in COUNTRIES:
             await message.add_reaction(OL_EMOJI)
             return
+    msg = STUDY.sub('', msg)
+    msg = STUDYJP.sub('', msg)   
+    if 'japanese' in msg or '日本語' in msg:
+        await message.add_reaction(JP_EMOJI)
+        return 
+    if 'english' in msg or '英語' in msg:
+        await message.add_reaction(EN_EMOJI)
+        return 
+        
 
 class EJLX(commands.Cog):
     def __init__(self, bot):
