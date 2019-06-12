@@ -54,7 +54,7 @@ NATIVEJP = re.compile(r'母国?語.(.+?)語')
 FROM = re.compile(r"i(?:'?m| am) from (?:the )?(?:united )?(\S+)")
 IM = re.compile(r"i(?:'?m| am)(?: a)? (\S+)")
 STUDY = re.compile(r'(?:learn|study|fluent in)(?:ing)? (?:japanese|english)')
-STUDYJP = re.compile(r'(?:日本語|英語).勉強')
+STUDYJP = re.compile(r'(?:日本語|英語).?勉強')
 
 JP_EMOJI = '<:japanese:439733745390583819>'
 EN_EMOJI = '<:english:439733745591779328>'
@@ -212,7 +212,7 @@ class EJLX(commands.Cog):
     @commands.Cog.listener()
     async def on_safe_message(self, message, **kwargs):
         if has_role(message.author, 249695630606336000):
-            guess_lang(message)
+            await guess_lang(message)
         
         
 
