@@ -179,7 +179,7 @@ class EJLX(commands.Cog):
             if msg.channel.id == INTRO:
                 await asyncio.gather(
                     reaction.remove(),
-                    msg.remove_reaction(tagged, self.bot.user),
+                    msg.remove_reaction(emoji, self.bot.user),
                 )
             else:
                 await msg.clear_reactions()
@@ -199,7 +199,7 @@ class EJLX(commands.Cog):
         if msg.channel.id == INTRO:
             await asyncio.gather(
                 reaction.remove(),
-                msg.remove_reaction(tagged, self.bot.user)
+                msg.remove_reaction(emoji, self.bot.user)
             )
         else:
             await asyncio.gather(
