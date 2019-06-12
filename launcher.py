@@ -3,6 +3,7 @@ import asyncpg
 import logging
 import contextlib
 import uvloop
+import sys
 
 from bot import Cirilla, initial_extensions
 import config
@@ -19,7 +20,10 @@ def setup_logging():
 
         log = logging.getLogger()
         log.setLevel(logging.INFO)
-        handler = logging.FileHandler(filename='cirilla.log', encoding='utf-8', mode='w')
+        if config.debugging:
+            handler = logging.StreamHandler(sys.stdout)
+        else:
+            handler = logging.FileHandler(filename='cirilla.log', encoding='utf-8', mode='w')
         dt_fmt = '%Y-%m-%d %H:%M:%S'
         fmt = logging.Formatter('[{asctime}] [{levelname:<7}] {name}: {message}', dt_fmt, style='{')
         handler.setFormatter(fmt)

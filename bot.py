@@ -47,9 +47,15 @@ class Cirilla(commands.Bot):
         elif isinstance(error, commands.BotMissingPermissions):
             await ctx.send(f'For this command, I need permissions: {error.missing_perms}')
         elif isinstance(error, commands.CommandInvokeError):
+            await ctx.send(f'CommandInvokeError: {error.original}')
             log.error(f'In {ctx.command.qualified_name}:')
             traceback.print_tb(error.original.__traceback__)
             log.error(f'{error.original.__class__.__name__}: {error.original}')
+        else:
+            await ctx.send(f'Unknown Error: {error}')
+            log.error(f'In {ctx.command.qualified_name}:')
+            log.error(f'{error.__class__.__name__}: {error}')
+
 
     async def on_ready(self):
         if not hasattr(self, 'uptime'):

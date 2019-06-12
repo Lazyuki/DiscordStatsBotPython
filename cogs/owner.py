@@ -24,7 +24,7 @@ class Stats(commands.Cog):
     @commands.command(aliases=['rl', 'rc'])
     async def reload(self, ctx, *, module):
         try:
-            self.bot.reload_extension(module)
+            self.bot.reload_extension(f'cogs.{module}')
         except commands.ExtensionError as e:
             await ctx.send(f'{e.__class__.__name__}: {e}')
         except e:
@@ -50,7 +50,7 @@ class Stats(commands.Cog):
     @commands.command(aliases=['rs'])
     async def restart(self, ctx):
         await ctx.send('Restarting...')
-        await asyncio.create_subprocess_exec('sleep 3 && . ~/.venv/ciri/bin/activate && python3 launcher.py', stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        await self.run_process('(sleep 3 && . ~/.venv/ciri/bin/activate && python3 launcher.py) &')
         await self.bot.close()
 
     @commands.command()
@@ -73,7 +73,14 @@ class Stats(commands.Cog):
                     await ctx.send(str(e))
                 else:
                     await ctx.send('\N{OK HAND SIGN} Updated cogs {}'.format(', '.join(cogs)))
-                
+
+    @commands.command(aliases=['log'])
+    async def tail_log(self, ctx):
+        async with ctx.typing():
+            stdout, stderr = await self.run_process('tail -n 20 cirilla.log')
+            await ctx.send('```' + stdout[-1994:] + '```')
+            if stderr:
+                await ctx.send('Error:\n' + stderr)
 
     @commands.command(aliases=['sh'])
     async def shell(self, ctx, *, script):

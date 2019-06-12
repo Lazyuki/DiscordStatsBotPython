@@ -38,7 +38,7 @@ class Stats(commands.Cog):
 
 
     @commands.command(aliases=['u', 'uinfo'])
-    async def user(self, ctx, *, arg):
+    async def user(self, ctx, *, arg = None):
         user_id = ctx.author.id
         if arg:
             user_id = resolve_user_id(ctx, arg)
