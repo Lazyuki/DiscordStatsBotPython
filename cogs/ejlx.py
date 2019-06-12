@@ -178,8 +178,8 @@ class EJLX(commands.Cog):
         if not has_role(msg.author, 249695630606336000):
             if msg.channel.id == INTRO:
                 await asyncio.gather(
-                    reaction.remove(),
-                    msg.remove_reaction(emoji, self.bot.user),
+                    reaction.remove(user),
+                    reaction.remove(self.bot.user),
                 )
             else:
                 await msg.clear_reactions()
@@ -187,7 +187,7 @@ class EJLX(commands.Cog):
 
         async with self._role_lock:
             if msg.author.id == self._recently_tagged:
-                await reaction.remove()
+                await reaction.remove(user)
                 return
             self._recently_tagged == msg.author.id
             
@@ -198,8 +198,8 @@ class EJLX(commands.Cog):
 
         if msg.channel.id == INTRO:
             await asyncio.gather(
-                reaction.remove(),
-                msg.remove_reaction(emoji, self.bot.user)
+                reaction.remove(user),
+                reaction.remove(self.bot.user)
             )
         else:
             await asyncio.gather(
