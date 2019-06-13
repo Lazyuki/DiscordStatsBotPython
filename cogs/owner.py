@@ -77,7 +77,17 @@ class Stats(commands.Cog):
     @commands.command(aliases=['log'])
     async def tail_log(self, ctx):
         async with ctx.typing():
-            stdout, stderr = await self.run_process('tail -n 20 cirilla.log')
+            stdout, stderr = await self.run_process('tail -n 30 cirilla.log')
+            await ctx.send('```' + stdout[-1994:] + '```')
+            if stderr:
+                await ctx.send('Error:\n' + stderr)
+
+    @commands.command(aliases=['err'])
+    async def tail_error(self, ctx):
+        async with ctx.typing():
+            stdout, stderr = await self.run_process('tail -n 30 cirilla_error.log')
+            if not stdout:
+                stdout = 'No errors'
             await ctx.send('```' + stdout[-1994:] + '```')
             if stderr:
                 await ctx.send('Error:\n' + stderr)

@@ -51,6 +51,8 @@ class Cirilla(commands.Bot):
             log.error(f'In {ctx.command.qualified_name}:')
             traceback.print_tb(error.original.__traceback__)
             log.error(f'{error.original.__class__.__name__}: {error.original}')
+        elif isinstance(error, commands.CommandNotFound):
+            pass
         else:
             await ctx.send(f'Unknown Error: {error}')
             log.error(f'In {ctx.command.qualified_name}:')

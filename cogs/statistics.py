@@ -7,6 +7,8 @@ import asyncpg
 from datetime import datetime, date
 from .utils.parser import REGEX_CUSTOM_EMOJIS, REGEX_BOT_COMMANDS
 from .utils.resolver import resolve_minimum_channel, resolve_user_id
+from .utils.leaderboard import PaginatedLeaderboard
+
 
 log = logging.getLogger(__name__)
 
@@ -187,7 +189,7 @@ class Stats(commands.Cog):
                 ) AS lb
             )
                 (
-                    SELECT * FROM ranked LIMIT 25
+                    SELECT * FROM ranked
                 ) UNION ALL
                 (
                     SELECT * FROM ranked WHERE user_id = $2
@@ -205,9 +207,9 @@ class Stats(commands.Cog):
         else:
             records = lb[:-1]
             user_record = lb[-1] 
-
-        embed = self.build_leaderboard(records, user_record=user_record)
-        await ctx.send(embed=embed)
+        
+        leaderboard = PaginatedLeaderboard(ctx, records=records, title='Leaderboard', description='Number of messages in the past 30 days (UTC)', user_record=user_record)
+        await leaderboard.build()
 
     @commands.command(aliases=['chlb', 'cl'])
     async def channel_leaderboard(self, ctx):
@@ -226,7 +228,7 @@ class Stats(commands.Cog):
                 ) AS cl
             )
                 (
-                    SELECT * FROM ranked LIMIT 25
+                    SELECT * FROM ranked
                 ) UNION ALL
                 (
                     SELECT * FROM ranked WHERE user_id = $3
@@ -254,8 +256,8 @@ class Stats(commands.Cog):
             records = chlb[:-1]
             user_record = chlb[-1] 
 
-        embed = self.build_leaderboard(records, title=title[:256], user_record=user_record)
-        await ctx.send(embed=embed)
+        leaderboard = PaginatedLeaderboard(ctx, records=records, title=title[:256], description='Number of messages in the past 30 days (UTC)', user_record=user_record)
+        await leaderboard.build()
 
 
     @commands.command(aliases=['jplb', 'jpl'])
@@ -283,7 +285,7 @@ class Stats(commands.Cog):
                 ) AS vl
             )
                 (
-                    SELECT * FROM ranked LIMIT 25
+                    SELECT * FROM ranked
                 ) UNION ALL
                 (
                     SELECT * FROM ranked WHERE user_id = $2
@@ -301,8 +303,13 @@ class Stats(commands.Cog):
             records = vl[:-1]
             user_record = vl[-1] 
 
-        embed = self.build_leaderboard(records, title='Voice Leaderboard', user_record=user_record)
-        await ctx.send(embed=embed)
+        def count_to_string(c):
+            hrs = c // 60
+            mns = c % 60
+            return (f'{hrs}hr ' if hrs else '') + f'{mns}min'
+
+        leaderboard = PaginatedLeaderboard(ctx, records=records, title='Voice Leaderboard', description='Time spent in VC in the past 30 days (UTC)', user_record=user_record, count_to_string=count_to_string)
+        await leaderboard.build()
 
     @commands.command(aliases=['ac', 'uac'])
     async def user_activity(self, ctx):
@@ -407,34 +414,7 @@ class Stats(commands.Cog):
         elapsed_mins = (now - vc[member_id]).total_seconds() / 60
         if delete:
             del vc[member_id]
-        self._temp_voice[(guild_id, member_id, now.date())] += elapsed_mins 
-
-    # Build leaderboard
-    # Records must contain user_id, count, and rank fields
-    def build_leaderboard(self, records, *, title='Leaderboard', user_record, count_to_string=lambda x: x):
-        embed = discord.Embed(colour=0x3A8EDB)
-        embed.title = title
-        embed.description = 'For the last 30 days (UTC)'
-
-        for record in records:
-            ru_id = record['user_id']
-            rank = record['rank']
-            ru = self.bot.get_user(ru_id)
-            if ru is None:
-                name = f'{rank}) @deleted-user({ru_id})'
-            else:
-                name = f'{rank}) {ru.name}'
-            embed.add_field(name=name, value=count_to_string(record['count']))
-
-        if user_record and user_record['user_id'] is not None:
-            user_id = user_record['user_id']
-            user = self.bot.get_user(user_id)
-            if user is None:
-                username = f'@deleted-user({user_id})'
-            else:
-                username = user.name
-            embed.set_footer (text='{}) {}: {}'.format(user_record['rank'], username, count_to_string(user_record['count'])))
-        return embed
+        self._temp_voice[(guild_id, member_id, now.date())] += elapsed_mins
 
     
     # Needs to have _batch_lock
