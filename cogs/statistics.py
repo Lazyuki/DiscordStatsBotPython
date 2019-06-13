@@ -208,7 +208,7 @@ class Stats(commands.Cog):
             records = lb[:-1]
             user_record = lb[-1] 
         
-        leaderboard = PaginatedLeaderboard(ctx, records=records, title='Leaderboard', description='Number of messages in the past 30 days (UTC)', user_record=user_record)
+        leaderboard = PaginatedLeaderboard(ctx, records=records, title='Leaderboard', description='Number of messages in the past 30 days (UTC)', find_record=user_record)
         await leaderboard.build()
 
     @commands.command(aliases=['chlb', 'cl'])
@@ -256,7 +256,7 @@ class Stats(commands.Cog):
             records = chlb[:-1]
             user_record = chlb[-1] 
 
-        leaderboard = PaginatedLeaderboard(ctx, records=records, title=title[:256], description='Number of messages in the past 30 days (UTC)', user_record=user_record)
+        leaderboard = PaginatedLeaderboard(ctx, records=records, title=title[:256], description='Number of messages in the past 30 days (UTC)', find_record=user_record)
         await leaderboard.build()
 
 
@@ -269,12 +269,81 @@ class Stats(commands.Cog):
     async def english_leaderboard(self, ctx):
         pass
 
+    @commands.command(aliases=['emlb', 'eml', 'emoji'])
+    async def emoji_leaderboard(self, ctx, *, option=''):
+        if option and option != 's' and option != 'server':
+            await self.emoji_usage_leaderboard(ctx, option)
+            return
+        records = await self.pool.fetch('''
+            SELECT *, RANK() OVER (ORDER BY count DESC)
+            FROM (
+                SELECT emoji, SUM(emoji_count) as count
+                FROM emojis
+                WHERE guild_id = $1
+                GROUP BY emoji
+                ORDER BY count DESC
+            ) AS el
+            ''', ctx.guild.id)
+
+        if not records:
+            await ctx.send('No emoji data found')
+            return
+
+        def emoji_resolver(rank, emoji):
+            return f'{rank}) {emoji}'
+
+        
+        if option == 's' or option == 'server':
+            guild_emojis = [str(emoji) for emoji in ctx.guild.emojis]
+            records = [r for r in records if r['emoji'] in guild_emojis]
+            description = 'Server emoji usage in the past 30 days (UTC)'
+        else:
+            description = 'Emoji usage in the past 30 days (UTC)'
+
+        leaderboard = PaginatedLeaderboard(ctx, records=records, title='Emoji Leaderboard', description=description, rank_for='emoji', field_name_resolver=emoji_resolver)
+        await leaderboard.build()
+
+
+    async def emoji_usage_leaderboard(self, ctx, emoji):
+        records = await self.pool.fetch('''
+            WITH ranked AS (
+                SELECT *, RANK() OVER (ORDER BY count DESC)
+                FROM (
+                    SELECT user_id, SUM(emoji_count) as count
+                    FROM emojis
+                    WHERE guild_id = $1 AND emoji = $2 
+                    GROUP BY user_id
+                    ORDER BY count DESC
+                ) AS el
+            )
+                (
+                    SELECT * FROM ranked
+                ) UNION ALL
+                (
+                    SELECT * FROM ranked WHERE user_id = $3
+                )
+            ''', ctx.guild.id, emoji, ctx.author.id)
+
+        if not records:
+            await ctx.send('No emoji data found')
+            return
+
+        description = f'Emoji leaderboard for {emoji} in the past 30 days (UTC)'
+
+        if records[-1]['user_id'] == ctx.author.id:
+            records = records[:-1]
+            user_record = records[-1] 
+        else:
+            user_record = None
+
+        leaderboard = PaginatedLeaderboard(ctx, records=records, title='Emoji Usage Leaderboard', description=description, find_record=user_record)
+        await leaderboard.build()
 
     @commands.command(aliases=['vclb', 'vl', 'v'])
     async def voice_leaderboard(self, ctx):
         user_id = ctx.author.id
         vl = await self.pool.fetch('''
-            WITH  ranked AS (
+            WITH ranked AS (
                 SELECT *, RANK() OVER (ORDER BY count DESC)
                 FROM (
                     SELECT user_id, SUM(minute_count) as count
@@ -308,7 +377,7 @@ class Stats(commands.Cog):
             mns = c % 60
             return (f'{hrs}hr ' if hrs else '') + f'{mns}min'
 
-        leaderboard = PaginatedLeaderboard(ctx, records=records, title='Voice Leaderboard', description='Time spent in VC in the past 30 days (UTC)', user_record=user_record, count_to_string=count_to_string)
+        leaderboard = PaginatedLeaderboard(ctx, records=records, title='Voice Leaderboard', description='Time spent in VC in the past 30 days (UTC)', find_record=user_record, count_to_string=count_to_string)
         await leaderboard.build()
 
     @commands.command(aliases=['ac', 'uac'])
@@ -338,7 +407,6 @@ class Stats(commands.Cog):
     @commands.command(aliases=['sac'])
     async def server_activity(self, ctx):
         pass
-
 
     @commands.Cog.listener()
     async def on_safe_message(self, m, **kwargs):

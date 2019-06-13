@@ -6,14 +6,18 @@ class PaginatedLeaderboard:
         records=[],
         title='Leaderboard',
         description='For the last 30 days (UTC)',
-        user_record=None,
+        rank_for='user_id',
+        find_record=None,
+        field_name_resolver=None,
         count_to_string=lambda x: x,
         per_page=25):
 
         self.ctx = ctx             
         self.bot = ctx.bot
         self.records = records
-        self.user_record = user_record
+        self.rank_for = rank_for
+        self.find_record = find_record
+        self.name_resolver = field_name_resolver if field_name_resolver else self.user_resolver
         self.count_to_string = count_to_string
         self.message = ctx.message
         self.author = ctx.author
@@ -24,10 +28,10 @@ class PaginatedLeaderboard:
 
         self.total_pages = total
         self.current_page = None
-        if user_record and 'rank' in user_record:
-            self.user_record_page = user_record['rank'] // per_page
+        if find_record and 'rank' in find_record:
+            self.find_record_page = find_record['rank'] // per_page
         else:
-            self.user_record_page = None
+            self.find_record_page = None
 
         self.title = title
         self.description = description
@@ -42,6 +46,15 @@ class PaginatedLeaderboard:
         ]
 
         self.message = None
+
+    def user_resolver(self, rank, user_id):
+        user = self.bot.get_user(user_id)
+        is_user = '\N{ROUND PUSHPIN}' if user_id == self.author.id else ''
+        if user is None:
+            name = f'{rank}) @deleted-user({user_id})'
+        else:
+            name = f'{is_user}{rank}) {user.name}'
+        return name
     
     async def show_page(self, page):
         if page < 0 or page == self.total_pages or page == self.current_page:
@@ -54,24 +67,12 @@ class PaginatedLeaderboard:
         embed.description = self.description
 
         for record in self.records[start:end]:
-            ru_id = record['user_id']
+            record_value = record[self.rank_for]
             rank = record['rank']
-            ru = self.bot.get_user(ru_id)
-            is_user = '\N{ROUND PUSHPIN}' if ru_id == self.author.id else ''
-            if ru is None:
-                name = f'{rank}) @deleted-user({ru_id})'
-            else:
-                name = f'{is_user}{rank}) {ru.name}'
+            name = self.name_resolver(rank, record_value)
             embed.add_field(name=name, value=self.count_to_string(record['count']))
 
-        if self.user_record and self.user_record['user_id'] is not None:
-            user_id = self.user_record['user_id']
-            user = self.bot.get_user(user_id)
-            if user is None:
-                username = f'@deleted-user({user_id})'
-            else:
-                username = user.name
-            embed.set_footer(text=f'Page: {page + 1}/{self.total_pages}')
+        embed.set_footer(text=f'Page: {page + 1}/{self.total_pages}')
         if self.message is not None:
             await self.message.edit(embed=embed)
         else:
@@ -90,8 +91,8 @@ class PaginatedLeaderboard:
         await self.show_page(self.current_page - 1)
 
     async def user_page(self):
-        if self.user_record_page is not None:
-            await self.show_page(self.user_record_page)
+        if self.find_record_page is not None:
+            await self.show_page(self.find_record_page)
 
     def react_check(self, reaction, user):
         if user is None or user.id != self.author.id:
@@ -113,7 +114,7 @@ class PaginatedLeaderboard:
             await self.message.add_reaction(self.reaction_emojis[1][0])
             await self.message.add_reaction(self.reaction_emojis[2][0])
             await self.message.add_reaction(self.reaction_emojis[3][0])
-            if self.user_record_page is not None:
+            if self.find_record_page is not None:
                 await self.message.add_reaction(self.reaction_emojis[4][0])
 
         while self.paginating:

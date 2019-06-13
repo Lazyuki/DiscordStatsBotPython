@@ -50,7 +50,8 @@ class Stats(commands.Cog):
     @commands.command(aliases=['rs'])
     async def restart(self, ctx):
         await ctx.send('Restarting...')
-        await self.run_process('(sleep 3 && . ~/.venv/ciri/bin/activate && python3 launcher.py) &')
+        self.bot.config.debugging = True
+        await asyncio.create_subprocess_shell('(sleep 3 && . ~/.venv/ciri/bin/activate && python3 launcher.py) &', close_fds=True)
         await self.bot.close()
 
     @commands.command()
