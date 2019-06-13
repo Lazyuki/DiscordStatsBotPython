@@ -24,14 +24,10 @@ def setup_logging():
             handler = logging.StreamHandler(sys.stdout)
         else:
             handler = logging.FileHandler(filename='cirilla.log', encoding='utf-8', mode='w')
-        errorHandler = logging.FileHandler(filename='cirilla_errors.log', encoding='utf-8', mode='w')
-        errorHandler.setLevel(logging.ERROR)
         dt_fmt = '%Y-%m-%d %H:%M:%S'
         fmt = logging.Formatter('[{asctime}] [{levelname:<7}] {name}: {message}', dt_fmt, style='{')
         handler.setFormatter(fmt)
-        errorHandler.setFormatter(fmt)
         log.addHandler(handler)
-        log.addHandler(errorHandler)
 
         yield
     finally:
@@ -56,8 +52,10 @@ def run_bot():
     print('Bot finished running')
 
 def main():
-    with setup_logging():
-        run_bot()
+    with open('cirilla_errors.log', 'w') as f:
+        with contextlib.redirect_stderr(f):
+            with setup_logging():
+                run_bot()
 
 if __name__ == '__main__':
     main()

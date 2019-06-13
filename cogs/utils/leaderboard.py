@@ -119,7 +119,7 @@ class PaginatedLeaderboard:
 
         while self.paginating:
             try:
-                reaction, user = await self.bot.wait_for('reaction_add', check=self.react_check, timeout=30.0)
+                reaction, user = await self.bot.wait_for('reaction_add', check=self.react_check, timeout=20.0)
             except asyncio.TimeoutError:
                 self.paginating = False
                 try:

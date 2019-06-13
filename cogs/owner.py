@@ -61,12 +61,14 @@ class Stats(commands.Cog):
             if 'bot.py' in stdout:
                 await self.restart(ctx)
             else:
-                cogs = re.findall(r'cogs/(.+?)\.py', stdout)
+                cogs = re.findall(r'cogs/(\w+?)\.py', stdout)
                 if not cogs:
                     await ctx.send('Nothing to update')
                     return
                 try:
                     for cog in cogs:
+                        if cog == 'utils':
+                            continue
                         self.bot.reload_extension(f'cogs.{cog}')
                 except commands.ExtensionError as e:
                     await ctx.send(f'{e.__class__.__name__}: {e}')
