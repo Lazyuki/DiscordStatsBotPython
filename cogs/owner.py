@@ -49,6 +49,9 @@ class Stats(commands.Cog):
 
     @commands.command(aliases=['rs'])
     async def restart(self, ctx):
+        await self._restart(ctx)
+
+    async def _restart(self, ctx):
         await ctx.send('Restarting...')
         self.bot.config.debugging = True
         await asyncio.create_subprocess_shell('(sleep 3 && . ~/.venv/ciri/bin/activate && python3 launcher.py) &', close_fds=True)
@@ -59,7 +62,7 @@ class Stats(commands.Cog):
         async with ctx.typing():
             stdout, stderr = await self.run_process('git pull')
             if 'bot.py' in stdout:
-                await self.restart(ctx)
+                await self._restart(ctx)
             else:
                 cogs = re.findall(r'cogs/(\w+?)\.py', stdout)
                 if not cogs:
