@@ -6,9 +6,9 @@ import asyncio
 import asyncpg
 from datetime import datetime, date
 from .utils.parser import REGEX_CUSTOM_EMOJIS, REGEX_BOT_COMMANDS
-from .utils.resolver import resolve_minimum_channel, resolve_user_id
+from .utils.resolver import resolve_minimum_channel, resolve_user_id, has_role
 from .utils.leaderboard import PaginatedLeaderboard
-
+from .ejlx import JP_EMOJI, EN_EMOJI, OL_EMOJI, NJ_ROLE
 
 log = logging.getLogger(__name__)
 
@@ -113,8 +113,8 @@ class Stats(commands.Cog):
         # If true, it will at least have 3 rows
         if message_data:
             # Message total.
-            month_total = message_data[0]['count']
-            week_total = message_data[-1]['count'] if message_data[-1]['channel_id'] is None else 0
+            month_total = message_data[0].get('count', 0)
+            week_total = message_data[-1].get('count', 0) if message_data[-1]['channel_id'] is None else 0
             embed.add_field(name='Messages Month | Week', value=f'{month_total} | {week_total}')
 
             # Lang usage
@@ -214,8 +214,9 @@ class Stats(commands.Cog):
     @commands.command(aliases=['chlb', 'cl'])
     async def channel_leaderboard(self, ctx):
         user_id = ctx.author.id
-        channel_id = ctx.channel.id
-        channel_ids = [ channel_id ]
+        channel_ids = ctx.message.channel_mentions
+        if not channel_ids:
+            channel_ids = [ ctx.channel.id ]
         chlb = await self.pool.fetch('''
             WITH  ranked AS (
                 SELECT *, RANK() OVER (ORDER BY count DESC)
@@ -261,13 +262,111 @@ class Stats(commands.Cog):
 
 
     @commands.command(aliases=['jplb', 'jpl'])
-    async def japanese_leaderboard(self, ctx):
-        pass
+    async def japanese_leaderboard(self, ctx, *, limit=''):
+        try:
+            limit = int(limit)
+        except:
+            limit = 500
 
+        records = await self.pool.fetch('''
+            WITH lang_usage AS (
+                SELECT user_id, COALESCE(SUM(CASE WHEN lang = 'JP' THEN message_count END),0) as jp_count, SUM(message_count) as total
+                FROM messages
+                WHERE guild_id = $1 AND lang IN ('EN', 'JP')
+                GROUP BY user_id
+                HAVING SUM(message_count) > $2
+            )
+                (
+                    SELECT user_id, 100.0 * jp_count / total AS jp_ratio
+                    FROM lang_usage
+                    ORDER BY jp_ratio DESC
+                )
+            ''', ctx.guild.id, limit)
+
+        rank = 1
+        jplb = []
+        for record in records:
+            user_id = record.get('user_id')
+            member = ctx.guild.get_member(user_id)
+            is_author = '\N{ROUND PUSHPIN}' if user_id == ctx.author.id else ''
+            if member is None or has_role(member, NJ_ROLE['id']):
+                continue
+            name = f'{is_author}{rank}) {member.name}'
+            jplb.append({
+                'rank': rank,
+                'field_name': name,
+                'count': record.get('jp_ratio')
+            })
+            rank += 1
+        
+        if not jplb:
+            await ctx.send(f'No user found with more than {limit} messages')
+            return
+        
+        leaderboard = PaginatedLeaderboard(
+            ctx,
+            records=jplb,
+            title='Japanese Usage Leaderboard',
+            description=f'Japanese usage in the past 30 days for people with more than {limit} messages',
+            rank_for='field_name',
+            field_name_resolver=lambda x, y: y,
+            count_to_string=lambda x: f'{x:.2f}%'
+            )
+        await leaderboard.build()
 
     @commands.command(aliases=['enlb', 'enl'])
-    async def english_leaderboard(self, ctx):
-        pass
+    async def english_leaderboard(self, ctx, *, limit=''):
+        try:
+            limit = int(limit)
+        except:
+            limit = 300
+
+        records = await self.pool.fetch('''
+            WITH lang_usage AS (
+                SELECT user_id, COALESCE(SUM(CASE WHEN lang = 'EN' THEN message_count END),0) as en_count, SUM(message_count) as total
+                FROM messages
+                WHERE guild_id = $1 AND lang IN ('EN', 'JP')
+                GROUP BY user_id
+                HAVING SUM(message_count) > $2
+            )
+                (
+                    SELECT user_id, 100.0 * en_count / total AS en_ratio
+                    FROM lang_usage
+                    ORDER BY en_ratio DESC
+                )
+            ''', ctx.guild.id, limit)
+        
+
+        rank = 1
+        enlb = []
+        for record in records:
+            user_id = record.get('user_id')
+            member = ctx.guild.get_member(user_id)
+            is_author = '\N{ROUND PUSHPIN}' if user_id == ctx.author.id else ''
+            if member is None or not has_role(member, NJ_ROLE['id']):
+                continue
+            name = f'{is_author}{rank}) {member.name}'
+            enlb.append({
+                'rank': rank,
+                'field_name': name,
+                'count': record.get('en_ratio')
+            })
+            rank += 1
+
+        if not enlb:
+            await ctx.send(f'No user found with more than {limit} messages')
+            return
+        
+        leaderboard = PaginatedLeaderboard(
+            ctx,
+            records=enlb,
+            title='English Usage Leaderboard',
+            description=f'English usage in the past 30 days for people with more than {limit} messages',
+            rank_for='field_name',
+            field_name_resolver=lambda x, y: y,
+            count_to_string=lambda x: f'{x:.2f}%'
+            )
+        await leaderboard.build()
 
     @commands.command(aliases=['emlb', 'eml', 'emoji'])
     async def emoji_leaderboard(self, ctx, *, option=''):
@@ -443,9 +542,14 @@ class Stats(commands.Cog):
     async def on_reaction_add(self, reaction, user):
         if user.bot:
             return
+        # No bot navigation reactions
+        if reaction.message.author.bot:
+            return
         if reaction.message.guild is None:
             return
         emoji = str(reaction.emoji)
+        if emoji in [JP_EMOJI, EN_EMOJI, OL_EMOJI]:
+            return
         today = datetime.utcnow().date()
         async with self._batch_lock:
             self._temp_emojis[(reaction.message.guild.id, user.id, today)][emoji] += 1

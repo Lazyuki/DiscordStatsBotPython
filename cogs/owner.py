@@ -91,7 +91,7 @@ class Stats(commands.Cog):
     @commands.command(aliases=['err'])
     async def tail_error(self, ctx):
         async with ctx.typing():
-            stdout, stderr = await self.run_process('tail -n 30 cirilla_error.log')
+            stdout, stderr = await self.run_process('tail -n 30 cirilla_errors.log')
             if not stdout:
                 stdout = 'No errors'
             await ctx.send('```' + stdout[-1994:] + '```')
