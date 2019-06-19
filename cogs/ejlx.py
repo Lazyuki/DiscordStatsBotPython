@@ -58,16 +58,18 @@ def get_role_by_short(short):
 LANGS = ['german', 'italian', 'french', 'spanish',
     'portuguese', 'korean', 'chinese', 'telugu', 'hindi', 'urdu', 'tamil', 'malay',
     'dutch', 'arabic', 'russian', 'turkish', 'mandarin', 'cantonese', 'polish', 'swedish',
-    'tagalog', 'norwegian']
+    'tagalog', 'norwegian', 'vietnamese']
 
 COUNTRIES = ['germany', 'italy', 'france', 'spain', 'portugal', 'brazil', 'korea', 'china',
-    'taiwan', 'india', 'malaysia', 'netherland', 'russia', 'poland', 'sweden', 'turkey', 'norway']
+    'taiwan', 'india', 'malaysia', 'netherland', 'russia', 'poland', 'sweden', 'turkey', 'norway'
+    'vietnam']
 
-NATIVE = re.compile(r'native(?: language)?(?: is)? (\S+)')
+NATIVE = re.compile(r'native(?: language)?(?: is)? (\w+)')
+NATIVE2 = re.compile(r'(\w+) is my native')
 NATIVEJP = re.compile(r'母国?語.(.+?)語')
-FROM = re.compile(r"i(?:'?m| am) from (?:the )?(?:united )?(\S+)")
-IM = re.compile(r"i(?:'?m| am)(?: a)? (\S+)")
-STUDY = re.compile(r'(?:learn|study|fluent in)(?:ing)? (?:japanese|english)')
+FROM = re.compile(r"i(?:'?m| am) from (?:the )?(?:united )?(\w+)")
+IM = re.compile(r"i(?:'?m| am)(?: a)? (\w+)")
+STUDY = re.compile(r'(?:learn|study|studied|fluent in)(?:ing)? (?:japanese|english)')
 STUDYJP = re.compile(r'(?:日本語|英語).?勉強')
 
 # Emojis
@@ -93,9 +95,10 @@ async def guess_lang(message):
     m = NATIVE.search(msg)
     if m:
         nat = m.group(1)
-        if nat == 'japanese':
+        m2 = NATIVE2.search(msg)
+        if nat == 'japanese' or m2 and m2.group(1) == 'japanese':
             await message.add_reaction(JP_EMOJI)
-        elif nat == 'english':
+        elif nat == 'english' or m2 and m2.group(1) == 'english':
             await message.add_reaction(EN_EMOJI)
         else:
             await message.add_reaction(OL_EMOJI)
@@ -151,6 +154,9 @@ async def guess_lang(message):
         return 
     if 'english' in msg or '英語' in msg:
         await message.add_reaction(EN_EMOJI)
+        return 
+    if '語' in msg:
+        await message.add_reaction(OL_EMOJI)
         return 
         
 
@@ -218,10 +224,8 @@ class EJLX(commands.Cog):
                 return
             self._recently_tagged == msg.author.id
             
-        await asyncio.gather(
-            msg.author.add_roles(msg.guild.get_role(tagged), reason=f'by {user.name}'),
-            msg.author.remove_roles(msg.guild.get_role(NU_ROLE['id']), reason=f'by {user.name}')
-        )
+        await msg.author.add_roles(msg.guild.get_role(tagged), reason=f'by {user.name}')
+        await msg.author.remove_roles(msg.guild.get_role(NU_ROLE['id']), reason=f'by {user.name}')
 
         if msg.channel.id == INTRO:
             await asyncio.gather(

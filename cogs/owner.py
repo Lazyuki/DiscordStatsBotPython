@@ -35,7 +35,7 @@ class Stats(commands.Cog):
     @commands.command(aliases=['gpl'])
     async def git_pull(self, ctx):
         async with ctx.typing():
-            stdout, stderr = await self.run_process('git pull')
+            stdout, _ = await self.run_process('git pull')
             await ctx.send(stdout)
 
     @commands.command(aliases=['db'])
@@ -60,7 +60,7 @@ class Stats(commands.Cog):
     @commands.command()
     async def update(self, ctx):
         async with ctx.typing():
-            stdout, stderr = await self.run_process('git pull')
+            stdout, _ = await self.run_process('git pull')
             if 'bot.py' in stdout:
                 await self._restart(ctx)
             else:
