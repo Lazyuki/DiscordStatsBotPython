@@ -1,0 +1,11 @@
+owner_id = 000000 # Bot owner's ID
+client_id = 000000 # Bot's client ID
+default_prefix = '/'
+token = '' # bot's token
+debugging = True
+db = {
+  'user': 'db_user_name',
+  'password': 'db_password',
+  'database': 'db_name',
+  'host': '127.0.0.1'
+}
