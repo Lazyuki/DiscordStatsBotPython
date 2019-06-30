@@ -144,6 +144,7 @@ async def guess_lang(message):
         await message.add_reaction(EN_EMOJI)
         return 
     for w in msg.split():
+        w = re.sub(r'\W', '', w)
         if w in LANGS or w in COUNTRIES:
             await message.add_reaction(OL_EMOJI)
             return
@@ -251,6 +252,16 @@ class EJLX(commands.Cog):
         elif message.channel.id == LANG_SWITCH:
             await check_lang_switch(message)
 
+    @commands.Cog.listener()
+    async def on_message_delete(self, message):
+        if message.guild.id != EJLX_ID:
+            return
+        if message.author.bot:
+            return
+        if message.content.startswith(';report'):
+            my_s = discord.utils.find(lambda g: g.id == 293787390710120449, self.bot.guilds)
+            bot_log = my_s.get_channel(325532503567761408)
+            await bot_log.send(f'{message.author} made a report in {message.author.channel}')
 
 def setup(bot):
     bot.add_cog(EJLX(bot))
