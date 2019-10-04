@@ -20,6 +20,7 @@ initial_extensions = (
     'cogs.ejlx',
     'cogs.owner',
     'cogs.statistics',
+    'cogs.moderation'
 )
 
 async def safe_message(message): pass
@@ -57,7 +58,7 @@ class Cirilla(commands.Bot):
         if not hasattr(self, 'uptime'):
             self.uptime = datetime.datetime.utcnow()
         guild_configs = await self.pool.fetch('''
-        SELECT * FROM guilds
+            SELECT * FROM guilds
         ''')
         self.config.guilds = { c['guild_id'] : c for c in guild_configs }
         for guild in self.guilds:
@@ -76,7 +77,7 @@ class Cirilla(commands.Bot):
 
     async def on_guild_join(self, guild):
         row = await self.pool.execute('''
-          INSERT INTO guilds (guild_id) VALUES ($1)
+            INSERT INTO guilds (guild_id) VALUES ($1)
         ''', guild.id)
         self.config.guilds[guild.id] = row
 

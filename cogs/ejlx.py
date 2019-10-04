@@ -3,6 +3,8 @@ import discord
 import asyncio
 import re
 from .utils.resolver import has_role
+from .utils.parser import guess_lang, JP_EMOJI, EN_EMOJI, OL_EMOJI
+from datetime import datetime
 
 EJLX_ID = 189571157446492161
 
@@ -54,29 +56,6 @@ def get_role_by_short(short):
             return role
     return None
 
-# Languages
-LANGS = ['german', 'italian', 'french', 'spanish',
-    'portuguese', 'korean', 'chinese', 'telugu', 'hindi', 'urdu', 'tamil', 'malay',
-    'dutch', 'arabic', 'russian', 'turkish', 'mandarin', 'cantonese', 'polish', 'swedish',
-    'tagalog', 'norwegian', 'vietnamese']
-
-COUNTRIES = ['germany', 'italy', 'france', 'spain', 'portugal', 'brazil', 'korea', 'china',
-    'taiwan', 'india', 'malaysia', 'netherland', 'russia', 'poland', 'sweden', 'turkey', 'norway'
-    'vietnam']
-
-NATIVE = re.compile(r'native(?: language)?(?: is)? (\w+)')
-NATIVE2 = re.compile(r'(\w+) is my native')
-NATIVEJP = re.compile(r'母国?語.(.+?)語')
-FROM = re.compile(r"i(?:'?m| am) from (?:the )?(?:united )?(\w+)")
-IM = re.compile(r"i(?:'?m| am)(?: a)? (\w+)")
-STUDY = re.compile(r'(?:learn|study|studied|fluent in)(?:ing)? (?:japanese|english)')
-STUDYJP = re.compile(r'(?:日本語|英語).?勉強')
-
-# Emojis
-JP_EMOJI = '<:japanese:439733745390583819>'
-EN_EMOJI = '<:english:439733745591779328>'
-OL_EMOJI = '<:other_lang:439733745491116032>'
-
 # Helpers
 async def has_manage_roles(ctx):
     return ctx.author.guild_permissions.manage_roles
@@ -89,76 +68,6 @@ async def check_kanji(message):
 
 async def check_lang_switch(message):
     pass
-
-async def guess_lang(message):
-    msg =  message.content.lower()
-    m = NATIVE.search(msg)
-    if m:
-        nat = m.group(1)
-        m2 = NATIVE2.search(msg)
-        if nat == 'japanese' or m2 and m2.group(1) == 'japanese':
-            await message.add_reaction(JP_EMOJI)
-        elif nat == 'english' or m2 and m2.group(1) == 'english':
-            await message.add_reaction(EN_EMOJI)
-        else:
-            await message.add_reaction(OL_EMOJI)
-        return
-    m = NATIVEJP.search(msg)
-    if m:
-        nat = m.group(1)
-        if nat == '日本':
-            await message.add_reaction(JP_EMOJI)
-        elif nat == '英':
-            await message.add_reaction(EN_EMOJI)
-        else:
-            await message.add_reaction(OL_EMOJI)
-        return
-    m = FROM.search(msg)
-    if m:
-        orig = m.group(1)
-        if orig == 'japan':
-            await message.add_reaction(JP_EMOJI)
-            return 
-        elif orig in ['us', 'states', 'kingdom', 'uk', 'canada', 'australia']:
-            await message.add_reaction(EN_EMOJI)
-            return
-        elif orig in COUNTRIES:
-            await message.add_reaction(OL_EMOJI)
-            return
-    m = IM.search(msg)
-    if m:
-        orig = m.group(1)
-        if orig == 'japanese':
-            await message.add_reaction(JP_EMOJI)
-            return 
-        elif orig in ['english', 'canadian', 'australian', 'british']:
-            await message.add_reaction(EN_EMOJI)
-            return
-        elif orig in LANGS:
-            await message.add_reaction(OL_EMOJI)
-            return
-    if '日本人です' in msg:
-        await message.add_reaction(JP_EMOJI)
-        return 
-    elif 'アメリカ人' in msg or 'イギリス人' in msg or 'カナダ人' in msg or 'オーストラリア人' in msg:
-        await message.add_reaction(EN_EMOJI)
-        return 
-    for w in msg.split():
-        w = re.sub(r'\W', '', w)
-        if w in LANGS or w in COUNTRIES:
-            await message.add_reaction(OL_EMOJI)
-            return
-    msg = STUDY.sub('', msg)
-    msg = STUDYJP.sub('', msg)   
-    if 'japanese' in msg or '日本語' in msg:
-        await message.add_reaction(JP_EMOJI)
-        return 
-    if 'english' in msg or '英語' in msg:
-        await message.add_reaction(EN_EMOJI)
-        return 
-    if '語' in msg:
-        await message.add_reaction(OL_EMOJI)
-        return 
         
 
 class EJLX(commands.Cog):
@@ -184,6 +93,31 @@ class EJLX(commands.Cog):
         self.newbies.append(member.id)
         if len(self.newbies) > 3:
             self.newbies.pop(0)
+
+    @commands.Cog.listener()
+    async def on_member_remove(self, member):
+        if member.premium_since is not None:
+            ewbf = member.guild.get_channel(EWBF)
+            embed = discord.Embed(colour=0xf47fff)
+            embed.title = f"{member}'s boost is now gone..."
+            embed.timestamp = datetime.now()
+            embed.set_footer(text=f'Nitro Boosts: {member.guild.premium_subscription_count} (Tier: {member.guild.premium_tier}')
+            await ewbf.send(embed=embed)
+
+    @commands.Cog.listener()
+    async def on_member_update(self, before, after):
+        if before.guild.id != EJLX_ID:
+            return
+        if before.premium_since != after.premium_since:
+            ewbf = before.guild.get_channel(EWBF)
+            embed = discord.Embed(colour=0xf47fff)
+            embed.timestamp = datetime.now()
+            embed.set_footer(text=f'Nitro Boosts: {before.guild.premium_subscription_count} (Tier: {before.guild.premium_tier})')
+            if before.premium_since is None:
+                embed.title = f'{before.user} just boosted the server!'
+            else:
+                embed.title = f"{before.user}'s boost was removed/expired..."
+            await ewbf.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):

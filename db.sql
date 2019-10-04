@@ -2,10 +2,10 @@ CREATE TYPE langtype AS ENUM ('OL', 'JP', 'EN');
 
 CREATE TABLE IF NOT EXISTS guilds(
   guild_id BIGINT UNIQUE PRIMARY KEY,
-  mod_channels BIGINT[],
-  watched_users BIGINT[],
 
---   prefix CHAR(5),
+  prefix CHAR(5),
+  mod_channels BIGINT[],
+--   watched_users BIGINT[],
 --   ignored_channels BIGINT[],
 --   ignored_users BIGINT[],
 --   ignored_prefixes TEXT [],
@@ -18,8 +18,7 @@ CREATE TABLE IF NOT EXISTS guilds(
 --   emoji_role_custom_message TEXT,
 --   emoji_role_message_id TEXT, -- CHANNEL_ID-MESSAGE_ID
 --   clock_category BIGINT,
---   clock_format TEXT,
---   enabled_modules TEXT[]
+--   clock_format TEXT
 );
 
 CREATE TABLE IF NOT EXISTS messages(
