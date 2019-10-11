@@ -2,11 +2,15 @@ from discord.ext import commands
 import discord
 import asyncio
 import re
+import logging
+
 from .utils.resolver import has_role
 from .utils.parser import guess_lang, JP_EMOJI, EN_EMOJI, OL_EMOJI
 from datetime import datetime
 
 EJLX_ID = 189571157446492161
+
+BOOSTER_COLOR = 0xf47fff
 
 # Channels
 INTRO = 395741560840519680
@@ -86,6 +90,15 @@ class EJLX(commands.Cog):
         member = member or self.newbies[-1]
         pass
 
+    @commands.command()
+    async def boosters(self, ctx):
+        embed = discord.Embed(colour=BOOSTER_COLOR)
+        embed.title = f'Nitro Boosters: {len(ctx.guild.premium_subscribers)} members'
+        embed.description = '\n'.join([f'**{sub}** - ' + sub.premium_since.strftime('%Y/%m/%d') for sub in sorted(ctx.guild.premium_subscribers, key=lambda m: m.premium_since)])
+        embed.timestamp = datetime.utcnow()
+        embed.set_footer(text=f'Nitro Boosts: {ctx.guild.premium_subscription_count} (Tier {ctx.guild.premium_tier})')
+        await ctx.send(embed=embed)
+
     @commands.Cog.listener()
     async def on_member_join(self, member):
         if member.guild.id != EJLX_ID:
@@ -96,28 +109,46 @@ class EJLX(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
+        if member.guild.id != EJLX_ID:
+            return
         if member.premium_since is not None:
             ewbf = member.guild.get_channel(EWBF)
-            embed = discord.Embed(colour=0xf47fff)
+            embed = discord.Embed(colour=BOOSTER_COLOR)
             embed.title = f"{member}'s boost is now gone..."
-            embed.timestamp = datetime.now()
-            embed.set_footer(text=f'Nitro Boosts: {member.guild.premium_subscription_count} (Tier: {member.guild.premium_tier}')
+            embed.timestamp = datetime.utcnow()
+            embed.set_footer(text=f'Nitro Boosts: {member.guild.premium_subscription_count} (Tier {member.guild.premium_tier})')
             await ewbf.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
-        if before.guild.id != EJLX_ID:
+        if after.guild.id != EJLX_ID:
             return
+        # Boost change
         if before.premium_since != after.premium_since:
-            ewbf = before.guild.get_channel(EWBF)
-            embed = discord.Embed(colour=0xf47fff)
-            embed.timestamp = datetime.now()
-            embed.set_footer(text=f'Nitro Boosts: {before.guild.premium_subscription_count} (Tier: {before.guild.premium_tier})')
+            logging.info(f'boost by {before} {before.premium_since} {after.premium_since}')
+            ewbf = after.guild.get_channel(EWBF)
+            embed = discord.Embed(colour=BOOSTER_COLOR)
+            embed.timestamp = datetime.utcnow()
+            embed.set_footer(text=f'Nitro Boosts: {after.guild.premium_subscription_count} (Tier {after.guild.premium_tier})')
             if before.premium_since is None:
-                embed.title = f'{before.user} just boosted the server!'
+                embed.title = f'{after.user} just boosted the server!'
             else:
-                embed.title = f"{before.user}'s boost was removed/expired..."
+                embed.title = f'{after.user}\'s boost was removed/expired...'
             await ewbf.send(embed=embed)
+            return
+        # Nickname change
+        # if before.nick != after.nick:
+        #     ewbf = before.guild.get_channel(EWBF)
+        #     embed = discord.Embed(colour=0x4286f4)
+        #     embed.timestamp = datetime.utcnow()
+        #     embed.set_footer(text=f'{before.name} ({before.id})', icon_url=before.avatar_url)
+        #     if before.nick is None:
+        #         embed.description = f'**{before.name}**\'s nickname was set to **${after.nick}**'
+        #     elif after.nick is None:
+        #         embed.description = f'**{before.nick}**\'s nickname was removed'
+        #     else:
+        #         embed.description = f'**{before.nick}**\'s nickname was changed to **{after.nick}**'
+        #     await ewbf.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):

@@ -628,7 +628,6 @@ class Stats(commands.Cog):
 
     @tasks.loop(seconds=20.0)
     async def batch_update(self):
-        log.info('bath_updateing')
         async with self._batch_lock:
             messages, emojis, voices = self.do_batch()
         await self.bulk_insert(messages, emojis, voices)
