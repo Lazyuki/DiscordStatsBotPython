@@ -51,8 +51,9 @@ class Stats(commands.Cog):
         member = ctx.guild.get_member(user_id)
 
         mod_channels = self.settings[ctx.guild.id]._mod_channel_ids
+        if ctx.guild.id in mod_channels:
+             mod_channels = []
         
-
         emoji_data, voice, message_data = await asyncio.gather(
             self.pool.fetch('''
                 SELECT emoji, SUM(emoji_count) as count
@@ -92,7 +93,7 @@ class Stats(commands.Cog):
                         FROM records
                         WHERE utc_date > (current_date - '7 days'::interval)
                     )
-                ''', ctx.guild.id, user_id, mod_channels if ctx.guild.id not in mod_channels else [])
+                ''', ctx.guild.id, user_id, mod_channels)
         )
 
         # Prepare embed
