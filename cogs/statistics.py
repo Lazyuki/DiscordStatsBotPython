@@ -51,7 +51,7 @@ class Stats(commands.Cog):
         member = ctx.guild.get_member(user_id)
 
         mod_channels = self.settings[ctx.guild.id]._mod_channel_ids
-        if ctx.guild.id in mod_channels:
+        if ctx.channel.id in mod_channels:
              mod_channels = []
         
         emoji_data, voice, message_data = await asyncio.gather(
