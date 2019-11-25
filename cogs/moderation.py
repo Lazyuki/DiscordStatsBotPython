@@ -9,16 +9,20 @@ import re
 async def has_move_members(ctx):
     return ctx.author.guild_permissions.move_members
 
+async def has_manage_messages(ctx):
+    return ctx.author.guild_permissions.manage_messages
+
 class Moderation(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.settings = bot.settings
         self.pool = bot.pool
         self.config = bot.config
 
     @commands.command(aliases=['del'])
+    @commands.check(has_manage_messages)
     async def delete(self, ctx, *, id):
-        if not ctx.author.guild_permissions.manage_server:
-            return
+        pass
 
     @commands.command(aliases=['vk'])
     @commands.check(has_move_members)

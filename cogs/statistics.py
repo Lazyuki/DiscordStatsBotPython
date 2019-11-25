@@ -18,6 +18,7 @@ def is_vc(voice_state):
 class Stats(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.settings = bot.settings
         self.pool = bot.pool
         self.config = bot.config
         self.in_vc = defaultdict(dict)
@@ -28,6 +29,7 @@ class Stats(commands.Cog):
         self.batch_update.add_exception_type(asyncpg.PostgresConnectionError)
         self.batch_update.add_exception_type(asyncpg.CardinalityViolationError) # why
         self.batch_update.start()
+        self.clear_old_records.start()
 
         if bot.is_ready():
             log.info('cog reloaded && bot is ready')
@@ -37,7 +39,6 @@ class Stats(commands.Cog):
                     for member in vcs.members:
                         if is_vc(member.voice):
                             vc[member.id] = datetime.utcnow()
-
 
     @commands.command(aliases=['u', 'uinfo'])
     async def user(self, ctx, *, arg = None):
@@ -67,7 +68,7 @@ class Stats(commands.Cog):
                 WITH records AS (
                     SELECT channel_id, lang, message_count, utc_date
                     FROM messages
-                    WHERE guild_id = $1 AND user_id = $2
+                    WHERE guild_id = $1 AND user_id = $2 AND channel_id != ALL ($3::BIGINT[])
                 )
                     (
                         SELECT NULL::BIGINT AS channel_id, NULL::LANGTYPE AS lang, SUM(message_count) AS count
@@ -88,7 +89,7 @@ class Stats(commands.Cog):
                         FROM records
                         WHERE utc_date > (current_date - '7 days'::interval)
                     )
-                ''', ctx.guild.id, user_id)
+                ''', ctx.guild.id, user_id, self.settings[ctx.guild.id]._mod_channel_ids)
         )
 
         # Prepare embed
@@ -119,7 +120,7 @@ class Stats(commands.Cog):
 
             # Lang usage
             langs = { r['lang'] : r['count'] for r in message_data[1:4] if r['lang'] }
-            jp_role = self.config.guilds[ctx.guild.id].get(['jp_role'], None)
+            jp_role = self.settings[ctx.guild.id].jp_role_id
             is_jp = member and discord.utils.find(lambda r: r.id == jp_role, member.roles)
             EN = langs.get('EN', 0)
             JP = langs.get('JP', 0)
@@ -218,12 +219,12 @@ class Stats(commands.Cog):
         if not channel_ids:
             channel_ids = [ ctx.channel.id ]
         chlb = await self.pool.fetch('''
-            WITH  ranked AS (
+            WITH ranked AS (
                 SELECT *, RANK() OVER (ORDER BY count DESC)
                 FROM (
                     SELECT user_id, SUM(message_count) as count
                     FROM messages
-                    WHERE guild_id = $1 AND channel_id = ANY ($2)
+                    WHERE guild_id = $1 AND channel_id = ANY ($2::)
                     GROUP BY user_id
                     ORDER BY count DESC
                 ) AS cl
@@ -673,6 +674,16 @@ class Stats(commands.Cog):
                 SET minute_count = voice.minute_count + EXCLUDED.minute_count
                 ''', voices)
         )
+
+
+    @tasks.loop(hours=24)
+    async def clear_old_records(self):
+        async with self._batch_lock:
+            await self.pool.execute('''
+                DELETE FROM messages WHERE utc_date < NOW() - INTERVAL '30 days';
+                DELETE FROM emojis WHERE utc_date < NOW() - INTERVAL '30 days';
+                DELETE FROM voice WHERE utc_date < NOW() - INTERVAL '30 days';
+                ''')
     
 def setup(bot):
     bot.add_cog(Stats(bot))

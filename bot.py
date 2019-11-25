@@ -11,23 +11,33 @@ import asyncpg
 from cogs.utils.parser import parse_language
 
 description = """
+Ciri but better...?
 Written by @Geralt#0007
 """
 
 log = logging.getLogger(__name__)
 
 initial_extensions = (
+    'cogs.settings',
     'cogs.ejlx',
     'cogs.owner',
     'cogs.statistics',
-    'cogs.moderation'
+    'cogs.moderation',
+    'cogs.utilities'
 )
 
 async def safe_message(message): pass
 
+def dynamic_prefix(bot, message): 
+    if message.content.startswith(','):
+        for override in config.ciri_overrides:
+            if re.search(fr'^,{override}(?:\s|$)', message.content):
+                return ','
+    return config.default_prefix
+
 class Cirilla(commands.Bot):
     def __init__(self, pool):
-        super().__init__(command_prefix=config.default_prefix,
+        super().__init__(command_prefix=dynamic_prefix,
                          description=description,
                          fetch_offline_members=True)
         self.client_id = config.client_id
@@ -57,16 +67,6 @@ class Cirilla(commands.Bot):
     async def on_ready(self):
         if not hasattr(self, 'uptime'):
             self.uptime = datetime.datetime.utcnow()
-        guild_configs = await self.pool.fetch('''
-            SELECT * FROM guilds
-        ''')
-        self.config.guilds = { c['guild_id'] : c for c in guild_configs }
-        for guild in self.guilds:
-          if guild.id not in self.config.guilds:
-            row = await self.pool.fetch('''
-              INSERT INTO guilds (guild_id) VALUES ($1)
-            ''', guild.id)
-            self.config.guilds[guild.id] = row
 
         log.info(f'Ready: {self.user} (ID: {self.user.id})')
         log.info(f'Servers: {len(self.guilds)}')
@@ -74,12 +74,6 @@ class Cirilla(commands.Bot):
 
     async def on_resumed(self):
         log.info('resumed...')
-
-    async def on_guild_join(self, guild):
-        row = await self.pool.execute('''
-            INSERT INTO guilds (guild_id) VALUES ($1)
-        ''', guild.id)
-        self.config.guilds[guild.id] = row
 
     async def on_message(self, message):
         if message.author.bot: # no bots

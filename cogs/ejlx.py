@@ -73,10 +73,15 @@ async def check_kanji(message):
 async def check_lang_switch(message):
     pass
         
+def is_in_ejlx():
+    async def predicate(ctx):
+        return ctx.guild and ctx.guild.id == EJLX_ID
+    return commands.check(predicate)
 
 class EJLX(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.settings = bot.settings
         self.newbies = []
         self._role_lock = asyncio.Lock()
         self._recently_tagged = None
@@ -89,15 +94,6 @@ class EJLX(commands.Cog):
     async def tag(self, ctx, *, member: discord.Member = None):
         member = member or self.newbies[-1]
         pass
-
-    @commands.command()
-    async def boosters(self, ctx):
-        embed = discord.Embed(colour=BOOSTER_COLOR)
-        embed.title = f'Nitro Boosters: {len(ctx.guild.premium_subscribers)} members'
-        embed.description = '\n'.join([f'**{sub}** - ' + sub.premium_since.strftime('%Y/%m/%d') for sub in sorted(ctx.guild.premium_subscribers, key=lambda m: m.premium_since)])
-        embed.timestamp = datetime.utcnow()
-        embed.set_footer(text=f'Nitro Boosts: {ctx.guild.premium_subscription_count} (Tier {ctx.guild.premium_tier})')
-        await ctx.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -127,15 +123,23 @@ class EJLX(commands.Cog):
         if before.premium_since != after.premium_since:
             logging.info(f'boost by {before} {before.premium_since} {after.premium_since}')
             ewbf = after.guild.get_channel(EWBF)
+            logging.info(f'{ewbf.name} fetched')
             embed = discord.Embed(colour=BOOSTER_COLOR)
+            logging.info(f'embed created')
             embed.timestamp = datetime.utcnow()
+            logging.info(f'timestamp set')
             embed.set_footer(text=f'Nitro Boosts: {after.guild.premium_subscription_count} (Tier {after.guild.premium_tier})')
+            logging.info(f'footer set')
             if before.premium_since is None:
                 embed.title = f'{after.user} just boosted the server!'
+                logging.info(f'add boost title set')
             else:
                 embed.title = f'{after.user}\'s boost was removed/expired...'
+                logging.info(f'remove boost title set')
+            logging.info(f'sending boost embed...')
             await ewbf.send(embed=embed)
-            return
+            logging.info(f'embed sent?')
+            
         # Nickname change
         # if before.nick != after.nick:
         #     ewbf = before.guild.get_channel(EWBF)
@@ -206,6 +210,8 @@ class EJLX(commands.Cog):
 
     @commands.Cog.listener()
     async def on_safe_message(self, message, **kwargs):
+        if self.bot.config.debugging:
+            return
         if message.guild.id != EJLX_ID:
             return
         if has_role(message.author, NU_ROLE['id']):

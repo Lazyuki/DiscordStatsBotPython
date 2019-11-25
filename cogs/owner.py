@@ -4,11 +4,17 @@ import logging
 import asyncio
 import asyncpg
 import subprocess
+import textwrap
+import traceback
 import re
+import io
+from contextlib import redirect_stdout
 
-class Stats(commands.Cog):
+
+class Owner(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self.settings = bot.settings
         self.pool = bot.pool
         self.config = bot.config
 
@@ -105,6 +111,60 @@ class Stats(commands.Cog):
             await ctx.send(stdout)
             if stderr:
                 await ctx.send('Error:\n' + stderr)
+
+    @commands.command(hidden=True, name='eval')
+    async def _eval(self, ctx, *, body: str):
+        """Evaluates a code"""
+
+        env = {
+            'bot': self.bot,
+            'ctx': ctx,
+            'channel': ctx.channel,
+            'author': ctx.author,
+            'guild': ctx.guild,
+            'message': ctx.message
+        }
+
+        env.update(globals())
+
+        body = self.cleanup_code(body)
+        stdout = io.StringIO()
+
+        to_compile = f'async def func():\n{textwrap.indent(body, "  ")}'
+
+        try:
+            exec(to_compile, env)
+        except Exception as e:
+            return await ctx.send(f'```py\n{e.__class__.__name__}: {e}\n```')
+
+        func = env['func']
+        try:
+            with redirect_stdout(stdout):
+                ret = await func()
+        except Exception as e:
+            value = stdout.getvalue()
+            await ctx.send(f'```py\n{value}{traceback.format_exc()}\n```')
+        else:
+            value = stdout.getvalue()
+            try:
+                await ctx.message.add_reaction('\u2705')
+            except:
+                pass
+
+            if ret is None:
+                if value:
+                    await ctx.send(f'```py\n{value}\n```')
+            else:
+                await ctx.send(f'```py\n{value}{ret}\n```')
+
+    def cleanup_code(self, content):
+        """Automatically removes code blocks from the code."""
+        # remove ```py\n```
+        if content.startswith('```') and content.endswith('```'):
+            return '\n'.join(content.split('\n')[1:-1])
+
+        # remove `foo`
+        return content.strip('` \n')
     
     async def run_process(self, command):
         try:
@@ -117,4 +177,4 @@ class Stats(commands.Cog):
         return [output.decode() for output in result]
             
 def setup(bot):
-    bot.add_cog(Stats(bot))
+    bot.add_cog(Owner(bot))

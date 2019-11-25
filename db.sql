@@ -4,8 +4,8 @@ CREATE TABLE IF NOT EXISTS guilds(
   guild_id BIGINT UNIQUE PRIMARY KEY,
 
   prefix CHAR(5),
-  mod_channels BIGINT[],
---   watched_users BIGINT[],
+  watched_users BIGINT[],
+--   mod_channels BIGINT[],
 --   ignored_channels BIGINT[],
 --   ignored_users BIGINT[],
 --   ignored_prefixes TEXT [],
@@ -70,6 +70,7 @@ CREATE TABLE IF NOT EXISTS command_aliases(
   alias TEXT NOT NULL,
   command TEXT NOT NULL
 );
+
 ALTER TABLE command_aliases ADD CONSTRAINT alias_pk PRIMARY KEY (guild_id, alias);
 
 
