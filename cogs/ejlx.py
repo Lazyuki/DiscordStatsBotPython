@@ -122,23 +122,15 @@ class EJLX(commands.Cog):
         # Boost change
         if before.premium_since != after.premium_since:
             logging.info(f'boost by {before} {before.premium_since} {after.premium_since}')
-            ewbf = after.guild.get_channel(EWBF)
-            logging.info(f'{ewbf.name} fetched')
+            ewbf = before.guild.get_channel(EWBF)
             embed = discord.Embed(colour=BOOSTER_COLOR)
-            logging.info(f'embed created')
-            embed.timestamp = datetime.utcnow()
-            logging.info(f'timestamp set')
-            embed.set_footer(text=f'Nitro Boosts: {after.guild.premium_subscription_count} (Tier {after.guild.premium_tier})')
-            logging.info(f'footer set')
             if before.premium_since is None:
-                embed.title = f'{after.user} just boosted the server!'
-                logging.info(f'add boost title set')
+                embed.title = f'{before} just boosted the server!'
             else:
-                embed.title = f'{after.user}\'s boost was removed/expired...'
-                logging.info(f'remove boost title set')
-            logging.info(f'sending boost embed...')
+                embed.title = f'{before}\'s boost was removed/expired...'
+            embed.timestamp = datetime.utcnow()
+            embed.set_footer(text=f'Nitro Boosts: {before.guild.premium_subscription_count} (Tier {before.guild.premium_tier})')
             await ewbf.send(embed=embed)
-            logging.info(f'embed sent?')
             
         # Nickname change
         # if before.nick != after.nick:
