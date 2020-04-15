@@ -213,7 +213,7 @@ class EJLX(commands.Cog):
                 if nu.content == content and len(content) > 5:
                     nu.count += 1
                     if nu.count >= 5:
-                        if (timestamp - nu.timestamp).total_seconds <= 5:
+                        if (timestamp - nu.timestamp).total_seconds() <= 5:
                             await author.ban(delete_message_days=1, resason="Troll detected. The user has sent the same message 5 times in a row within 5 seconds")
                             await message.channel.send(f'{author.mention} has been banned automatically due to spamming')
                         else:
