@@ -115,6 +115,12 @@ class Settings(commands.Cog):
         self.updateSettings(ctx.guild, _mod_channel_ids=channel_ids)
         await ctx.send(f"\N{WHITE HEAVY CHECK MARK} Mod channels have been set to {', '.join([c.mention for c in channels])}")
 
+    @commands.command(aliases=['setlog'])
+    @commands.check(has_manage_server)
+    async def set_log_channel(self, ctx, *, channel: discord.TextChannel):
+        self.updateSettings(ctx.guild, log_channel_id=channel.id)
+        await ctx.send(f"\N{WHITE HEAVY CHECK MARK} Log channel has been set to {channel}")
+
     @commands.Cog.listener()
     async def on_ready(self):
         self.load()
