@@ -265,7 +265,7 @@ class EJLX(commands.Cog):
         if message.content.startswith(';report'):
             my_s = discord.utils.find(lambda g: g.id == 293787390710120449, self.bot.guilds)
             bot_log = my_s.get_channel(325532503567761408)
-            await bot_log.send(f'{message.author} made a report in {message.author.channel}')
+            await bot_log.send(f'{message.author} made a report in {message.channel}')
 
 def setup(bot):
     bot.add_cog(EJLX(bot))
