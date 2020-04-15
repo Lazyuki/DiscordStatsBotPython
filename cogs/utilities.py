@@ -4,8 +4,9 @@ import discord
 import logging
 import asyncio 
 
-BOOSTER_COLOR = 0xf47fff
+log = logging.getLogger(__name__)
 
+BOOSTER_COLOR = 0xf47fff
 
 class Utilities(commands.Cog):
     def __init__(self, bot):
@@ -29,12 +30,13 @@ class Utilities(commands.Cog):
         banner = None
         reason = None
         await asyncio.sleep(1)
+        log.info('Member banned')
         async for entry in guild.audit_logs(action=discord.AuditLogAction.ban):
             if entry.target.id == user.id:
                 banner = entry.user
                 reason = entry.reason
                 break
-        
+        log.info(f'Banned by {banner.name if banner else "Unknown"}')
         embed = discord.Embed(colour=0x000000)
         embed.title = f'\N{CROSS MARK} **{user.name}#{user.discriminator}** was `banned`. ({user.id})'
         embed.description = f'*by* {banner if banner else "Unknown"}\n**Reason:** {reason if reason else "Unknown"}'
