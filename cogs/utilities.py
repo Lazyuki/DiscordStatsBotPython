@@ -30,7 +30,7 @@ class Utilities(commands.Cog):
         banner = None
         reason = None
         await asyncio.sleep(1)
-        log.info('Member banned')
+        log.info(f'Member banned {user.name}')
         async for entry in guild.audit_logs(action=discord.AuditLogAction.ban):
             if entry.target.id == user.id:
                 banner = entry.user
