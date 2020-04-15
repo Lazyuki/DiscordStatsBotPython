@@ -85,6 +85,7 @@ class EJLX(commands.Cog):
         self.newbies = []
         self._role_lock = asyncio.Lock()
         self._recently_tagged = None
+        self.troll_msgs = []
 
     async def cog_check(self, ctx):
         return ctx.guild.id == EJLX_ID
@@ -126,7 +127,9 @@ class EJLX(commands.Cog):
             embed = discord.Embed(colour=BOOSTER_COLOR)
             if before.premium_since is None:
                 embed.title = f'{before} just boosted the server!'
+                # Add "Just Boosted!" role and remove it in 7 days?
             else:
+                # Remove  "Just Boosted!" role if any
                 embed.title = f'{before}\'s boost was removed/expired...'
             embed.timestamp = datetime.utcnow()
             embed.set_footer(text=f'Nitro Boosts: {before.guild.premium_subscription_count} (Tier {before.guild.premium_tier})')
@@ -200,6 +203,43 @@ class EJLX(commands.Cog):
                 msg.channel.send(f"**{msg.author.name}**, you've been tagged as <@&{tagged}> by {user.name}!")
             )
 
+    async def troll_check(self, message):
+        author = message.author
+        content = message.clean_content
+        timestamp = discord.utils.snowflake_time(message.id)
+
+        for nu in self.troll_msgs:
+            if nu.id == author.id:
+                if nu.content == content and len(content) > 5:
+                    nu.count += 1
+                    if nu.count >= 5:
+                        if (timestamp - nu.timestamp).total_seconds <= 5:
+                            await author.ban(delete_message_days=1, resason="Troll detected. The user has sent the same message 5 times in a row within 5 seconds")
+                            await message.channel.send(f'{author.mention} has been banned automatically due to spamming')
+                        else:
+                            await author.add_roles(259181555803619329, resason="Possible spam detected. The user has sent the same message 5 times in a row") 
+                            await message.channel.send(f'{author.mention} has been muted automatically due to spamming')
+
+                        nu.count = 1
+                        nu.timestamp = timestamp
+                else:
+                    nu.content = content
+                    nu.count = 1
+                    nu.timestamp = timestamp
+                break
+        else:
+            self.troll_msgs.append({
+                "id": author.id,
+                "content": content,
+                "count": 1,
+                "timestamp": timestamp
+            })
+        
+        if len(self.troll_msgs) > 20:
+            self.troll_msgs.pop(0)
+
+
+    
     @commands.Cog.listener()
     async def on_safe_message(self, message, **kwargs):
         if self.bot.config.debugging:
@@ -208,6 +248,7 @@ class EJLX(commands.Cog):
             return
         if has_role(message.author, NU_ROLE['id']):
             await guess_lang(message)
+            await self.troll_check(message)
         if message.channel.id == JP_CHAT:
             await jp_only(message) # kwargs has lang info
         elif message.channel.id == JP_BEGINNER:
