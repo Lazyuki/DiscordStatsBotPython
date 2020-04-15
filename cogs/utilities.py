@@ -38,8 +38,7 @@ class Utilities(commands.Cog):
                 break
         log.info(f'Banned by {banner.name if banner else "Unknown"}')
         embed = discord.Embed(colour=0x000000)
-        embed.title = f'\N{CROSS MARK} **{user.name}#{user.discriminator}** was `banned`. ({user.id})'
-        embed.description = f'*by* {banner if banner else "Unknown"}\n**Reason:** {reason if reason else "Unknown"}'
+        embed.description = f'\N{CROSS MARK} **{user.name}#{user.discriminator}** was `banned`. ({user.id})\n\n*by* {banner.mention if banner else "Unknown"}\n**Reason:** {reason if reason else "Unknown"}'
         embed.timestamp = datetime.utcnow()
         embed.set_footer(text=f'User Banned', icon_url=user.avatar_url_as(static_format='png'))
         chan = guild.get_channel(self.settings[guild.id].log_channel_id)
