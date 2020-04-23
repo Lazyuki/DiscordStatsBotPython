@@ -14,6 +14,12 @@ def has_role(member, role_id):
         return False
     return discord.utils.find(lambda r: r.id == role_id, member.roles) is not None
 
+def has_any_role(member, role_ids):
+    if not member:
+        return False
+    return discord.utils.find(lambda r: r.id in role_ids, member.roles) is not None
+
+
 def resolve_minimum_channel(ctx, channel_id):
     channel = ctx.guild.get_channel(channel_id)
     if channel is None:

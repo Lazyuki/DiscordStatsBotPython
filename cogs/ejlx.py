@@ -4,7 +4,7 @@ import asyncio
 import re
 import logging
 
-from .utils.resolver import has_role
+from .utils.resolver import has_role, has_any_role
 from .utils.parser import guess_lang, JP_EMOJI, EN_EMOJI, OL_EMOJI
 from datetime import datetime
 
@@ -103,6 +103,8 @@ class EJLX(commands.Cog):
         self.newbies.append(member.id)
         if len(self.newbies) > 3:
             self.newbies.pop(0)
+        await member.add_roles(NU_ROLE['id'])
+
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
@@ -248,7 +250,7 @@ class EJLX(commands.Cog):
             return
         if message.guild.id != EJLX_ID:
             return
-        if has_role(message.author, NU_ROLE['id']):
+        if not has_any_role(message.author, [r_id for r_id in ROLE_IDS if r_id != NU_ROLE['id']]):
             await guess_lang(message)
             await self.troll_check(message)
         if message.channel.id == JP_CHAT:
