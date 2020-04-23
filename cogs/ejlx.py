@@ -211,25 +211,25 @@ class EJLX(commands.Cog):
         timestamp = discord.utils.snowflake_time(message.id)
 
         for nu in self.troll_msgs:
-            if nu.id == author.id:
-                if nu.content == content and len(content) > 5:
-                    nu.count += 1
-                    if nu.count >= 5:
+            if nu['id'] == author.id:
+                if nu['count'] == content and len(content) > 5:
+                    nu['count'] += 1
+                    if nu['count'] >= 5:
 
-                        if (timestamp - nu.timestamp).total_seconds() <= 5:
+                        if (timestamp - nu['timestamp']).total_seconds() <= 5:
                             await author.ban(delete_message_days=1, resason="Troll detected. The user has sent the same message 5 times in a row within 5 seconds")
                             await message.channel.send(f'{author.mention} has been banned automatically due to spamming')
                             await message.guild.get_channel(self.settings[message.guild.id].log_channel_id).send(f'{author.mention} repeatedly sent:\n{content}')
                         else:
                             await author.add_roles(259181555803619329, resason="Possible spam detected. The user has sent the same message 5 times in a row") 
                             await message.channel.send(f'{author.mention} has been muted automatically due to spamming')
-                        nu.count = 1
-                        nu.timestamp = timestamp
+                        nu['count'] = 1
+                        nu['timestamp'] = timestamp
 
                 else:
-                    nu.content = content
-                    nu.count = 1
-                    nu.timestamp = timestamp
+                    nu['content'] = content
+                    nu['count'] = 1
+                    nu['timestamp'] = timestamp
                 break
         else:
             self.troll_msgs.append({
