@@ -53,6 +53,7 @@ NF_ONLY_ROLE = 378668720417013760
 
 ROLES = [NJ_ROLE, FJ_ROLE, NE_ROLE, FE_ROLE, OL_ROLE, NU_ROLE]
 ROLE_IDS = [r['id'] for r in ROLES]
+LANG_ROLE_IDS = [r for r in ROLE_IDS if r != NU_ROLE['id']]
 
 def get_role_by_short(short):
     for role in ROLES:
@@ -103,7 +104,6 @@ class EJLX(commands.Cog):
         self.newbies.append(member.id)
         if len(self.newbies) > 3:
             self.newbies.pop(0)
-        await member.add_roles(NU_ROLE['id'])
 
 
     @commands.Cog.listener()
@@ -250,7 +250,7 @@ class EJLX(commands.Cog):
             return
         if message.guild.id != EJLX_ID:
             return
-        if not has_any_role(message.author, [r_id for r_id in ROLE_IDS if r_id != NU_ROLE['id']]):
+        if not has_any_role(message.author, LANG_ROLE_IDS):
             await guess_lang(message)
             await self.troll_check(message)
         if message.channel.id == JP_CHAT:
