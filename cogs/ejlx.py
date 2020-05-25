@@ -11,6 +11,7 @@ from datetime import datetime
 EJLX_ID = 189571157446492161
 
 BOOSTER_COLOR = 0xf47fff
+BOOSTER_PINK_ROLE = 590163584856752143
 
 # Channels
 INTRO = 395741560840519680
@@ -129,10 +130,9 @@ class EJLX(commands.Cog):
             embed = discord.Embed(colour=BOOSTER_COLOR)
             if before.premium_since is None:
                 embed.title = f'{before} just boosted the server!'
-                # Add "Just Boosted!" role and remove it in 7 days?
             else:
-                # Remove  "Just Boosted!" role if any
                 embed.title = f'{before}\'s boost was removed/expired...'
+                await before.remove_roles(BOOSTER_PINK_ROLE)
             embed.timestamp = datetime.utcnow()
             embed.set_footer(text=f'Nitro Boosts: {before.guild.premium_subscription_count} (Tier {before.guild.premium_tier})')
             await ewbf.send(embed=embed)
