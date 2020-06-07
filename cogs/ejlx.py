@@ -151,8 +151,37 @@ class EJLX(commands.Cog):
         #         embed.description = f'**{before.nick}**\'s nickname was changed to **{after.nick}**'
         #     await ewbf.send(embed=embed)
 
+    async def handleRawReaction(self, payload, is_add):
+        message_id = payload['message_id']
+        user_id = payload['user_id']
+        channel_id = payload['channel_id']
+        guild_id = payload['guild_id']
+        emoji = payload['emoji']
+
+        guild = self.bot.get_guild(guild_id)
+        channel = guild.get_channel(channel_id)
+        member = guild.get_member(user_id)
+        message = await channel.fetch_message(message_id)
+
+        if is_add:
+            reaction = discord.utils.find(lambda r: r.emoji.name == emoji.name, message.reactions)
+            await self.reaction_language(reaction, member)
+        else:
+            pass
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_remove(self, payload):
+        await self.handleRawReaction(payload, False)
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        await self.handleRawReaction(payload, True)
+
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
+        await self.reaction_language(reaction, user)
+
+    async def reaction_language(self, reaction, user):
         if self.bot.config.debugging:
             return
         if user.bot:
@@ -204,6 +233,7 @@ class EJLX(commands.Cog):
                 msg.clear_reactions(),
                 msg.channel.send(f"**{msg.author.name}**, you've been tagged as <@&{tagged}> by {user.name}!")
             )
+
 
     async def troll_check(self, message):
         author = message.author
