@@ -152,11 +152,11 @@ class EJLX(commands.Cog):
         #     await ewbf.send(embed=embed)
 
     async def handleRawReaction(self, payload, is_add):
-        message_id = payload['message_id']
-        user_id = payload['user_id']
-        channel_id = payload['channel_id']
-        guild_id = payload['guild_id']
-        emoji = payload['emoji']
+        message_id = payload.message_id
+        user_id = payload.user_id
+        channel_id = payload.channel_id
+        guild_id = payload.guild_id
+        emoji = payload.emoji
 
         guild = self.bot.get_guild(guild_id)
         channel = guild.get_channel(channel_id)
