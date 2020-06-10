@@ -158,6 +158,10 @@ class EJLX(commands.Cog):
         guild_id = payload.guild_id
         emoji = payload.emoji
 
+        cached = discord.utils.find(lambda m: m.id == message_id, self.bot.cached_messages)
+        if cached:
+            return
+
         guild = self.bot.get_guild(guild_id)
         channel = guild.get_channel(channel_id)
         member = guild.get_member(user_id)
