@@ -132,7 +132,7 @@ class EJLX(commands.Cog):
                 embed.title = f'{before} just boosted the server!'
             else:
                 embed.title = f'{before}\'s boost was removed/expired...'
-                await before.remove_roles(BOOSTER_PINK_ROLE)
+                await before.remove_roles(before.guild.get_role(BOOSTER_PINK_ROLE))
             embed.timestamp = datetime.utcnow()
             embed.set_footer(text=f'Nitro Boosts: {before.guild.premium_subscription_count} (Tier {before.guild.premium_tier})')
             await ewbf.send(embed=embed)
