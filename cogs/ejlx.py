@@ -168,7 +168,7 @@ class EJLX(commands.Cog):
         message = await channel.fetch_message(message_id)
 
         if is_add:
-            reaction = discord.utils.find(lambda r: r.emoji.name == emoji.name, message.reactions)
+            reaction = discord.utils.find(lambda r: ('name' in r.emoji) and (r.emoji.name == emoji.name), message.reactions)
             await self.reaction_language(reaction, member)
         else:
             pass
