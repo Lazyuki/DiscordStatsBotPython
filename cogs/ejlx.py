@@ -227,6 +227,9 @@ class EJLX(commands.Cog):
         await msg.author.add_roles(msg.guild.get_role(tagged), reason=f'by {user.name}')
         await msg.author.remove_roles(msg.guild.get_role(NU_ROLE['id']), reason=f'by {user.name}')
 
+        if msg.author.id == self._recently_tagged:
+            self._recently_tagged = None
+
         if msg.channel.id == INTRO:
             await asyncio.gather(
                 reaction.remove(user),
