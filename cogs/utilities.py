@@ -57,7 +57,7 @@ class Utilities(commands.Cog):
                 banner = entry.user
                 break
         log.info(f'Unbanned by {banner.name if banner else "Unknown"}')
-        embed = discord.Embed(colour=0xfff)
+        embed = discord.Embed(colour=0xeeeeee)
         embed.description = f'\N{WHITE EXCLAMATION MARK ORNAMENT} **{user.name}#{user.discriminator}** was `unbanned`. ({user.id})\n\n*by* {banner.mention if banner else "Unknown"}'
         embed.timestamp = datetime.utcnow()
         embed.set_footer(text=f'User Unbanned', icon_url=user.avatar_url_as(static_format='png'))
