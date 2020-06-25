@@ -50,17 +50,15 @@ class Utilities(commands.Cog):
         """Notify unban"""
         # Fetch audit log to get who banned them
         banner = None
-        reason = None
         await asyncio.sleep(1)
         log.info(f'Member unbanned {user.name}')
         async for entry in guild.audit_logs(action=discord.AuditLogAction.unban):
             if entry.target.id == user.id:
                 banner = entry.user
-                reason = entry.reason
                 break
         log.info(f'Unbanned by {banner.name if banner else "Unknown"}')
-        embed = discord.Embed(colour=0xffffff)
-        embed.description = f'\N{EXCLAMATION MARK} **{user.name}#{user.discriminator}** was `unbanned`. ({user.id})\n\n*by* {banner.mention if banner else "Unknown"}\n**Reason:** {reason if reason else "Unknown"}'
+        embed = discord.Embed(colour=0xfff)
+        embed.description = f'\N{WHITE EXCLAMATION MARK ORNAMENT} **{user.name}#{user.discriminator}** was `unbanned`. ({user.id})\n\n*by* {banner.mention if banner else "Unknown"}'
         embed.timestamp = datetime.utcnow()
         embed.set_footer(text=f'User Unbanned', icon_url=user.avatar_url_as(static_format='png'))
         chan = guild.get_channel(self.settings[guild.id].log_channel_id)
