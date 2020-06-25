@@ -45,7 +45,7 @@ class Utilities(commands.Cog):
         if chan:
             await chan.send(embed=embed)
 
-     @commands.Cog.listener()
+    @commands.Cog.listener()
     async def on_member_unban(self, guild, user):
         """Notify unban"""
         # Fetch audit log to get who banned them
