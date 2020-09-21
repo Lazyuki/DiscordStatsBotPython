@@ -69,6 +69,9 @@ def get_role_by_short(short):
 async def has_manage_roles(ctx):
     return ctx.author.guild_permissions.manage_roles
 
+async def has_manage_guild(ctx):
+    return ctx.author.guild_permissions.manage_guild
+
 class ClubRole:
     def __init__(self, role):
         self.role = role # discord.Role or str
@@ -151,7 +154,7 @@ class EJLX(commands.Cog):
         await ctx.send(embed=embed)
         
     @clubs.command(name='add', aliases=['create'])
-    @commands.check(has_manage_roles)
+    @commands.check(has_manage_guild)
     async def club_add(self, ctx, *, clubRole: ClubRole):
         """
         Create a new club
@@ -180,7 +183,7 @@ class EJLX(commands.Cog):
         
 
     @clubs.command(name='delete', aliases=['remove', 'del', 'rem'])
-    @commands.check(has_manage_roles)
+    @commands.check(has_manage_guild)
     async def club_delete(self, ctx, *, clubRole: ClubRole):
         """
         Deletes the club
