@@ -162,11 +162,10 @@ class EJLX(commands.Cog):
         This uses an existing role or will create a new **mentionable** role `Amond Us` which members can freely join.
         """
         created_role = False
-        if isinstance(clubRole, str):
-            role = await ctx.guild.create_role(reason=f'Create Club Role issued by {ctx.author.name}#{ctx.author.discriminator} ({ctx.author.id})', name=clubRole, mentionable=True)
+        role = clubRole.role
+        if isinstance(role, str):
+            role = await ctx.guild.create_role(reason=f'Create Club Role issued by {ctx.author.name}#{ctx.author.discriminator} ({ctx.author.id})', name=role, mentionable=True)
             created_role = True
-        else:
-            role = clubRole.role
         
         if role >= ctx.author.top_role:
             await ctx.send(f'"{role.name}" is higher in hierarchy than your highest role')
@@ -190,11 +189,11 @@ class EJLX(commands.Cog):
         Example: `,club delete Among Us`
         This will not delete the role itself for safety, so you need to delete it yourself.
         """
-        if isinstance(clubRole, str):
-            await ctx.send(f'Club "{clubRole}" does not exist')
+        role = clubRole.role
+        if isinstance(role, str):
+            await ctx.send(f'Club "{role}" does not exist')
             return
         
-        role = clubRole.role
         role_id = role.id
         clubs = self.settings[ctx.guild.id].clubs
         if not role_id in clubs:
@@ -211,11 +210,11 @@ class EJLX(commands.Cog):
         Example: `,join among us`
         Club names are case insensitive, and can be partial
         """
-        if isinstance(clubRole, str):
-            await ctx.send(f'Club "{clubRole}" does not exist', delete_after=10)
+        role = clubRole.role
+        if isinstance(role, str):
+            await ctx.send(f'Club "{role}" does not exist', delete_after=10)
             return
 
-        role = clubRole.role
         clubs = self.settings[ctx.guild.id].clubs 
         if not role.id in clubs:
             await ctx.send(f'"{role.name}" is not a club')
