@@ -2,23 +2,6 @@ CREATE TYPE langtype AS ENUM ('OL', 'JP', 'EN');
 
 CREATE TABLE IF NOT EXISTS guilds(
   guild_id BIGINT UNIQUE PRIMARY KEY,
-
-  prefix CHAR(5),
-  watched_users BIGINT[],
---   mod_channels BIGINT[],
---   ignored_channels BIGINT[],
---   ignored_users BIGINT[],
---   ignored_prefixes TEXT [],
---   log_channel BIGINT,
---   mod_log_channel BIGINT,
---   mod_roles BIGINT[],
---   jp_role BIGINT,
---   hc_role BIGINT,
---   hc_ignored_channels BIGINT[],
---   emoji_role_custom_message TEXT,
---   emoji_role_message_id TEXT, -- CHANNEL_ID-MESSAGE_ID
---   clock_category BIGINT,
---   clock_format TEXT
 );
 
 CREATE TABLE IF NOT EXISTS messages(
@@ -49,29 +32,13 @@ CREATE TABLE IF NOT EXISTS voice(
 );
 ALTER TABLE voice ADD CONSTRAINT voice_pk PRIMARY KEY (guild_id, user_id, utc_date);
 
-
-CREATE TABLE IF NOT EXISTS emoji_roles(
-  guild_id BIGINT NOT NULL REFERENCES guilds(guild_id),
-  emoji TEXT NOT NULL,
-  role_id BIGINT NOT NULL,
-  PRIMARY KEY(guild_id, emoji)
+CREATE TABLE IF NOT EXISTS deletes(
+    guild_id BIGINT NOT NULL REFERENCES guilds(guild_id),
+    user_id BIGINT NOT NULL,
+    utc_date DATE NOT NULL,
+    delete_count INT NOT NULL
 );
-
-CREATE TABLE IF NOT EXISTS line_notifiers(
-  user_id BIGINT NOT NULL,
-  line_token TEXT NOT NULL,
-  mention_id BIGINT NOT NULL, -- role or user ID
-  only_offline BOOLEAN NOT NULL,
-  PRIMARY KEY(user_id, mention_id)
-);
-
-CREATE TABLE IF NOT EXISTS command_aliases(
-  guild_id BIGINT NOT NULL REFERENCES guilds(guild_id),
-  alias TEXT NOT NULL,
-  command TEXT NOT NULL
-);
-
-ALTER TABLE command_aliases ADD CONSTRAINT alias_pk PRIMARY KEY (guild_id, alias);
+ALTER TABLE deletes ADD CONSTRAINT delete_pk PRIMARY KEY (guild_id, user_id, utc_date);
 
 
 -- ,u

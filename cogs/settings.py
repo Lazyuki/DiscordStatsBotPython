@@ -25,6 +25,7 @@ class Server:
     ignored_prefixes: List[str] = field(default_factory=list)
     emoji_role_message_id: int = None
     emoji_roles: Dict[int, str] = None
+    clubs: List[int] = field(default_factory=list)
     # hidden fields
     _mod_log_channel_id: int = None
     _mod_channel_ids: List[int] = field(default_factory=list)

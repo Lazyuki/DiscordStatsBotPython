@@ -19,10 +19,10 @@ class Moderation(commands.Cog):
         self.pool = bot.pool
         self.config = bot.config
 
-    @commands.command(aliases=['del'])
-    @commands.check(has_manage_messages)
-    async def delete(self, ctx, *, id):
-        pass
+    # @commands.command(aliases=['del'])
+    # @commands.check(has_manage_messages)
+    # async def delete(self, ctx, *, id):
+    #     pass
 
     @commands.command(aliases=['vk'])
     @commands.check(has_move_members)

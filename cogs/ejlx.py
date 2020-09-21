@@ -1,8 +1,10 @@
 from discord.ext import commands
+from typing import List
 import discord
 import asyncio
 import re
 import logging
+from collections import namedtuple
 
 from .utils.resolver import has_role, has_any_role
 from .utils.parser import guess_lang, JP_EMOJI, EN_EMOJI, OL_EMOJI
@@ -66,6 +68,20 @@ def get_role_by_short(short):
 async def has_manage_roles(ctx):
     return ctx.author.guild_permissions.manage_roles
 
+class ClubRole:
+    def __init__(self, role):
+        self.role = role # discord.Role or str
+
+    @classmethod
+    async def convert(cls, ctx, argument):
+        try:
+            role = await commands.RoleConverter().convert(ctx, argument)
+        except:
+            role = next(filter(lambda r: argument.lower() in r.name.lower(), ctx.guild.roles), argument)
+
+        return cls(role)
+
+
 async def jp_only(message):
     pass
 
@@ -92,11 +108,146 @@ class EJLX(commands.Cog):
     async def cog_check(self, ctx):
         return ctx.guild.id == EJLX_ID
 
-    @commands.command()
+    # @commands.command()
+    # @commands.check(has_manage_roles)
+    # async def tag(self, ctx, *, member: discord.Member = None):
+    #     member = member or self.newbies[-1]
+    #     pass
+
+    @commands.group(name='clubs', invoke_without_command=True)
+    async def clubs(self, ctx):
+        """
+        List clubs
+        """
+        clubs: List[int] = self.settings[ctx.guild.id].clubs
+
+        if not clubs:
+            await ctx.send(f'There are no clubs set in this server. Set up clubs by using `{ctx.prefix}clubs add <Role> <Name>`')
+            return
+        
+        Club = namedtuple('Club', 'name members mentionable joined')
+
+        club_list = []
+        invalid_roles = []
+        guild = ctx.guild
+        for role_id in clubs:
+            role = guild.get_role(role_id)
+            if not role:
+                invalid_roles.append(role_id)
+                continue
+            club_list.append(Club(role.name, len(role.members), role.mentionable, role in ctx.author.roles))
+
+        self.settings[guild.id].clubs = [c for c in clubs if c not in invalid_roles]
+        club_list_str = '\n'.join([f'**{club.name}**: {club.members} members{" (joined)" if club.joined else ""}' for club in sorted(club_list, key=lambda c: c.name) if club.mentionable])
+
+        embed = discord.Embed(colour=0xffffff)
+        embed.title = f'List of Clubs'
+        embed.description = f'These clubs are mentionable, so join them at your own risk.\nTo join, simply type `{ctx.prefix}join <club name>`\n\n{club_list_str}'
+        await ctx.send(embed=embed)
+        
+    @clubs.command(name='add', aliases=['create'])
     @commands.check(has_manage_roles)
-    async def tag(self, ctx, *, member: discord.Member = None):
-        member = member or self.newbies[-1]
-        pass
+    async def club_add(self, ctx, *, clubRole: ClubRole):
+        """
+        Create a new club
+        Example: `,club add Among Us`
+        This will create a new **mentionable** role `Amond Us` which members can freely join.
+        """
+        if isinstance(clubRole, str):
+            role = await ctx.guild.create_role(reason=f'Create Club Role issued by {ctx.author.name}#{ctx.author.discriminator} ({ctx.author.id})', name=clubRole, mentionable=True)
+        else:
+            role = clubRole.role
+
+        role_id = role.id
+        clubs = self.settings[ctx.guild.id].clubs
+        if role_id in clubs:
+            await ctx.send(f'"{role.name}" already is a club')
+            return
+        self.settings[ctx.guild.id].clubs.append(role_id)
+        await ctx.send(f'\N{WHITE HEAVY CHECK MARK} Club "{role.name}" created')
+        
+
+    @clubs.command(name='delete', aliases=['remove', 'del', 'rem'])
+    @commands.check(has_manage_roles)
+    async def club_delete(self, ctx, *, clubRole: ClubRole):
+        """
+        Deletes the club
+        Example: `,club delete Among Us`
+        This will not delete the role itself for safety, so you need to delete it yourself.
+        """
+        if isinstance(clubRole, str):
+            await ctx.send(f'Club "{clubRole}" does not exist')
+            return
+        
+        role = clubRole.role
+        role_id = role.id
+        clubs = self.settings[ctx.guild.id].clubs
+        if not role_id in clubs:
+            await ctx.send(f'"{role.name}" is not a club')
+            return
+        self.settings[ctx.guild.id].clubs.remove(role_id)
+        await ctx.send(f'\N{WHITE HEAVY CHECK MARK} Club "{role.name}" deleted. The role itself was not deleted, so if you need to, delete it yourself.') 
+
+    @commands.command()
+    async def join(self, ctx, *, clubRole: ClubRole):
+        """
+        Join a club
+        Example: `,join among us`
+        Club names are case insensitive, and can be partial
+        """
+        if isinstance(clubRole, str):
+            await ctx.send(f'Club "{clubRole}" does not exist', delete_after=10)
+            return
+
+        role = clubRole.role
+        clubs = self.settings[ctx.guild.id].clubs 
+        if not role.id in clubs:
+            await ctx.send(f'"{role.name}" is not a club')
+            return
+        if role in ctx.author.roles:
+            await ctx.send(f'You are already in the club "{role.name}"')
+            return
+        try:
+            await ctx.author.add_roles(role, reason=f'Self Assigning the Club Role')
+            await ctx.send(f'\N{WHITE HEAVY CHECK MARK} Joined the club "{role.name}".\nRemember that you can ping and can **be pinged** by anyone in the server')
+        except:
+            await ctx.send(f'Failed to add the role {role.name}')
+
+    @commands.command()
+    async def leave(self, ctx, *, clubRole: ClubRole):
+        """
+        Leave a club
+        Example: `,leave among us`
+        Club names are case insensitive, and can be partial
+        """
+        if isinstance(clubRole, str):
+            await ctx.send(f'Club "{clubRole}" does not exist', delete_after=10)
+            return
+        
+        role = clubRole.role
+        clubs = self.settings[ctx.guild.id].clubs 
+        if not role.id in clubs:
+            await ctx.send(f'"{role.name}" is not a club')
+            return
+        if not role in ctx.author.roles:
+            await ctx.send(f'You are not in the club "{role.name}"', delete_after=10)
+            return
+        try:
+            await ctx.author.remove_roles(role, reason=f'Self Assigning the Club Role')
+            await ctx.send(f'\N{WHITE HEAVY CHECK MARK} Left the club "{role.name}"')
+        except:
+            await ctx.send(f'Failed to remove the role {role.name}')
+
+    async def check_role_mentions(self, message):
+        clubs = self.settings[message.guild.id].clubs
+        for role in message.role_mentions:
+            if role.id in clubs:
+                embed = discord.Embed(colour=0xffffff)
+                embed.title = f'Club {role.name} Pinged'
+                embed.description = f'If you want to leave this club, type `,leave {role.name}`'
+                embed.set_footer(text=f'by {message.author.name}#{message.author.discriminator}')
+                await message.channel.send(embed=embed)
+
 
     @commands.Cog.listener()
     async def on_member_join(self, member):
@@ -299,6 +450,8 @@ class EJLX(commands.Cog):
             await check_kanji(message)
         elif message.channel.id == LANG_SWITCH:
             await check_lang_switch(message)
+        if len(message.role_mentions) > 0:
+            await self.check_role_mentions(message)
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
