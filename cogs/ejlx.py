@@ -12,6 +12,7 @@ from datetime import datetime
 
 EJLX_ID = 189571157446492161
 
+CLUB_COLOR = 0xc780f2
 BOOSTER_COLOR = 0xf47fff
 BOOSTER_PINK_ROLE = 590163584856752143
 
@@ -140,7 +141,7 @@ class EJLX(commands.Cog):
         self.settings[guild.id].clubs = [c for c in clubs if c not in invalid_roles]
         club_list_str = '\n'.join([f'**{club.name}**: {club.members} members{" (joined)" if club.joined else ""}' for club in sorted(club_list, key=lambda c: c.name) if club.mentionable])
 
-        embed = discord.Embed(colour=0xffffff)
+        embed = discord.Embed(colour=CLUB_COLOR)
         embed.title = f'List of Clubs'
         embed.description = f'These clubs are mentionable, so join them at your own risk.\nTo join, simply type `{ctx.prefix}join <club name>`\n\n{club_list_str}'
         await ctx.send(embed=embed)
@@ -242,10 +243,10 @@ class EJLX(commands.Cog):
         clubs = self.settings[message.guild.id].clubs
         for role in message.role_mentions:
             if role.id in clubs:
-                embed = discord.Embed(colour=0xffffff)
-                embed.title = f'Club {role.name} Pinged'
+                embed = discord.Embed(colour=CLUB_COLOR)
+                embed.title = f'Club "{role.name}" Pinged'
                 embed.description = f'If you want to leave this club, type `,leave {role.name}`'
-                embed.set_footer(text=f'by {message.author.name}#{message.author.discriminator}')
+                embed.set_footer(text=f'pinged by {message.author.name}#{message.author.discriminator}')
                 await message.channel.send(embed=embed)
 
 

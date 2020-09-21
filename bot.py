@@ -28,11 +28,12 @@ initial_extensions = (
 
 async def safe_message(message): pass
 
+PREFIX_OVERRIDES_REGEXES = [re.compile(fr'^,(?:help\s)?{override})(?:\s|$)') for override in config.ciri_overrides]
+
 def dynamic_prefix(bot, message): 
     if message.content.startswith(','):
-        for override in config.ciri_overrides:
-            if re.search(fr'^,{override}(?:\s|$)', message.content):
-                return ','
+        if PREFIX_OVERRIDES_REGEXES.match(message.content):
+            return ','
     return config.default_prefix
 
 class Cirilla(commands.Bot):
