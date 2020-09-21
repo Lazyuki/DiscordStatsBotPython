@@ -235,11 +235,12 @@ class EJLX(commands.Cog):
         Example: `,leave among us`
         Club names are case insensitive, and can be partial
         """
-        if isinstance(clubRole, str):
-            await ctx.send(f'Club "{clubRole}" does not exist', delete_after=10)
+
+        role = clubRole.role
+        if isinstance(role, str):
+            await ctx.send(f'Club "{role}" does not exist', delete_after=10)
             return
         
-        role = clubRole.role
         clubs = self.settings[ctx.guild.id].clubs 
         if not role.id in clubs:
             await ctx.send(f'"{role.name}" is not a club')
