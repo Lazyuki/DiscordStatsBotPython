@@ -141,7 +141,7 @@ class EJLX(commands.Cog):
         if len(invalid_roles):
             self.settings[guild.id].clubs = [c for c in clubs if c not in invalid_roles]
             self.settings.save(ctx.guild)
-        club_list_str = '\n'.join([f'{"(P) " if club.mentionable else ""}**{club.name}**: {club.members} members{" (joined)" if club.joined else ""}' for club in sorted(club_list, key=lambda c: c.name)])
+        club_list_str = '\n'.join([f'**{club.name}**{" (P)" if club.mentionable else ""}: {club.members} members{" (joined)" if club.joined else ""}' for club in sorted(club_list, key=lambda c: c.name)])
 
         embed = discord.Embed(colour=CLUB_COLOR)
         embed.title = f'List of Clubs'
@@ -154,10 +154,12 @@ class EJLX(commands.Cog):
         """
         Create a new club
         Example: `,club add Among Us`
-        This will create a new **mentionable** role `Amond Us` which members can freely join.
+        This uses an existing role or will create a new **mentionable** role `Amond Us` which members can freely join.
         """
+        created_role = False
         if isinstance(clubRole, str):
             role = await ctx.guild.create_role(reason=f'Create Club Role issued by {ctx.author.name}#{ctx.author.discriminator} ({ctx.author.id})', name=clubRole, mentionable=True)
+            created_role = True
         else:
             role = clubRole.role
 
@@ -168,7 +170,7 @@ class EJLX(commands.Cog):
             return
         self.settings[ctx.guild.id].clubs.append(role_id)
         self.settings.save(ctx.guild)
-        await ctx.send(f'\N{WHITE HEAVY CHECK MARK} Club "{role.name}" created')
+        await ctx.send(f'\N{WHITE HEAVY CHECK MARK} Club "{role.name}" {"created with a new role" if created_role else "added"}')
         
 
     @clubs.command(name='delete', aliases=['remove', 'del', 'rem'])
