@@ -139,11 +139,11 @@ class EJLX(commands.Cog):
             club_list.append(Club(role.name, len(role.members), role.mentionable, role in ctx.author.roles))
 
         self.settings[guild.id].clubs = [c for c in clubs if c not in invalid_roles]
-        club_list_str = '\n'.join([f'**{club.name}**: {club.members} members{" (joined)" if club.joined else ""}' for club in sorted(club_list, key=lambda c: c.name) if club.mentionable])
+        club_list_str = '\n'.join([f'{"(P) " if club.mentionable else ""}**{club.name}**: {club.members} members{" (joined)" if club.joined else ""}' for club in sorted(club_list, key=lambda c: c.name)])
 
         embed = discord.Embed(colour=CLUB_COLOR)
         embed.title = f'List of Clubs'
-        embed.description = f'These clubs are mentionable, so join them at your own risk.\nTo join, simply type `{ctx.prefix}join <club name>`\n\n{club_list_str}'
+        embed.description = f'To join a club, simply type `{ctx.prefix}join <club name>`\n(P) indicates roles that **can be pinged**\n\n{club_list_str}'
         await ctx.send(embed=embed)
         
     @clubs.command(name='add', aliases=['create'])
@@ -210,7 +210,7 @@ class EJLX(commands.Cog):
             return
         try:
             await ctx.author.add_roles(role, reason=f'Self Assigning the Club Role')
-            await ctx.send(f'\N{WHITE HEAVY CHECK MARK} Joined the club "{role.name}".\nRemember that you can ping and can **be pinged** by anyone in the server')
+            await ctx.send('\n'.join(filter(None, [f'\N{WHITE HEAVY CHECK MARK} Joined the club "{role.name}"', role.mentionable and 'Note that this role **can be pinged** by anyone in the server'])))
         except:
             await ctx.send(f'Failed to add the role {role.name}')
 
