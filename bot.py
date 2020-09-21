@@ -32,8 +32,9 @@ PREFIX_OVERRIDES_REGEXES = [re.compile(fr'^,(?:help\s)?{override})(?:\s|$)') for
 
 def dynamic_prefix(bot, message): 
     if message.content.startswith(','):
-        if PREFIX_OVERRIDES_REGEXES.match(message.content):
-            return ','
+        for regex in PREFIX_OVERRIDES_REGEXES:
+            if regex.match(message.content):
+                return ','
     return config.default_prefix
 
 class Cirilla(commands.Bot):
