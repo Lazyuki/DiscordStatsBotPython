@@ -138,7 +138,9 @@ class EJLX(commands.Cog):
                 continue
             club_list.append(Club(role.name, len(role.members), role.mentionable, role in ctx.author.roles))
 
-        self.settings[guild.id].clubs = [c for c in clubs if c not in invalid_roles]
+        if len(invalid_roles):
+            self.settings[guild.id].clubs = [c for c in clubs if c not in invalid_roles]
+            self.settings.save()
         club_list_str = '\n'.join([f'{"(P) " if club.mentionable else ""}**{club.name}**: {club.members} members{" (joined)" if club.joined else ""}' for club in sorted(club_list, key=lambda c: c.name)])
 
         embed = discord.Embed(colour=CLUB_COLOR)
@@ -165,6 +167,7 @@ class EJLX(commands.Cog):
             await ctx.send(f'"{role.name}" already is a club')
             return
         self.settings[ctx.guild.id].clubs.append(role_id)
+        self.settings.save()
         await ctx.send(f'\N{WHITE HEAVY CHECK MARK} Club "{role.name}" created')
         
 
@@ -187,6 +190,7 @@ class EJLX(commands.Cog):
             await ctx.send(f'"{role.name}" is not a club')
             return
         self.settings[ctx.guild.id].clubs.remove(role_id)
+        self.settings.save()
         await ctx.send(f'\N{WHITE HEAVY CHECK MARK} Club "{role.name}" deleted. The role itself was not deleted, so if you need to, delete it yourself.') 
 
     @commands.command()
