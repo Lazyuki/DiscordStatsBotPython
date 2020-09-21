@@ -164,6 +164,10 @@ class EJLX(commands.Cog):
             created_role = True
         else:
             role = clubRole.role
+        
+        if role >= ctx.author.top_role:
+            await ctx.send(f'"{role.name}" is higher in hierarchy than your highest role')
+            return
 
         role_id = role.id
         clubs = self.settings[ctx.guild.id].clubs
