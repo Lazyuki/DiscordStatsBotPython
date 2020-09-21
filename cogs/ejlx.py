@@ -78,7 +78,9 @@ class ClubRole:
         try:
             role = await commands.RoleConverter().convert(ctx, argument)
         except:
-            role = next(filter(lambda r: argument.lower() in r.name.lower(), ctx.guild.roles), argument)
+            role = next(filter(lambda r: argument.lower() == r.name.lower(), ctx.guild.roles), None)
+            if not role:
+                role = next(filter(lambda r: argument.lower() in r.name.lower(), ctx.guild.roles), argument)
 
         return cls(role)
 
