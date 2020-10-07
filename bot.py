@@ -38,8 +38,7 @@ def dynamic_prefix(bot, message):
 class Cirilla(commands.Bot):
     def __init__(self, pool):
         super().__init__(command_prefix=dynamic_prefix,
-                         description=description,
-                         fetch_offline_members=True)
+                         description=description )
         self.client_id = config.client_id
         self.owner_id = config.owner_id
         self.case_insensitive = True
