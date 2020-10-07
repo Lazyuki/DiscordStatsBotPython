@@ -10,6 +10,11 @@ import config
 import asyncpg
 from cogs.utils.parser import parse_language
 
+intents = discord.Intents.default()
+intents.members = True
+intents.presences = True
+intents.typing = False
+
 description = """
 Ciri but better...?
 Written by @Geralt#0007
@@ -38,7 +43,8 @@ def dynamic_prefix(bot, message):
 class Cirilla(commands.Bot):
     def __init__(self, pool):
         super().__init__(command_prefix=dynamic_prefix,
-                         description=description )
+                         description=description,
+                         intents=intents)
         self.client_id = config.client_id
         self.owner_id = config.owner_id
         self.case_insensitive = True
