@@ -75,3 +75,23 @@ def resolve_user_id(ctx, arg):
         user_id = int(id_match.group(1))
     return user_id
         
+def resolve_role(ctx, role):
+    roles = ctx.guild.roles
+    role = role.lower()
+    starts = []
+    contains = []
+    for r in roles:
+        name = r.name.lower()
+        if name == role:
+            return r
+        if name.startswith(role):
+            starts.append(r)
+        if role in name:
+            contains.append(r)
+    if starts:
+        return starts[0]
+    if contains:
+        return contains[0]
+    return None
+
+    

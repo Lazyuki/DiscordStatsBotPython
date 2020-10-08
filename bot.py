@@ -72,10 +72,10 @@ class Cirilla(commands.Bot):
     async def on_ready(self):
         if not hasattr(self, 'uptime'):
             self.uptime = datetime.datetime.utcnow()
-
         log.info(f'Ready: {self.user} (ID: {self.user.id})')
         log.info(f'Servers: {len(self.guilds)}')
         log.info('========================================')
+        self.change_presence(activity=discord.CustomActivity(',,help'))
 
     async def on_resumed(self):
         log.info('resumed...')

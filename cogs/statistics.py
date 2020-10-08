@@ -4,9 +4,10 @@ from collections import Counter, defaultdict
 import logging
 import asyncio
 import asyncpg
+import re
 from datetime import datetime, date
 from .utils.parser import REGEX_CUSTOM_EMOJIS, REGEX_BOT_COMMANDS
-from .utils.resolver import resolve_minimum_channel, resolve_user_id, has_role
+from .utils.resolver import resolve_minimum_channel, resolve_user_id, has_role, resolve_role
 from .utils.leaderboard import PaginatedLeaderboard
 from .ejlx import JP_EMOJI, EN_EMOJI, OL_EMOJI, NJ_ROLE
 
@@ -181,7 +182,7 @@ class Stats(commands.Cog):
 
 
     @commands.command(aliases=['l', 'lb'])
-    async def leaderboard(self, ctx):
+    async def leaderboard(self, ctx, *, role = None):
         user_id = ctx.author.id
         lb = await self.pool.fetch('''
             WITH ranked AS (
@@ -212,14 +213,28 @@ class Stats(commands.Cog):
         else:
             records = lb[:-1]
             user_record = lb[-1] 
+
+        if role:
+            role = resolve_role(ctx, role)
+            if not role:
+                await ctx.send('Invalid role name')
+                return
+            def hasRole(uid):
+                member = ctx.guild.get_member(uid)
+                if not member:
+                    return False
+                return any([r == role.id for r in member.roles])
+            records = [r for r in records if hasRole(r['user_id'])]
         
         leaderboard = PaginatedLeaderboard(ctx, records=records, title='Leaderboard', description='Number of messages in the past 30 days (UTC)', find_record=user_record)
         await leaderboard.build()
 
     @commands.command(aliases=['chlb', 'cl'])
-    async def channel_leaderboard(self, ctx):
+    async def channel_leaderboard(self, ctx, *, role = ''):
         user_id = ctx.author.id
         channel_ids = ctx.message.channel_mentions
+        role = re.sub(r"<#[0-9]+>", "", role).strip()
+
         if not channel_ids:
             channel_ids = [ ctx.channel.id ]
         chlb = await self.pool.fetch('''
@@ -261,6 +276,18 @@ class Stats(commands.Cog):
         else:
             records = chlb[:-1]
             user_record = chlb[-1] 
+
+        if role:
+            role = resolve_role(ctx, role)
+            if not role:
+                await ctx.send('Invalid role name')
+                return
+            def hasRole(uid):
+                member = ctx.guild.get_member(uid)
+                if not member:
+                    return False
+                return any([r == role.id for r in member.roles])
+            records = [r for r in records if hasRole(r['user_id'])]
 
         leaderboard = PaginatedLeaderboard(ctx, records=records, title=title[:256], description='Number of messages in the past 30 days (UTC)', find_record=user_record)
         await leaderboard.build()
