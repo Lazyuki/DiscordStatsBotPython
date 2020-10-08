@@ -182,7 +182,7 @@ class Stats(commands.Cog):
 
 
     @commands.command(aliases=['l', 'lb'])
-    async def leaderboard(self, ctx, *, role = None):
+    async def leaderboard(self, ctx, *, role=None):
         user_id = ctx.author.id
         if role:
             role = resolve_role(ctx, role)
@@ -235,10 +235,10 @@ class Stats(commands.Cog):
         await leaderboard.build()
 
     @commands.command(aliases=['chlb', 'cl'])
-    async def channel_leaderboard(self, ctx, *, role = ''):
+    async def channel_leaderboard(self, ctx, *, role=''):
         user_id = ctx.author.id
         channel_ids = ctx.message.channel_mentions
-        role = re.sub(r"<#[0-9]+>", "", role).strip()
+        role = re.sub(r'<#[0-9]+>', '', role).strip()
         if role:
             role = resolve_role(ctx, role)
             if not role:
@@ -253,7 +253,7 @@ class Stats(commands.Cog):
                 FROM (
                     SELECT user_id, SUM(message_count) as count
                     FROM messages
-                    WHERE guild_id = $1 AND channel_id = ANY ($2::)
+                    WHERE guild_id = $1 AND channel_id = ANY ($2::BIGINT[])
                     GROUP BY user_id
                     ORDER BY count DESC
                 ) AS cl
@@ -478,8 +478,13 @@ class Stats(commands.Cog):
         await leaderboard.build()
 
     @commands.command(aliases=['vclb', 'vl', 'v'])
-    async def voice_leaderboard(self, ctx):
+    async def voice_leaderboard(self, ctx, *, role=''):
         user_id = ctx.author.id
+        if role:
+            role = resolve_role(ctx, role)
+            if not role:
+                await ctx.send('Invalid role name')
+                return
         vl = await self.pool.fetch('''
             WITH ranked AS (
                 SELECT *, RANK() OVER (ORDER BY count DESC)
@@ -515,7 +520,17 @@ class Stats(commands.Cog):
             mns = c % 60
             return (f'{hrs}hr ' if hrs else '') + f'{mns}min'
 
-        leaderboard = PaginatedLeaderboard(ctx, records=records, title='Voice Leaderboard', description='Time spent in VC in the past 30 days (UTC)', find_record=user_record, count_to_string=count_to_string)
+        title = 'Voice Leaderboard'
+        if role:
+            title += f' with role: {role.name}'
+            def hasRole(uid):
+                member = ctx.guild.get_member(uid)
+                if not member:
+                    return False
+                return any([r == role for r in member.roles])
+            records = [r for r in records if hasRole(r['user_id'])] 
+
+        leaderboard = PaginatedLeaderboard(ctx, records=records, title=title, description='Time spent in VC in the past 30 days (UTC)', find_record=user_record, count_to_string=count_to_string)
         await leaderboard.build()
 
     @commands.command(aliases=['ac', 'uac'])
