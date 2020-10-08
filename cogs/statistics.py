@@ -237,7 +237,7 @@ class Stats(commands.Cog):
     @commands.command(aliases=['chlb', 'cl'])
     async def channel_leaderboard(self, ctx, *, role=''):
         user_id = ctx.author.id
-        channel_ids = ctx.message.channel_mentions
+        channel_ids = [ c.id for c in ctx.message.channel_mentions ]
         role = re.sub(r'<#[0-9]+>', '', role).strip()
         if role:
             role = resolve_role(ctx, role)
