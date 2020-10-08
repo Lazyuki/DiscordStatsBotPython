@@ -184,6 +184,12 @@ class Stats(commands.Cog):
     @commands.command(aliases=['l', 'lb'])
     async def leaderboard(self, ctx, *, role = None):
         user_id = ctx.author.id
+        if role:
+            role = resolve_role(ctx, role)
+            if not role:
+                await ctx.send('Invalid role name')
+                return
+
         lb = await self.pool.fetch('''
             WITH ranked AS (
                 SELECT *, RANK() OVER(ORDER BY count DESC)
@@ -213,12 +219,11 @@ class Stats(commands.Cog):
         else:
             records = lb[:-1]
             user_record = lb[-1] 
+        
+        title = 'Leaderboard'
 
         if role:
-            role = resolve_role(ctx, role)
-            if not role:
-                await ctx.send('Invalid role name')
-                return
+            title += f' with role: {role.name}'
             def hasRole(uid):
                 member = ctx.guild.get_member(uid)
                 if not member:
@@ -226,7 +231,7 @@ class Stats(commands.Cog):
                 return any([r == role for r in member.roles])
             records = [r for r in records if hasRole(r['user_id'])]
         
-        leaderboard = PaginatedLeaderboard(ctx, records=records, title='Leaderboard', description='Number of messages in the past 30 days (UTC)', find_record=user_record)
+        leaderboard = PaginatedLeaderboard(ctx, records=records, title=title, description='Number of messages in the past 30 days (UTC)', find_record=user_record)
         await leaderboard.build()
 
     @commands.command(aliases=['chlb', 'cl'])
@@ -234,6 +239,11 @@ class Stats(commands.Cog):
         user_id = ctx.author.id
         channel_ids = ctx.message.channel_mentions
         role = re.sub(r"<#[0-9]+>", "", role).strip()
+        if role:
+            role = resolve_role(ctx, role)
+            if not role:
+                await ctx.send('Invalid role name')
+                return
 
         if not channel_ids:
             channel_ids = [ ctx.channel.id ]
@@ -278,10 +288,7 @@ class Stats(commands.Cog):
             user_record = chlb[-1] 
 
         if role:
-            role = resolve_role(ctx, role)
-            if not role:
-                await ctx.send('Invalid role name')
-                return
+            title += f' with role: {role.name}'
             def hasRole(uid):
                 member = ctx.guild.get_member(uid)
                 if not member:
