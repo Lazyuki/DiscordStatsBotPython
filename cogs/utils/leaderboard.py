@@ -51,7 +51,7 @@ class PaginatedLeaderboard:
         user = self.bot.get_user(user_id)
         is_user = '\N{ROUND PUSHPIN}' if user_id == self.author.id else ''
         if user is None:
-            name = f'{rank}) @deleted-user({user_id})'
+            name = f'{rank}) @user-left({user_id})'
         else:
             name = f'{is_user}{rank}) {user.name}'
         return name

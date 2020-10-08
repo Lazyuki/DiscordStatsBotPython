@@ -223,7 +223,7 @@ class Stats(commands.Cog):
                 member = ctx.guild.get_member(uid)
                 if not member:
                     return False
-                return any([r == role.id for r in member.roles])
+                return any([r == role for r in member.roles])
             records = [r for r in records if hasRole(r['user_id'])]
         
         leaderboard = PaginatedLeaderboard(ctx, records=records, title='Leaderboard', description='Number of messages in the past 30 days (UTC)', find_record=user_record)
@@ -286,7 +286,7 @@ class Stats(commands.Cog):
                 member = ctx.guild.get_member(uid)
                 if not member:
                     return False
-                return any([r == role.id for r in member.roles])
+                return any([r == role for r in member.roles])
             records = [r for r in records if hasRole(r['user_id'])]
 
         leaderboard = PaginatedLeaderboard(ctx, records=records, title=title[:256], description='Number of messages in the past 30 days (UTC)', find_record=user_record)
