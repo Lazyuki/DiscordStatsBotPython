@@ -5,7 +5,7 @@ import logging
 import asyncio
 import asyncpg
 import re
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from .utils.parser import REGEX_CUSTOM_EMOJIS, REGEX_BOT_COMMANDS
 from .utils.resolver import resolve_minimum_channel, resolve_user_id, has_role, resolve_role
 from .utils.leaderboard import PaginatedLeaderboard
@@ -546,16 +546,29 @@ class Stats(commands.Cog):
             ''', ctx.guild.id, user.id)
         s = f'Server activity for **{user}**\n```\n'
         if use_numbers:
+            prev_date = datetime.now() - timedelta(days=30)
             for record in ac:
                 date = record['utc_date']
+                if date.date() < prev_date.date():
+                    continue
+                while (date.date() > prev_date.date()):
+                    s += prev_date.strftime(f'%b %d(%a): 0\n')
+                    prev_date += timedelta(days=1)
                 count = record['count']
                 s += date.strftime(f'%b %d(%a): {count}\n')
         else:
             max_num = max(ac, key=lambda r: r['count'])['count']
+            s += f'Unit: {max_num / 15} messages\n'
+            prev_date = datetime.now() - timedelta(days=30)
             for record in ac:
                 date = record['utc_date']
+                if date.date() < prev_date.date():
+                    continue
+                while (date.date() > prev_date.date()):
+                    s += prev_date.strftime(f'%b %d(%a):\n')
+                    prev_date += timedelta(days=1)
                 count = record['count']
-                ticks = 15.0 * count / max_num
+                ticks = 15 * count / max_num
                 bar = '-' * ticks
                 s += date.strftime(f'%b %d(%a): {bar}\n')
 
@@ -579,18 +592,32 @@ class Stats(commands.Cog):
         channels = [ctx.guild.get_channel(cid).name for cid in channel_ids]
         s = f'Server activity for {channels}\n```\n'
         if use_numbers:
+            prev_date = datetime.now() - timedelta(days=30)
             for record in ac:
                 date = record['utc_date']
+                if date.date() < prev_date.date():
+                    continue
+                while (date.date() > prev_date.date()):
+                    s += prev_date.strftime(f'%b %d(%a): 0\n')
+                    prev_date += timedelta(days=1)
                 count = record['count']
                 s += date.strftime(f'%b %d(%a): {count}\n')
         else:
             max_num = max(ac, key=lambda r: r['count'])['count']
+            s += f'Unit: {max_num / 15} messages\n'
+            prev_date = datetime.now() - timedelta(days=30)
             for record in ac:
                 date = record['utc_date']
+                if date.date() < prev_date.date():
+                    continue
+                while (date.date() > prev_date.date()):
+                    s += prev_date.strftime(f'%b %d(%a):\n')
+                    prev_date += timedelta(days=1)
                 count = record['count']
-                ticks = 15.0 * count / max_num
+                ticks = 15 * count / max_num
                 bar = '-' * ticks
                 s += date.strftime(f'%b %d(%a): {bar}\n')
+
         s += '```'
         await ctx.send(s)
 
@@ -607,18 +634,32 @@ class Stats(commands.Cog):
             ''', ctx.guild.id)
         s = f'Server activity\n```\n'
         if use_numbers:
+            prev_date = datetime.now() - timedelta(days=30)
             for record in ac:
                 date = record['utc_date']
+                if date.date() < prev_date.date():
+                    continue
+                while (date.date() > prev_date.date()):
+                    s += prev_date.strftime(f'%b %d(%a): 0\n')
+                    prev_date += timedelta(days=1)
                 count = record['count']
                 s += date.strftime(f'%b %d(%a): {count}\n')
         else:
             max_num = max(ac, key=lambda r: r['count'])['count']
+            s += f'Unit: {max_num / 15} messages\n'
+            prev_date = datetime.now() - timedelta(days=30)
             for record in ac:
                 date = record['utc_date']
+                if date.date() < prev_date.date():
+                    continue
+                while (date.date() > prev_date.date()):
+                    s += prev_date.strftime(f'%b %d(%a):\n')
+                    prev_date += timedelta(days=1)
                 count = record['count']
-                ticks = 15.0 * count / max_num
+                ticks = 15 * count / max_num
                 bar = '-' * ticks
                 s += date.strftime(f'%b %d(%a): {bar}\n')
+
         s += '```'
         await ctx.send(s)
 
