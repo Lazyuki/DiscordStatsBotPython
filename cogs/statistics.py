@@ -546,7 +546,7 @@ class Stats(commands.Cog):
             ''', ctx.guild.id, user.id)
         s = f'Server activity for **{user}**\n```\n'
         if use_numbers:
-            prev_date = datetime.now().date() - timedelta(days=30)
+            prev_date = datetime.now().date() - timedelta(days=29)
             for record in ac:
                 date = record['utc_date']
                 if date < prev_date:
@@ -560,7 +560,7 @@ class Stats(commands.Cog):
         else:
             max_num = max(ac, key=lambda r: r['count'])['count']
             s += f'Unit: {max_num // 15} messages\n'
-            prev_date = datetime.now().date() - timedelta(days=30)
+            prev_date = datetime.now().date() - timedelta(days=29)
             for record in ac:
                 date = record['utc_date']
                 if date < prev_date:
@@ -594,7 +594,7 @@ class Stats(commands.Cog):
         channels = [ctx.guild.get_channel(cid).name for cid in channel_ids]
         s = f'Server activity for {", ".join(channels)}\n```\n'
         if use_numbers:
-            prev_date = datetime.now().date() - timedelta(days=30)
+            prev_date = datetime.now().date() - timedelta(days=29)
             for record in ac:
                 date = record['utc_date']
                 if date < prev_date:
@@ -608,7 +608,7 @@ class Stats(commands.Cog):
         else:
             max_num = max(ac, key=lambda r: r['count'])['count']
             s += f'Unit: {max_num // 15} messages\n'
-            prev_date = datetime.now().date() - timedelta(days=30)
+            prev_date = datetime.now().date() - timedelta(days=29)
             for record in ac:
                 date = record['utc_date']
                 if date < prev_date:
@@ -638,7 +638,7 @@ class Stats(commands.Cog):
             ''', ctx.guild.id)
         s = f'Server activity\n```\n'
         if use_numbers:
-            prev_date = datetime.now().date() - timedelta(days=30)
+            prev_date = datetime.now().date() - timedelta(days=29)
             for record in ac:
                 date = record['utc_date']
                 if date < prev_date:
@@ -652,7 +652,7 @@ class Stats(commands.Cog):
         else:
             max_num = max(ac, key=lambda r: r['count'])['count']
             s += f'Unit: {max_num // 15} messages\n'
-            prev_date = datetime.now().date() - timedelta(days=30)
+            prev_date = datetime.now().date() - timedelta(days=29)
             for record in ac:
                 date = record['utc_date']
                 if date < prev_date:
