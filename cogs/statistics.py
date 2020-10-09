@@ -551,10 +551,10 @@ class Stats(commands.Cog):
                 count = record['count']
                 s += date.strftime(f'%b %d(%a): {count}\n')
         else:
-            max_num = max(ac, key=lambda r: r['count'])
+            max_num = max(ac, key=lambda r: int(r['count']))
             for record in ac:
                 date = record['utc_date']
-                count = record['count']
+                count = int(record['count'])
                 ticks = 15.0 * count / max_num
                 bar = '-' * ticks
                 s += date.strftime(f'%b %d(%a): {bar}\n')
@@ -584,10 +584,10 @@ class Stats(commands.Cog):
                 count = record['count']
                 s += date.strftime(f'%b %d(%a): {count}\n')
         else:
-            max_num = max(ac, key=lambda r: r['count'])
+            max_num = max(ac, key=lambda r: int(r['count']))
             for record in ac:
                 date = record['utc_date']
-                count = record['count']
+                count = int(record['count'])
                 ticks = 15.0 * count / max_num
                 bar = '-' * ticks
                 s += date.strftime(f'%b %d(%a): {bar}\n')
@@ -612,10 +612,10 @@ class Stats(commands.Cog):
                 count = record['count']
                 s += date.strftime(f'%b %d(%a): {count}\n')
         else:
-            max_num = max(ac, key=lambda r: r['count'])
+            max_num = max(ac, key=lambda r: int(r['count']))
             for record in ac:
                 date = record['utc_date']
-                count = record['count']
+                count = int(record['count'])
                 ticks = 15.0 * count / max_num
                 bar = '-' * ticks
                 s += date.strftime(f'%b %d(%a): {bar}\n')
