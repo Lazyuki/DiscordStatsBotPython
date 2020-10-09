@@ -534,8 +534,9 @@ class Stats(commands.Cog):
         await leaderboard.build()
 
     @commands.command(aliases=['ac', 'uac'])
-    async def user_activity(self, ctx):
+    async def user_activity(self, ctx, *, arg=''):
         user = ctx.author
+        use_numbers = '-n' in arg
         ac = await self.pool.fetch('''
             SELECT SUM(message_count) as count, utc_date
             FROM messages
@@ -544,22 +545,82 @@ class Stats(commands.Cog):
             ORDER BY utc_date ASC
             ''', ctx.guild.id, user.id)
         s = f'Server activity for **{user}**\n```\n'
-        for record in ac:
-            date = record['utc_date']
-            count = record['count']
-            s += date.strftime(f'%b %d(%a): {count}\n')
+        if use_numbers:
+            for record in ac:
+                date = record['utc_date']
+                count = record['count']
+                s += date.strftime(f'%b %d(%a): {count}\n')
+        else:
+            max_num = max(ac, key=lambda r: r['count'])
+            for record in ac:
+                date = record['utc_date']
+                count = record['count']
+                ticks = 15.0 * count / max_num
+                bar = '-' * ticks
+                s += date.strftime(f'%b %d(%a): {bar}\n')
+
         s += '```'
         await ctx.send(s)
 
 
     @commands.command(aliases=['cac', 'chac'])
-    async def channel_activity(self, ctx):
-        pass
+    async def channel_activity(self, ctx, *, arg=''):
+        channel_ids = [ c.id for c in ctx.message.channel_mentions ] 
+        use_numbers = '-n' in arg
+        if not channel_ids:
+            channel_ids = [ ctx.channel.id ]
+        ac = await self.pool.fetch('''
+            SELECT SUM(message_count) as count, utc_date
+            FROM messages
+            WHERE guild_id = $1 AND channel_id = ANY ($2::BIGINT[])
+            GROUP BY utc_date
+            ORDER BY utc_date ASC
+            ''', ctx.guild.id, channel_ids)
+        channels = [ctx.guild.get_channel(cid).name for cid in channel_ids]
+        s = f'Server activity for {channels}\n```\n'
+        if use_numbers:
+            for record in ac:
+                date = record['utc_date']
+                count = record['count']
+                s += date.strftime(f'%b %d(%a): {count}\n')
+        else:
+            max_num = max(ac, key=lambda r: r['count'])
+            for record in ac:
+                date = record['utc_date']
+                count = record['count']
+                ticks = 15.0 * count / max_num
+                bar = '-' * ticks
+                s += date.strftime(f'%b %d(%a): {bar}\n')
+        s += '```'
+        await ctx.send(s)
 
 
     @commands.command(aliases=['sac'])
-    async def server_activity(self, ctx):
-        pass
+    async def server_activity(self, ctx, *, arg=''):
+        use_numbers = '-n' in arg
+        ac = await self.pool.fetch('''
+            SELECT SUM(message_count) as count, utc_date
+            FROM messages
+            WHERE guild_id = $1
+            GROUP BY utc_date
+            ORDER BY utc_date ASC
+            ''', ctx.guild.id)
+        s = f'Server activity\n```\n'
+        if use_numbers:
+            for record in ac:
+                date = record['utc_date']
+                count = record['count']
+                s += date.strftime(f'%b %d(%a): {count}\n')
+        else:
+            max_num = max(ac, key=lambda r: r['count'])
+            for record in ac:
+                date = record['utc_date']
+                count = record['count']
+                ticks = 15.0 * count / max_num
+                bar = '-' * ticks
+                s += date.strftime(f'%b %d(%a): {bar}\n')
+        s += '```'
+        await ctx.send(s)
 
     @commands.Cog.listener()
     async def on_safe_message(self, m, **kwargs):
