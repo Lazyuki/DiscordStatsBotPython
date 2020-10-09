@@ -554,11 +554,12 @@ class Stats(commands.Cog):
                 while (date > prev_date):
                     s += prev_date.strftime(f'%b %d(%a): 0\n')
                     prev_date += timedelta(days=1)
+                prev_date += timedelta(days=1)
                 count = record['count']
                 s += date.strftime(f'%b %d(%a): {count}\n')
         else:
             max_num = max(ac, key=lambda r: r['count'])['count']
-            s += f'Unit: {max_num / 15} messages\n'
+            s += f'Unit: {max_num // 15} messages\n'
             prev_date = datetime.now().date() - timedelta(days=30)
             for record in ac:
                 date = record['utc_date']
@@ -567,8 +568,9 @@ class Stats(commands.Cog):
                 while (date > prev_date):
                     s += prev_date.strftime(f'%b %d(%a):\n')
                     prev_date += timedelta(days=1)
+                prev_date += timedelta(days=1)
                 count = record['count']
-                ticks = 15 * count / max_num
+                ticks = 15 * count // max_num
                 bar = '-' * ticks
                 s += date.strftime(f'%b %d(%a): {bar}\n')
 
@@ -600,11 +602,12 @@ class Stats(commands.Cog):
                 while (date > prev_date):
                     s += prev_date.strftime(f'%b %d(%a): 0\n')
                     prev_date += timedelta(days=1)
+                prev_date += timedelta(days=1)
                 count = record['count']
                 s += date.strftime(f'%b %d(%a): {count}\n')
         else:
             max_num = max(ac, key=lambda r: r['count'])['count']
-            s += f'Unit: {max_num / 15} messages\n'
+            s += f'Unit: {max_num // 15} messages\n'
             prev_date = datetime.now().date() - timedelta(days=30)
             for record in ac:
                 date = record['utc_date']
@@ -613,8 +616,9 @@ class Stats(commands.Cog):
                 while (date > prev_date):
                     s += prev_date.strftime(f'%b %d(%a):\n')
                     prev_date += timedelta(days=1)
+                prev_date += timedelta(days=1)
                 count = record['count']
-                ticks = 15 * count / max_num
+                ticks = 15 * count // max_num
                 bar = '-' * ticks
                 s += date.strftime(f'%b %d(%a): {bar}\n')
 
@@ -642,11 +646,12 @@ class Stats(commands.Cog):
                 while (date > prev_date):
                     s += prev_date.strftime(f'%b %d(%a): 0\n')
                     prev_date += timedelta(days=1)
+                prev_date += timedelta(days=1)
                 count = record['count']
                 s += date.strftime(f'%b %d(%a): {count}\n')
         else:
             max_num = max(ac, key=lambda r: r['count'])['count']
-            s += f'Unit: {max_num / 15} messages\n'
+            s += f'Unit: {max_num // 15} messages\n'
             prev_date = datetime.now().date() - timedelta(days=30)
             for record in ac:
                 date = record['utc_date']
@@ -655,8 +660,9 @@ class Stats(commands.Cog):
                 while (date > prev_date):
                     s += prev_date.strftime(f'%b %d(%a):\n')
                     prev_date += timedelta(days=1)
+                prev_date += timedelta(days=1)
                 count = record['count']
-                ticks = 15 * count / max_num
+                ticks = 15 * count // max_num
                 bar = '-' * ticks
                 s += date.strftime(f'%b %d(%a): {bar}\n')
 
