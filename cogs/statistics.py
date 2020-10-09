@@ -546,12 +546,12 @@ class Stats(commands.Cog):
             ''', ctx.guild.id, user.id)
         s = f'Server activity for **{user}**\n```\n'
         if use_numbers:
-            prev_date = datetime.now() - timedelta(days=30)
+            prev_date = datetime.today().date() - timedelta(days=30)
             for record in ac:
                 date = record['utc_date']
-                if date.date() < prev_date.date():
+                if date < prev_date:
                     continue
-                while (date.date() > prev_date.date()):
+                while (date > prev_date):
                     s += prev_date.strftime(f'%b %d(%a): 0\n')
                     prev_date += timedelta(days=1)
                 count = record['count']
@@ -562,9 +562,9 @@ class Stats(commands.Cog):
             prev_date = datetime.now() - timedelta(days=30)
             for record in ac:
                 date = record['utc_date']
-                if date.date() < prev_date.date():
+                if date < prev_date:
                     continue
-                while (date.date() > prev_date.date()):
+                while (date.date() > prev_date):
                     s += prev_date.strftime(f'%b %d(%a):\n')
                     prev_date += timedelta(days=1)
                 count = record['count']
@@ -595,9 +595,9 @@ class Stats(commands.Cog):
             prev_date = datetime.now() - timedelta(days=30)
             for record in ac:
                 date = record['utc_date']
-                if date.date() < prev_date.date():
+                if date < prev_date:
                     continue
-                while (date.date() > prev_date.date()):
+                while (date.date() > prev_date):
                     s += prev_date.strftime(f'%b %d(%a): 0\n')
                     prev_date += timedelta(days=1)
                 count = record['count']
@@ -608,9 +608,9 @@ class Stats(commands.Cog):
             prev_date = datetime.now() - timedelta(days=30)
             for record in ac:
                 date = record['utc_date']
-                if date.date() < prev_date.date():
+                if date < prev_date:
                     continue
-                while (date.date() > prev_date.date()):
+                while (date.date() > prev_date):
                     s += prev_date.strftime(f'%b %d(%a):\n')
                     prev_date += timedelta(days=1)
                 count = record['count']
@@ -637,9 +637,9 @@ class Stats(commands.Cog):
             prev_date = datetime.now() - timedelta(days=30)
             for record in ac:
                 date = record['utc_date']
-                if date.date() < prev_date.date():
+                if date < prev_date:
                     continue
-                while (date.date() > prev_date.date()):
+                while (date.date() > prev_date):
                     s += prev_date.strftime(f'%b %d(%a): 0\n')
                     prev_date += timedelta(days=1)
                 count = record['count']
@@ -650,9 +650,9 @@ class Stats(commands.Cog):
             prev_date = datetime.now() - timedelta(days=30)
             for record in ac:
                 date = record['utc_date']
-                if date.date() < prev_date.date():
+                if date < prev_date:
                     continue
-                while (date.date() > prev_date.date()):
+                while (date.date() > prev_date):
                     s += prev_date.strftime(f'%b %d(%a):\n')
                     prev_date += timedelta(days=1)
                 count = record['count']
