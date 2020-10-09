@@ -336,6 +336,9 @@ class EJLX(commands.Cog):
 
         if is_add:
             reaction = discord.utils.find(lambda r: ('name' in r.emoji) and (r.emoji.name == emoji.name), message.reactions)
+            if not reaction:
+                logging.warn(f'Reaction could not be found {emoji.name}, in message {message_id} in channel {channel_id}, reactions size: {len(message.reactions)}')
+                return
             await self.reaction_language(reaction, member)
         else:
             pass
