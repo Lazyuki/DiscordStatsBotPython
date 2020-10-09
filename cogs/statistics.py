@@ -592,7 +592,7 @@ class Stats(commands.Cog):
             ORDER BY utc_date ASC
             ''', ctx.guild.id, channel_ids)
         channels = [ctx.guild.get_channel(cid).name for cid in channel_ids]
-        s = f'Server activity for {channels}\n```\n'
+        s = f'Server activity for {', '.join(channels)}\n```\n'
         if use_numbers:
             prev_date = datetime.now().date() - timedelta(days=30)
             for record in ac:
