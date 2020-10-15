@@ -61,7 +61,7 @@ ROLES = [NJ_ROLE, FJ_ROLE, NE_ROLE, FE_ROLE, OL_ROLE, NU_ROLE]
 ROLE_IDS = [r['id'] for r in ROLES]
 LANG_ROLE_IDS = [r for r in ROLE_IDS if r != NU_ROLE['id']]
 
-MUSIC_BOT_REGEX = re.compile(r'^(%|=)[a-zA-Z]+\s\w')
+MUSIC_BOT_REGEX = re.compile(r'^[%=>][a-zA-Z]+\s\w')
 
 def get_role_by_short(short):
     for role in ROLES:
