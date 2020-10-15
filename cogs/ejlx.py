@@ -22,6 +22,8 @@ JHO = 189571157446492161
 JP_CHAT = 189629338142900224
 JP_BEGINNER = 208118574974238721
 LANG_SWITCH = 376574779316109313
+BOT_CHANNEL = 225828894765350913
+VOICE_BOT_CHANNEL = 765626780450422805
 NF_CHANNEL = 193966083886153729
 NF_VOICE_TEXT = 390796551796293633
 NF_VOICE = 196684007402897408
@@ -59,6 +61,8 @@ ROLES = [NJ_ROLE, FJ_ROLE, NE_ROLE, FE_ROLE, OL_ROLE, NU_ROLE]
 ROLE_IDS = [r['id'] for r in ROLES]
 LANG_ROLE_IDS = [r for r in ROLE_IDS if r != NU_ROLE['id']]
 
+MUSIC_BOT_REGEX = re.compile(r'^(%|=)[a-zA-Z]+\s\w')
+
 def get_role_by_short(short):
     for role in ROLES:
         if short in role['short']:
@@ -87,6 +91,8 @@ class ClubRole:
 
         return cls(role)
 
+async def send_music_bot_notif(message):
+    await message.channel.send(f'{message.author} All music bot commands should be in <#{VOICE_BOT_CHANNEL}> now.')
 
 async def jp_only(message):
     pass
@@ -120,7 +126,7 @@ class EJLX(commands.Cog):
     #     member = member or self.newbies[-1]
     #     pass
 
-    @commands.group(name='clubs', invoke_without_command=True)
+    @commands.group(name='clubs', aliaes=['club'], invoke_without_command=True)
     async def clubs(self, ctx):
         """
         List clubs
@@ -471,6 +477,10 @@ class EJLX(commands.Cog):
             await check_lang_switch(message)
         if len(message.role_mentions) > 0:
             await self.check_role_mentions(message)
+        if message.channel.id == BOT_CHANNEL:
+            if MUSIC_BOT_REGEX.match(message.content):
+                await send_music_bot_notif(message)
+
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
