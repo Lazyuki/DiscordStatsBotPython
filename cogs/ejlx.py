@@ -92,7 +92,7 @@ class ClubRole:
         return cls(role)
 
 async def send_music_bot_notif(message):
-    await message.channel.send(f'{message.author} All music bot commands should be in <#{VOICE_BOT_CHANNEL}> now.')
+    await message.channel.send(f'{message.author.mention} All music bot commands should be in <#{VOICE_BOT_CHANNEL}> now.')
 
 async def jp_only(message):
     pass
