@@ -3,6 +3,7 @@ from datetime import datetime
 import discord
 import logging
 import asyncio 
+import re
 
 log = logging.getLogger(__name__)
 
@@ -22,6 +23,28 @@ class Utilities(commands.Cog):
         embed.timestamp = datetime.utcnow()
         embed.set_footer(text=f'Nitro Boosts: {ctx.guild.premium_subscription_count} (Tier {ctx.guild.premium_tier})')
         await ctx.send(embed=embed)
+
+    @commands.command()
+    async def poll(self, ctx, *, arg = None):
+        """
+        Adds poll reactions to the message
+        Usage: `,,poll` will add reactions to the message above the command.
+        `,,poll 1233345555567` to specify a message with ad ID
+        `,,poll Should I sleep?` will start a new poll with the message
+        """
+        if arg:
+            if re.match(r'^[0-9]{17, 22}$', arg):
+                message = await ctx.channel.get_message(arg)
+            else:
+                message = ctx.message
+        else:
+            async for m in ctx.channel.history(limit=2, oldest_first=True):
+                message = m
+                break
+        await message.add_reaction(f'\N{THUMBS UP SIGN}') 
+        await message.add_reaction(f'\N{THUMBS DOWN SIGN}') 
+        await message.add_reaction(f'\N{NEGATIVE SQUARED AB}') 
+
 
     @commands.Cog.listener()
     async def on_member_ban(self, guild, user):
