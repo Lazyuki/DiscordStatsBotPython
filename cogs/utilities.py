@@ -34,9 +34,9 @@ class Utilities(commands.Cog):
         """
         if arg:
             if re.match(r'^[0-9]{17, 22}$', arg):
-                message = await ctx.channel.get_message(arg)
+                message = await ctx.channel.fetch_message(arg)
             else:
-                message = ctx.message
+                message = await ctx.send(arg)
         else:
             async for m in ctx.channel.history(limit=2, oldest_first=True):
                 message = m
