@@ -38,7 +38,7 @@ class Utilities(commands.Cog):
             else:
                 message = await ctx.send(arg)
         else:
-            message = await ctx.history(limit=2, oldest_first=True).next()
+            message = await ctx.history(limit=2, oldest_first=True).find(lambda e: True)
 
         await ctx.message.delete()
         if not message:
