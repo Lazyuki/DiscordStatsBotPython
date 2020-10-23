@@ -33,14 +33,12 @@ class Utilities(commands.Cog):
         `,,poll Should I sleep?` will start a new poll with the message
         """
         if arg:
-            if re.match(r'^[0-9]{17, 22}$', arg):
+            if re.match(r'^[0-9]{17,22}$', arg):
                 message = await ctx.channel.fetch_message(arg)
             else:
                 message = await ctx.send(arg)
         else:
-            async for m in ctx.channel.history(limit=2, oldest_first=True):
-                message = m
-                break
+            message = await ctx.channel.history(limit=2, oldest_first=True).get()
         await message.add_reaction(f'\N{THUMBS UP SIGN}') 
         await message.add_reaction(f'\N{THUMBS DOWN SIGN}') 
         await message.add_reaction(f'\N{NEGATIVE SQUARED AB}') 
