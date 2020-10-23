@@ -34,11 +34,16 @@ class Utilities(commands.Cog):
         """
         if arg:
             if re.match(r'^[0-9]{17,22}$', arg):
-                message = await ctx.channel.fetch_message(arg)
+                message = await ctx.fetch_message(arg)
             else:
                 message = await ctx.send(arg)
         else:
-            message = await ctx.channel.history(limit=2, oldest_first=True).get()
+            message = await ctx.history(limit=2, oldest_first=True).next()
+
+        await ctx.message.delete()
+        if not message:
+            await ctx.send('Failed to find the message')
+            return
         await message.add_reaction(f'\N{THUMBS UP SIGN}') 
         await message.add_reaction(f'\N{THUMBS DOWN SIGN}') 
         await message.add_reaction(f'\N{NEGATIVE SQUARED AB}') 
