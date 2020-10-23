@@ -27,9 +27,10 @@ class Utilities(commands.Cog):
     @commands.command()
     async def poll(self, ctx, *, arg = None):
         """
-        Adds poll reactions to the message
-        Usage: `,,poll` will add reactions to the message above the command.
-        `,,poll 1233345555567` to specify a message with ad ID
+        Adds poll reactions
+        Usage: 
+        `,,poll` will add reactions to the message above the command that invoked this.
+        `,,poll 1233345555567` to specify a message with an ID
         `,,poll Should I sleep?` will start a new poll with the message
         """
         if arg:
