@@ -497,7 +497,7 @@ class Stats(commands.Cog):
             for i, r in enumerate(filtered, 1):
                 d = dict(r)
                 d['rank'] = i
-                records.push(d)
+                records.append(d)
             description = 'Server emoji usage in the past 30 days (UTC)'
         else:
             description = 'Emoji usage in the past 30 days (UTC)'
