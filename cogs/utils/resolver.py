@@ -1,5 +1,6 @@
 import discord
 import re
+import shlex
 
 ID_REGEX = re.compile(r'([0-9]{15,21})>?\b')
 
@@ -94,4 +95,51 @@ def resolve_role(ctx, role):
         return contains[0]
     return None
 
+    
+
+def resolve_options(content: str, accepted_options: dict):
+    """
+    accepted_options: {
+        name: {
+            abbrev: str;
+            boolean: bool;
+        }
+    }
+    """
+    if (not content) or (not accepted_options):
+        return (content, None)
+    resolved = {}
+    rest_content = []
+    names = accepted_options.keys()
+    abbrevs = { opt['abbrev']: key for key, opt in accepted_options.items() }
+    words = shlex.split(content)
+    word_iter = iter(words)
+    try:
+        while True:
+            word = next(word_iter)
+            if word.startswith('--'):
+                name = word[2:]
+                if name in names:
+                    opt = accepted_options[name]
+                    boolean = opt['boolean']
+                    if boolean:
+                        resolved[name] = True
+                    else:
+                        resolved[name] = next(word_iter)
+            elif word.startswith('-'):
+                abbrev = word[1:]
+                if abbrev in abbrevs:
+                    name = abbrevs[abbrev]
+                    opt = accepted_options[name]
+                    boolean = opt['boolean']
+                    if boolean:
+                        resolved[name] = True
+                    else:
+                        resolved[name] = next(word_iter)
+            else:
+                rest_content.append(word)
+    except StopIteration:
+        pass
+
+    return (' '.join(rest_content), resolved)
     

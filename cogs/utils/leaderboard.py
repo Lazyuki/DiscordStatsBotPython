@@ -9,6 +9,7 @@ class PaginatedLeaderboard:
         rank_for='user_id',
         find_record=None,
         field_name_resolver=None,
+        record_to_count=lambda r: r['count'],
         count_to_string=lambda x: x,
         per_page=25):
 
@@ -17,7 +18,8 @@ class PaginatedLeaderboard:
         self.records = records
         self.rank_for = rank_for
         self.find_record = find_record
-        self.name_resolver = field_name_resolver if field_name_resolver else self.user_resolver
+        self.name_resolver = field_name_resolver or self.user_resolver
+        self.record_to_count = record_to_count
         self.count_to_string = count_to_string
         self.message = ctx.message
         self.author = ctx.author
@@ -47,7 +49,7 @@ class PaginatedLeaderboard:
 
         self.message = None
 
-    def user_resolver(self, rank, user_id):
+    def user_resolver(self, rank, user_id, record):
         user = self.bot.get_user(user_id)
         is_user = '\N{ROUND PUSHPIN}' if user_id == self.author.id else ''
         if user is None:
@@ -69,8 +71,8 @@ class PaginatedLeaderboard:
         for record in self.records[start:end]:
             record_value = record[self.rank_for]
             rank = record['rank']
-            name = self.name_resolver(rank, record_value)
-            embed.add_field(name=name, value=self.count_to_string(record['count']))
+            name = self.name_resolver(rank, record_value, record)
+            embed.add_field(name=name, value=self.count_to_string(self.record_to_count(record)))
 
         embed.set_footer(text=f'Page: {page + 1}/{self.total_pages}')
         if self.message is not None:

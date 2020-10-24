@@ -7,7 +7,7 @@ import asyncpg
 import re
 from datetime import datetime, date, timedelta
 from .utils.parser import REGEX_CUSTOM_EMOJIS, REGEX_BOT_COMMANDS
-from .utils.resolver import resolve_minimum_channel, resolve_user_id, has_role, resolve_role
+from .utils.resolver import resolve_minimum_channel, resolve_user_id, has_role, resolve_role, resolve_options
 from .utils.leaderboard import PaginatedLeaderboard
 from .ejlx import JP_EMOJI, EN_EMOJI, OL_EMOJI, NJ_ROLE
 
@@ -408,37 +408,68 @@ class Stats(commands.Cog):
         await leaderboard.build()
 
     @commands.command(aliases=['emlb', 'eml', 'emoji'])
-    async def emoji_leaderboard(self, ctx, *, option=''):
-        if option and option != 's' and option != 'server':
-            await self.emoji_usage_leaderboard(ctx, option)
-            return
-        records = await self.pool.fetch('''
-            SELECT *, RANK() OVER (ORDER BY count DESC)
-            FROM (
-                SELECT emoji, SUM(emoji_count) as count
-                FROM emojis
-                WHERE guild_id = $1
-                GROUP BY emoji
-                ORDER BY count DESC
-            ) AS el
-            ''', ctx.guild.id)
+    async def emoji_leaderboard(self, ctx, *, args=''):
+        """
+        Emoji leaderbaord.
+        Usage: ",,emoji [--server] [--median]"
+        """
+        _, options = resolve_options(args, { "server": { "abbrev": "s", "boolean": True }, "median": { "abbrev": "m", "boolean": True }}) 
+        server_only =  options and options.get('server')
+        use_median = options and options.get('median')
+
+        if use_median:
+            records = await self.pool.fetch('''
+                WITH emoji_counts AS (
+                    SELECT emoji, PERCENTILE_DISC(0.5) WITHIN GROUP(ORDER BY count) AS median, COUNT(user_id) AS spread
+                    FROM (
+                        SELECT emoji, user_id, SUM(emoji_count) as count
+                        FROM emojis
+                        WHERE guild_id = $1
+                        GROUP BY emoji, user_id
+                        ORDER BY count DESC
+                    ) AS el
+                    GROUP BY emoji
+                )
+                    (
+                       SELECT *, RANK() OVER (ORDER BY median DESC) from emoji_counts
+                    )
+                ''', ctx.guild.id)
+        else:
+            records = await self.pool.fetch('''
+                SELECT *, RANK() OVER (ORDER BY count DESC)
+                FROM (
+                    SELECT emoji, SUM(emoji_count) as count
+                    FROM emojis
+                    WHERE guild_id = $1
+                    GROUP BY emoji
+                ) AS el
+                ''', ctx.guild.id)
 
         if not records:
             await ctx.send('No emoji data found')
             return
 
-        def emoji_resolver(rank, emoji):
+        def emoji_resolver(rank, emoji, record):
             return f'{rank}) {emoji}'
 
+        def record_to_count(record):
+            if use_median:
+                return f'{record["median"]} ({record["spread"]} users)'
+            return record['count']
         
-        if option == 's' or option == 'server':
+        if server_only:
             guild_emojis = [str(emoji) for emoji in ctx.guild.emojis]
             records = [r for r in records if r['emoji'] in guild_emojis]
             description = 'Server emoji usage in the past 30 days (UTC)'
         else:
             description = 'Emoji usage in the past 30 days (UTC)'
+        
+        if use_median:
+            title = 'Median Emoji Leaderboard'
+        else:
+            title = 'Emoji Leaderboard'
 
-        leaderboard = PaginatedLeaderboard(ctx, records=records, title='Emoji Leaderboard', description=description, rank_for='emoji', field_name_resolver=emoji_resolver)
+        leaderboard = PaginatedLeaderboard(ctx, records=records, title=title, description=description, rank_for='emoji', field_name_resolver=emoji_resolver, record_to_count=record_to_count)
         await leaderboard.build()
 
 
