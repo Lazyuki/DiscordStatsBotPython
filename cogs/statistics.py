@@ -411,16 +411,23 @@ class Stats(commands.Cog):
     async def emoji_leaderboard(self, ctx, *, args=''):
         """
         Emoji leaderbaord.
-        Usage: ",,emoji [--server] [--median]"
+        Usage: ",,emoji [--server] [--percentile <number between 0-1>] [--users]"
         """
-        _, options = resolve_options(args, { "server": { "abbrev": "s", "boolean": True }, "median": { "abbrev": "m", "boolean": True }}) 
+        _, options = resolve_options(args, { "server": { "abbrev": "s", "boolean": True }, "percentile": { "abbrev": "p", "boolean": False }, "users": { "abbrev": "u", "boolean": True}}) 
         server_only =  options and options.get('server')
-        use_median = options and options.get('median')
+        percentile = options and options.get('percentile')
+        users = options and options.get('users')
 
-        if use_median:
-            records = await self.pool.fetch('''
+        if percentile:
+            try:
+                f = float(percentile)
+                if f < 0 or f > 1:
+                    percentile = 0.5
+            except:
+                percentile = 0.5
+            records = await self.pool.fetch(f'''
                 WITH emoji_counts AS (
-                    SELECT emoji, PERCENTILE_DISC(0.5) WITHIN GROUP(ORDER BY count) AS median, COUNT(user_id) AS spread
+                    SELECT emoji, PERCENTILE_DISC({percentile}) WITHIN GROUP(ORDER BY count) AS median, COUNT(user_id) AS spread
                     FROM (
                         SELECT emoji, user_id, SUM(emoji_count) as count
                         FROM emojis
@@ -432,6 +439,23 @@ class Stats(commands.Cog):
                 )
                     (
                        SELECT *, RANK() OVER (ORDER BY median DESC) from emoji_counts
+                    )
+                ''', ctx.guild.id)
+        elif users:
+            records = await self.pool.fetch('''
+                WITH emoji_counts AS (
+                    SELECT emoji, SUM(count) as count, COUNT(user_id) AS spread
+                    FROM (
+                        SELECT emoji, user_id, SUM(emoji_count) as count
+                        FROM emojis
+                        WHERE guild_id = $1
+                        GROUP BY emoji, user_id
+                        ORDER BY count DESC
+                    ) AS el
+                    GROUP BY emoji
+                )
+                    (
+                       SELECT *, RANK() OVER (ORDER BY spread DESC) from emoji_counts
                     )
                 ''', ctx.guild.id)
         else:
@@ -453,8 +477,10 @@ class Stats(commands.Cog):
             return f'{rank}) {emoji}'
 
         def record_to_count(record):
-            if use_median:
+            if percentile:
                 return f'{record["median"]} ({record["spread"]} users)'
+            elif users:
+                return f'{record["spread"]} (total: {record["count"]})'
             return record['count']
         
         if server_only:
@@ -464,8 +490,10 @@ class Stats(commands.Cog):
         else:
             description = 'Emoji usage in the past 30 days (UTC)'
         
-        if use_median:
-            title = 'Median Emoji Leaderboard'
+        if percentile:
+            title = f'Emoji Leaderboard (percentile: {percentile})'
+        elif users:
+            title = 'Emoji Leaderboard by number of users'
         else:
             title = 'Emoji Leaderboard'
 
