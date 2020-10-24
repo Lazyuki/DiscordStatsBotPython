@@ -412,11 +412,18 @@ class Stats(commands.Cog):
         """
         Emoji leaderbaord.
         Usage: ",,emoji [--server] [--percentile <number between 0-1>] [--users]"
+        Options:
+           server: Only emojis in the server
+           percentile: Emoji count in the percentile. Good for ignoring a few top users
+           users: Leadearboard in terms of number of users
         """
-        _, options = resolve_options(args, { "server": { "abbrev": "s", "boolean": True }, "percentile": { "abbrev": "p", "boolean": False }, "users": { "abbrev": "u", "boolean": True}}) 
-        server_only =  options and options.get('server')
-        percentile = options and options.get('percentile')
-        users = options and options.get('users')
+        _, options = resolve_options(args, { "server": { "abbrev": "s", "boolean": True }, "percentile": { "abbrev": "p", "boolean": False }, "users": { "abbrev": "u", "boolean": True }, "emoji": { "abbrev": "e", "boolean": False }}) 
+        if options.get('emoji'):
+            await self.emoji_usage_leaderboard(ctx, options.get('emoji'))
+            return
+        server_only = options.get('server')
+        percentile = options.get('percentile')
+        users =options.get('users')
 
         if percentile:
             try:
@@ -478,9 +485,9 @@ class Stats(commands.Cog):
 
         def record_to_count(record):
             if percentile:
-                return f'{record["median"]} ({record["spread"]} users)'
+                return f'**{record["median"]}** (users: {record["spread"]})'
             elif users:
-                return f'{record["spread"]} (total: {record["count"]})'
+                return f'**{record["spread"]}** (total: {record["count"]})'
             return record['count']
         
         if server_only:

@@ -107,7 +107,7 @@ def resolve_options(content: str, accepted_options: dict):
     }
     """
     if (not content) or (not accepted_options):
-        return (content, None)
+        return (content, {})
     resolved = {}
     rest_content = []
     names = accepted_options.keys()
