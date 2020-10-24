@@ -493,6 +493,8 @@ class Stats(commands.Cog):
         if server_only:
             guild_emojis = [str(emoji) for emoji in ctx.guild.emojis]
             records = [r for r in records if r['emoji'] in guild_emojis]
+            for i, r in enumerate(records, 1):
+                r['rank'] = i
             description = 'Server emoji usage in the past 30 days (UTC)'
         else:
             description = 'Emoji usage in the past 30 days (UTC)'
