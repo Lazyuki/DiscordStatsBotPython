@@ -86,7 +86,7 @@ class Settings(commands.Cog):
         with open(f'{guild.id}-settings.json', 'w+') as output:
             json.dump(asdict(self.settings[guild.id]), output, indent=4)
 
-    @commands.command(alias=['settings'])
+    @commands.command(aliases=['settings'])
     @commands.check(has_manage_server)
     async def config(self, ctx):
         """Show server settings."""

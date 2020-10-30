@@ -134,7 +134,7 @@ class EJLX(commands.Cog):
     #     member = member or self.newbies[-1]
     #     pass
 
-    @commands.group(name='clubs', aliaes=['club'], invoke_without_command=True)
+    @commands.group(name='clubs', aliases=['club'], invoke_without_command=True)
     async def clubs(self, ctx):
         """
         List clubs

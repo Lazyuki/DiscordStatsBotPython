@@ -24,7 +24,7 @@ class Utilities(commands.Cog):
         embed.set_footer(text=f'Nitro Boosts: {ctx.guild.premium_subscription_count} (Tier {ctx.guild.premium_tier})')
         await ctx.send(embed=embed)
 
-    @commands.command(alias=['vp'])
+    @commands.command(aliases=['vp'])
     async def voiceping(self, ctx, *, message=''):
         """
         Ping everyone in your VC room
@@ -33,8 +33,11 @@ class Utilities(commands.Cog):
         if not voice or not voice.channel:
             await ctx.send("You need to be in VC to do this")
             return
-        s = f'From {ctx.author.mention} to everyone in {voice.channel.name}\n'
+        s = f'{ctx.author.mention} pinged #{voice.channel.name}\n'
         members = [m for m in voice.channel.members if m != ctx.author]
+        if len(members) == 0:
+            ctx.send('Nobody else seems to be in your VC')
+            return
         s += ' '.join(members)
         await ctx.send(s)
 
