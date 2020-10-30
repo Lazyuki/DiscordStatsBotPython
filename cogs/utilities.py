@@ -24,6 +24,20 @@ class Utilities(commands.Cog):
         embed.set_footer(text=f'Nitro Boosts: {ctx.guild.premium_subscription_count} (Tier {ctx.guild.premium_tier})')
         await ctx.send(embed=embed)
 
+    @commands.command(alias=['vp'])
+    async def voiceping(self, ctx, *, message=''):
+        """
+        Ping everyone in your VC room
+        """
+        voice = ctx.author.voice
+        if not voice or not voice.channel:
+            await ctx.send("You need to be in VC to do this")
+            return
+        s = f'From {ctx.author.mention} to everyone in {voice.channel.name}\n'
+        members = [m for m in voice.channel.members if m != ctx.author]
+        s += ' '.join(members)
+        await ctx.send(s)
+
     @commands.command()
     async def poll(self, ctx, *, arg = None):
         """

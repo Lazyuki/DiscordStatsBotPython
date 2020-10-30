@@ -91,6 +91,13 @@ class ClubRole:
 
         return cls(role)
 
+class RaidWatcher:
+    def __init__(self):
+        self._bucket = []
+
+    def add(self, user_id: int):
+        pass
+
 async def send_music_bot_notif(message):
     await message.channel.send(f'{message.author.mention} All music bot commands should be in <#{VOICE_BOT_CHANNEL}> now.')
 
@@ -116,6 +123,7 @@ class EJLX(commands.Cog):
         self._role_lock = asyncio.Lock()
         self._recently_tagged = None
         self.troll_msgs = []
+        self.raidwatcher = RaidWatcher()
 
     async def cog_check(self, ctx):
         return ctx.guild.id == EJLX_ID
@@ -278,6 +286,7 @@ class EJLX(commands.Cog):
         self.newbies.append(member.id)
         if len(self.newbies) > 3:
             self.newbies.pop(0)
+        self.raidwatcher.add(member.id)
 
 
     @commands.Cog.listener()
