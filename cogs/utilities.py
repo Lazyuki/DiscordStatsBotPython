@@ -34,7 +34,7 @@ class Utilities(commands.Cog):
             await ctx.send("You need to be in VC to do this")
             return
         s = f'{ctx.author.mention} pinged #{voice.channel.name}\n'
-        members = [m for m in voice.channel.members if m != ctx.author]
+        members = [m.mention for m in voice.channel.members if m != ctx.author]
         if len(members) == 0:
             ctx.send('Nobody else seems to be in your VC')
             return
