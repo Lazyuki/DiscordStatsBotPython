@@ -109,7 +109,7 @@ async def guess_lang(message):
     if m:
         msg = JP_STUDY.sub('', msg) 
         lang = m.group(1)
-        if lang = '日本語':
+        if lang == '日本語':
             not_jp = True
         else:
             not_en = True
