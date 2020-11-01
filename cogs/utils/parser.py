@@ -174,6 +174,7 @@ async def asking_vc(message):
     vc = False
     asking = False
     for w in msg.split():
+         w = re.sub(r'\W', '', w)
         if w in VC:
             vc = True 
         elif w in QUESTION or w in VERB or w in LOCK:
