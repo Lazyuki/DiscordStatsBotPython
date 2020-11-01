@@ -82,6 +82,7 @@ class ClubRole:
 
     @classmethod
     async def convert(cls, ctx, argument):
+        argument = re.sub(r'\W', '', argument)
         try:
             role = await commands.RoleConverter().convert(ctx, argument)
         except:
@@ -164,7 +165,7 @@ class EJLX(commands.Cog):
 
         embed = discord.Embed(colour=CLUB_COLOR)
         embed.title = f'List of Clubs'
-        embed.description = f'To join a club, simply type `{ctx.prefix}join <club name>`\n(P) indicates roles that **can be pinged**\n\n{club_list_str}'
+        embed.description = f'To join a club, simply type `{ctx.prefix}join <club name>`\n(P) indicates roles that **can be pinged** by anyone\n\n{club_list_str}'
         await ctx.send(embed=embed)
         
     @clubs.command(name='add', aliases=['create'])
@@ -173,7 +174,7 @@ class EJLX(commands.Cog):
         """
         Create a new club
         Example: `,club add Among Us`
-        This uses an existing role or will create a new **mentionable** role `Amond Us` which members can freely join.
+        This uses an existing role or will create a new **mentionable** role `Among Us` which members can freely join.
         """
         created_role = False
         role = clubRole.role
