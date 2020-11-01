@@ -16,20 +16,21 @@ REGEX_BOT_COMMANDS = re.compile(r'^(?:[trkhHm]?q?!|[,.&+>$%;=\]])')
 
 # Languages
 LANGS = ['german', 'italian', 'french', 'spanish',
-    'portuguese', 'korean', 'chinese', 'telugu', 'hindi', 'urdu', 'tamil', 'malay',
-    'dutch', 'arabic', 'russian', 'turkish', 'mandarin', 'cantonese', 'polish', 'swedish',
-    'tagalog', 'norwegian', 'vietnamese', 'fillipino', 'thai', 'indonesian']
+         'portuguese', 'korean', 'chinese', 'telugu', 'hindi', 'urdu', 'tamil', 'malay',
+         'dutch', 'arabic', 'russian', 'turkish', 'mandarin', 'cantonese', 'polish', 'swedish',
+         'tagalog', 'norwegian', 'vietnamese', 'fillipino', 'thai', 'indonesian']
 
 COUNTRIES = ['germany', 'italy', 'france', 'spain', 'portugal', 'brazil', 'korea', 'china',
-    'taiwan', 'india', 'malaysia', 'netherland', 'russia', 'poland', 'sweden', 'turkey', 'norway'
-    'vietnam', 'philippines', 'indonesia', 'saudi', 'netherlands']
+             'taiwan', 'india', 'malaysia', 'netherland', 'russia', 'poland', 'sweden', 'turkey', 'norway'
+             'vietnam', 'philippines', 'indonesia', 'saudi', 'netherlands']
 
 NATIVE = re.compile(r'native(?: language)?(?: is)? (\w+)')
 NATIVE2 = re.compile(r'(\w+) is my native')
 NATIVEJP = re.compile(r'母国?語.(.+?)語')
 FROM = re.compile(r"i(?:'?m| am) from (?:the )?(?:united )?(\w+)")
 IM = re.compile(r"i(?:'?m| am)(?: a)? (\w+)")
-STUDY = re.compile(r'(?:learn|study|studied|fluent in|beginner at|beginner)(?:ing)? (japanese|english)')
+STUDY = re.compile(
+    r'(?:learn|study|studied|fluent in|beginner at|beginner)(?:ing)? (japanese|english)')
 JP_STUDY = re.compile(r'(?:日本語|英語).?勉強')
 
 # Emojis
@@ -37,8 +38,9 @@ JP_EMOJI = '<:japanese:439733745390583819>'
 EN_EMOJI = '<:english:439733745591779328>'
 OL_EMOJI = '<:other_lang:439733745491116032>'
 
+
 async def guess_lang(message):
-    msg =  message.content.lower()
+    msg = message.content.lower()
     m = NATIVE.search(msg)
     if m:
         nat = m.group(1)
@@ -65,7 +67,7 @@ async def guess_lang(message):
         orig = m.group(1)
         if orig == 'japan':
             await message.add_reaction(JP_EMOJI)
-            return 
+            return
         elif orig in ['us', 'states', 'kingdom', 'uk', 'canada', 'australia']:
             await message.add_reaction(EN_EMOJI)
             return
@@ -77,7 +79,7 @@ async def guess_lang(message):
         orig = m.group(1)
         if orig == 'japanese':
             await message.add_reaction(JP_EMOJI)
-            return 
+            return
         elif orig in ['english', 'canadian', 'australian', 'british']:
             await message.add_reaction(EN_EMOJI)
             return
@@ -86,10 +88,10 @@ async def guess_lang(message):
             return
     if '日本人です' in msg:
         await message.add_reaction(JP_EMOJI)
-        return 
+        return
     elif 'アメリカ人' in msg or 'イギリス人' in msg or 'カナダ人' in msg or 'オーストラリア人' in msg:
         await message.add_reaction(EN_EMOJI)
-        return 
+        return
     for w in msg.split():
         w = re.sub(r'\W', '', w)
         if w in LANGS or w in COUNTRIES:
@@ -107,7 +109,7 @@ async def guess_lang(message):
             not_en = True
     m = JP_STUDY.search(msg)
     if m:
-        msg = JP_STUDY.sub('', msg) 
+        msg = JP_STUDY.sub('', msg)
         lang = m.group(1)
         if lang == '日本語':
             not_jp = True
@@ -116,52 +118,55 @@ async def guess_lang(message):
 
     if not not_jp and ('japanese' in msg or '日本語' in msg):
         await message.add_reaction(JP_EMOJI)
-        return 
+        return
     if not not_en and ('english' in msg or '英語' in msg):
         await message.add_reaction(EN_EMOJI)
-        return 
+        return
     if '語' in msg:
         await message.add_reaction(OL_EMOJI)
-        return 
+        return
+
 
 def extract_unicode_emojis(text):
-  # https://stackoverflow.com/a/49242754
-  emoji_list = []
-  data = regex.findall(r'\X', text)
-  for word in data:
-      if any(char in emoji.UNICODE_EMOJI for char in word):
-          emoji_list.append(word)
-  return emoji_list
+    # https://stackoverflow.com/a/49242754
+    emoji_list = []
+    data = regex.findall(r'\X', text)
+    for word in data:
+        if any(char in emoji.UNICODE_EMOJI for char in word):
+            emoji_list.append(word)
+    return emoji_list
+
 
 JP_RATIO = 1.7
 
+
 def parse_language(message):
-  jp_count = en_count = ol_count = 0
-  escaped = False
-  lang = ''
-  content = REGEX_DISCORD_OBJ.sub('', message.content)
-  content = REGEX_URL.sub('', content)
-  emojis = extract_unicode_emojis(content)
-  for emoji in emojis:
-    content = content.replace(emoji, '')
-  for c in content:
-    if c == '*' or c == '＊':
-      escaped = True
-    elif REGEX_ENG.match(c):
-      en_count += 1
-    elif REGEX_JPN.match(c):
-      jp_count += 1
-    elif not re.match(r'[\swWｗＷ]', c):
-      ol_count += 1
-  if jp_count == 0 and en_count == 0:
-    lang = 'OL' # unknown
-  elif jp_count < 3 and en_count < 3 and ol_count > 0:
-    lang = 'OL' # probably an emoticon e.g. ¯\_(ツ)_/¯
-  elif jp_count * JP_RATIO > en_count:
-    lang = 'JP'
-  else:
-    lang = 'EN'
-  return (lang, escaped, emojis)
+    jp_count = en_count = ol_count = 0
+    escaped = False
+    lang = ''
+    content = REGEX_DISCORD_OBJ.sub('', message.content)
+    content = REGEX_URL.sub('', content)
+    emojis = extract_unicode_emojis(content)
+    for emoji in emojis:
+        content = content.replace(emoji, '')
+    for c in content:
+        if c == '*' or c == '＊':
+            escaped = True
+        elif REGEX_ENG.match(c):
+            en_count += 1
+        elif REGEX_JPN.match(c):
+            jp_count += 1
+        elif not re.match(r'[\swWｗＷ]', c):
+            ol_count += 1
+    if jp_count == 0 and en_count == 0:
+        lang = 'OL'  # unknown
+    elif jp_count < 3 and en_count < 3 and ol_count > 0:
+        lang = 'OL'  # probably an emoticon e.g. ¯\_(ツ)_/¯
+    elif jp_count * JP_RATIO > en_count:
+        lang = 'JP'
+    else:
+        lang = 'EN'
+    return (lang, escaped, emojis)
 
 
 QUESTION = ['how', 'why', 'y']
@@ -169,16 +174,16 @@ VERB = ['access', 'join', 'use', 'enter']
 VC = ['vc', 'vcs', 'voice']
 LOCK = ['locked', 'lock']
 
+
 async def asking_vc(message):
     msg = message.content.lower()
     vc = False
     asking = False
     for w in msg.split():
-         w = re.sub(r'\W', '', w)
+        w = re.sub(r'\W', '', w)
         if w in VC:
-            vc = True 
+            vc = True
         elif w in QUESTION or w in VERB or w in LOCK:
             asking = True
     if vc and asking:
         await message.channel.send(f'{message.author.mention} As mentioned in <#189585230972190720>, you need a language role to join voice chat. Please say what your native language is {"here" if message.channel.id == 189571157446492161 else "in <#189571157446492161>"}')
-    
