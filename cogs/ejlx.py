@@ -7,7 +7,7 @@ import logging
 from collections import namedtuple
 
 from .utils.resolver import has_role, has_any_role
-from .utils.parser import guess_lang, JP_EMOJI, EN_EMOJI, OL_EMOJI
+from .utils.parser import guess_lang, JP_EMOJI, EN_EMOJI, OL_EMOJI, asking_vc
 from datetime import datetime
 
 EJLX_ID = 189571157446492161
@@ -477,6 +477,7 @@ class EJLX(commands.Cog):
             return
         if not has_any_role(message.author, LANG_ROLE_IDS):
             await guess_lang(message)
+            await asking_vc(message)
             await self.troll_check(message)
         if message.channel.id == JP_CHAT:
             await jp_only(message) # kwargs has lang info
