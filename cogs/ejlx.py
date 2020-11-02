@@ -82,7 +82,7 @@ class ClubRole:
 
     @classmethod
     async def convert(cls, ctx, argument):
-        argument = re.sub(r'\W', '', argument)
+        argument = re.sub(r'[<>]', '', argument, 2)
         try:
             role = await commands.RoleConverter().convert(ctx, argument)
         except:
