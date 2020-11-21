@@ -169,8 +169,8 @@ def parse_language(message):
     return (lang, escaped, emojis)
 
 
-QUESTION = ['how', 'why', 'y']
-VERB = ['access', 'join', 'use', 'enter']
+QUESTION = ['how', 'why', 'y', "can't", 'can', 'cant']
+VERB = ['access', 'join', 'use', 'unlock', 'enter']
 VC = ['vc', 'vcs', 'voice']
 LOCK = ['locked', 'lock']
 
