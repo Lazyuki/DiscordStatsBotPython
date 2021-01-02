@@ -8,6 +8,7 @@ from collections import namedtuple
 
 from .utils.resolver import has_role, has_any_role
 from .utils.parser import guess_lang, JP_EMOJI, EN_EMOJI, OL_EMOJI, asking_vc
+from .utils.user_interaction import wait_for_reaction
 from datetime import datetime
 
 EJLX_ID = 189571157446492161
@@ -56,6 +57,8 @@ NU_ROLE = {
 }
 NF_ROLE = 196106229813215234
 NF_ONLY_ROLE = 378668720417013760
+CHAT_MUTE_ROLE = 259181555803619329
+ACTIVE_STAFF_ROLE = 240647591770062848
 
 ROLES = [NJ_ROLE, FJ_ROLE, NE_ROLE, FE_ROLE, OL_ROLE, NU_ROLE]
 ROLE_IDS = [r['id'] for r in ROLES]
@@ -430,6 +433,27 @@ class EJLX(commands.Cog):
                 msg.channel.send(f"**{msg.author.name}**, you've been tagged as <@&{tagged}> by {user.name}!")
             )
 
+    async def mention_spam(self, message):
+        if len(message.role_mentions) > 3:
+            # role mention spam
+            await message.author.add_roles(CHAT_MUTE_ROLE, reason='Role mention spam')
+            embed = discord.Embed(colour=0xff0000)
+            embed.title = f'FOR THOSE WHO GOT PINGED'
+            embed.description = f'{message.author} pinged roles: {", ".join(message.role_mentions)}\n\nWhile this message was most likely a spam, all of these roles are **self-assignable** in <#189585230972190720> and you probably assigned the roles yourself without reading the rules. Head over there to and unreact to remove the pingable roles.'
+            embed.timestamp = datetime.utcnow()
+            embed.set_footer(text=f'{message.author.name} has been muted. Mods can react with ❌ to ban them.')
+            ciri_message = await message.channel.send(f'<@&{ACTIVE_STAFF_ROLE}>', embed=embed)
+            await ciri_message.add_reaction('\N{CROSS MARK}')
+            banner = await wait_for_reaction(self.bot, message, '\N{CROSS MARK}')
+            await ciri_message.clear_reaction('\N{CROSS MARK}')
+            if banner is not None:
+                try:
+                    await message.author.ban(delete_message_days=0, reason=f'Issued by: {banner.name}. Role mention spam')
+                    await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} {message.author} has been banned.')
+                except:
+                    await message.channel.send(f'\N{CROSS MARK} {message.author} could not be banned.')
+
+
 
     async def troll_check(self, message):
         author = message.author
@@ -480,6 +504,7 @@ class EJLX(commands.Cog):
             await guess_lang(message)
             await asking_vc(message)
             await self.troll_check(message)
+        await self.mention_spam(message)
         if message.channel.id == JP_CHAT:
             await jp_only(message) # kwargs has lang info
         elif message.channel.id == JP_BEGINNER:
