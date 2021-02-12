@@ -7,7 +7,7 @@ import logging
 from collections import namedtuple
 
 from .utils.resolver import has_role, has_any_role
-from .utils.parser import guess_lang, JP_EMOJI, EN_EMOJI, OL_EMOJI, asking_vc
+from .utils.parser import guess_lang, JP_EMOJI, EN_EMOJI, OL_EMOJI, asking_vc, REGEX_DISCORD_OBJ
 from .utils.user_interaction import wait_for_reaction
 from datetime import datetime
 
@@ -65,6 +65,7 @@ ROLE_IDS = [r['id'] for r in ROLES]
 LANG_ROLE_IDS = [r for r in ROLE_IDS if r != NU_ROLE['id']]
 
 MUSIC_BOT_REGEX = re.compile(r'^[%=>][a-zA-Z]+')
+N_WORD_REGEX = re.compile(r'n(i|1)gg(e|3|a)r?s?')
 
 def get_role_by_short(short):
     for role in ROLES:
@@ -281,6 +282,8 @@ class EJLX(commands.Cog):
                 embed.description = f'If you want to leave this club, type `,leave {role.name}`'
                 embed.set_footer(text=f'pinged by {message.author.name}#{message.author.discriminator}')
                 await message.channel.send(embed=embed)
+            elif role.id == ACTIVE_STAFF_ROLE:
+                self.staff_ping(message)
 
 
     @commands.Cog.listener()
@@ -452,27 +455,34 @@ class EJLX(commands.Cog):
                     await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} {message.author} has been banned.')
                 except:
                     await message.channel.send(f'\N{CROSS MARK} {message.author} could not be banned.')
-
+        elif len(message.user_mentions) > 7:
+            pass
 
 
     async def troll_check(self, message):
+        pass
+
+    async def new_user_troll_check(self, message):
         author = message.author
         content = message.clean_content
         timestamp = discord.utils.snowflake_time(message.id)
+        if N_WORD_REGEX.match(message.content.lower().replace(" ", "")):
+            await author.ban(delete_message_days=1, reason="Auto-banned for a new user using the N-word")
+            await message.channel.send(f'{author.mention} has been banned automatically')
+            return
 
         for nu in self.troll_msgs:
             if nu['id'] == author.id:
-                if nu['count'] == content and len(content) > 5:
+                if (nu['content'] == content or nu['content'] + nu['content'] == content) and len(content) >= 5:
                     nu['count'] += 1
-                    if nu['count'] >= 5:
-
-                        if (timestamp - nu['timestamp']).total_seconds() <= 5:
-                            await author.ban(delete_message_days=1, resason="Troll detected. The user has sent the same message 5 times in a row within 5 seconds")
-                            await message.channel.send(f'{author.mention} has been banned automatically due to spamming')
+                    if nu['count'] >= 3:
+                        if (timestamp - nu['timestamp']).total_seconds() <= 10:
+                            await author.ban(delete_message_days=1, resason="Troll detected. The user has sent the same message 3 times in a row within 10 seconds")
+                            await message.channel.send(f'{author.mention} has been banned automatically due to spamming same messages')
                             await message.guild.get_channel(self.settings[message.guild.id].log_channel_id).send(f'{author.mention} repeatedly sent:\n{content}')
                         else:
-                            await author.add_roles(259181555803619329, resason="Possible spam detected. The user has sent the same message 5 times in a row") 
-                            await message.channel.send(f'{author.mention} has been muted automatically due to spamming')
+                            await author.add_roles(CHAT_MUTE_ROLE, resason="Possible spam detected. The user has sent the same message 3 times in a row") 
+                            await message.channel.send(f'{author.mention} has been muted automatically due to spamming same messages. Contact mods.')
                         nu['count'] = 1
                         nu['timestamp'] = timestamp
 
@@ -492,8 +502,38 @@ class EJLX(commands.Cog):
         if len(self.troll_msgs) > 20:
             self.troll_msgs.pop(0)
 
+    async def staff_ping(self, message):
+        msg_content = re.sub(REGEX_DISCORD_OBJ, '', message.content)
+        if has_any_role(message.author, LANG_ROLE_IDS) and len(msg_content) < 20:
+            messages = await message.channel.history(limit=20).flatten()
+            new_users = {}
+            for m in messages:
+                author = m.author
+                if N_WORD_REGEX.match(m.content.lower().replace(" ", "")):
+                    await author.ban(delete_message_days=1, reason="Auto-banned for using the N-word")
+                    await message.channel.send(f'{author.mention} has been banned automatically')
+                    continue
+                if author.joined and not has_any_role(author, LANG_ROLE_IDS):
+                    if author.id not in new_users:
+                        new_users[author.id] = author
+                    
+            if len(new_users) > 1:
+                now = datetime.now()
+                ciri_message = await message.channel.send(f'Found {len(new_users)} new users:\n{[f"{n.mention}: {n.name} joined {(now - n.joined).total_seconds() / 60}mins ago\n" for n in new_users]}\n\nMods can react with ❌ to BAN them')
+                await ciri_message.add_reaction('\N{CROSS MARK}')
+                banner = await wait_for_reaction(self.bot, message, '\N{CROSS MARK}', timeout=100)
+                await ciri_message.clear_reaction('\N{CROSS MARK}')
+                if banner is not None:
+                    for member in new_users:
+                        try:
+                            await member.ban(delete_message_days=0, reason=f'Issued by: {banner.name}. Role mention spam')
+                            await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} {member} has been banned.')
+                        except:
+                            await message.channel.send(f'\N{CROSS MARK} {member} could not be banned.') 
 
-    
+
+
+
     @commands.Cog.listener()
     async def on_safe_message(self, message, **kwargs):
         if self.bot.config.debugging:
@@ -503,7 +543,8 @@ class EJLX(commands.Cog):
         if not has_any_role(message.author, LANG_ROLE_IDS):
             await guess_lang(message)
             await asking_vc(message)
-            await self.troll_check(message)
+            await self.new_user_troll_check(message)
+        await self.troll_check(message)
         await self.mention_spam(message)
         if message.channel.id == JP_CHAT:
             await jp_only(message) # kwargs has lang info
