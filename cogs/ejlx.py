@@ -473,7 +473,7 @@ class EJLX(commands.Cog):
 
         for nu in self.troll_msgs:
             if nu['id'] == author.id:
-                if (nu['content'] == content or nu['content'] + nu['content'] == content) and len(content) >= 5:
+                if nu['content'] == content or nu['content'] + nu['content'] == content:
                     nu['count'] += 1
                     if nu['count'] >= 3:
                         if (timestamp - nu['timestamp']).total_seconds() <= 10:
@@ -486,12 +486,12 @@ class EJLX(commands.Cog):
                         nu['count'] = 1
                         nu['timestamp'] = timestamp
 
-                else:
+                elif len(content) >= 5:
                     nu['content'] = content
                     nu['count'] = 1
                     nu['timestamp'] = timestamp
                 break
-        else:
+        elif len(content) >= 5:
             self.troll_msgs.append({
                 "id": author.id,
                 "content": content,
@@ -499,7 +499,7 @@ class EJLX(commands.Cog):
                 "timestamp": timestamp
             })
         
-        if len(self.troll_msgs) > 20:
+        if len(self.troll_msgs) > 10:
             self.troll_msgs.pop(0)
 
     async def staff_ping(self, message):
@@ -514,6 +514,11 @@ class EJLX(commands.Cog):
                     await message.channel.send(f'{author.mention} has been banned automatically')
                     continue
                 if author.joined and not has_any_role(author, LANG_ROLE_IDS):
+                    if '死ね' in m.content:
+                        await author.ban(delete_message_days=1, reason="Auto-banned a new user for saying 死ね")
+                        await message.channel.send(f'{author.mention} has been banned automatically')
+                        continue
+
                     if author.id not in new_users:
                         new_users[author.id] = author
                     
