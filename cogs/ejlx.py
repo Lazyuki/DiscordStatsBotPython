@@ -531,7 +531,8 @@ class EJLX(commands.Cog):
                     
             if len(new_users) > 1:
                 now = datetime.now()
-                ciri_message = await message.channel.send(f'Found {len(new_users)} new users:\n{[f"{new_users[n].mention}: {new_users[n].name} joined {(now - new_users[n].joined).total_seconds() / 60}mins ago\n" for n in new_users]}\n\nMods can react with ❌ to BAN them')
+                nl = '\n'
+                ciri_message = await message.channel.send(f'Found {len(new_users)} new users:\n{[f"{new_users[n].mention}: {new_users[n].name} joined {(now - new_users[n].joined).total_seconds() / 60}mins ago{nl}" for n in new_users]}\n\nMods can react with ❌ to BAN them')
                 await reaction_ban(ciri_message, [new_users[n] for n in new_users])
 
 
