@@ -497,13 +497,14 @@ class EJLX(commands.Cog):
                     nu['count'] = 1
                     nu['timestamp'] = timestamp
                 break
-        elif len(content) >= 5:
-            self.troll_msgs.append({
-                "id": author.id,
-                "content": content,
-                "count": 1,
-                "timestamp": timestamp
-            })
+        else:
+            if len(content) >= 5:
+                self.troll_msgs.append({
+                    "id": author.id,
+                    "content": content,
+                    "count": 1,
+                    "timestamp": timestamp
+                })
         
         if len(self.troll_msgs) > 10:
             self.troll_msgs.pop(0)
