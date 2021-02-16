@@ -477,12 +477,12 @@ class EJLX(commands.Cog):
                     nu['count'] += 1
                     if nu['count'] >= 3:
                         if (timestamp - nu['timestamp']).total_seconds() <= 10:
-                            await author.ban(delete_message_days=1, resason="Troll detected. The user has sent the same message 3 times in a row within 10 seconds")
-                            await message.channel.send(f'{author.mention} has been banned automatically due to spamming same messages')
-                            await message.guild.get_channel(self.settings[message.guild.id].log_channel_id).send(f'{author.mention} repeatedly sent:\n{content}')
-                        else:
+                            # ban is too harsh?
+                            # await author.ban(delete_message_days=1, resason="Troll detected. The user has sent the same message 3 times in a row within 10 seconds")
+                            # await message.channel.send(f'{author.mention} has been banned automatically due to spamming same messages')
+                            # await message.guild.get_channel(self.settings[message.guild.id].log_channel_id).send(f'{author.mention} repeatedly sent:\n{content}')
                             await author.add_roles(CHAT_MUTE_ROLE, resason="Possible spam detected. The user has sent the same message 3 times in a row") 
-                            await message.channel.send(f'{author.mention} has been muted automatically due to spamming same messages. Contact mods.')
+                            await message.channel.send(f'<@&{ACTIVE_STAFF_ROLE}> {author.mention} has been muted automatically due to spamming the same message 3 times in a row.')
                         nu['count'] = 1
                         nu['timestamp'] = timestamp
 
@@ -524,14 +524,15 @@ class EJLX(commands.Cog):
                     
             if len(new_users) > 1:
                 now = datetime.now()
-                ciri_message = await message.channel.send(f'Found {len(new_users)} new users:\n{[f"{n.mention}: {n.name} joined {(now - n.joined).total_seconds() / 60}mins ago\n" for n in new_users]}\n\nMods can react with ❌ to BAN them')
+                ciri_message = await message.channel.send(f'Found {len(new_users)} new users:\n{[f"{new_users[n].mention}: {new_users[n].name} joined {(now - new_users[n].joined).total_seconds() / 60}mins ago\n" for n in new_users]}\n\nMods can react with ❌ to BAN them')
                 await ciri_message.add_reaction('\N{CROSS MARK}')
                 banner = await wait_for_reaction(self.bot, message, '\N{CROSS MARK}', timeout=100)
                 await ciri_message.clear_reaction('\N{CROSS MARK}')
                 if banner is not None:
-                    for member in new_users:
+                    for mem_id in new_users:
+                        member = new_users[mem_id]
                         try:
-                            await member.ban(delete_message_days=0, reason=f'Issued by: {banner.name}. Role mention spam')
+                            await member.ban(delete_message_days=1, reason=f'Issued by: {banner.name}. Role mention spam')
                             await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} {member} has been banned.')
                         except:
                             await message.channel.send(f'\N{CROSS MARK} {member} could not be banned.') 
