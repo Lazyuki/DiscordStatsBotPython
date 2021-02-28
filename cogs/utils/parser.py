@@ -36,7 +36,7 @@ JP_STUDY = re.compile(r'(?:日本語|英語).?勉強')
 # Emojis
 JP_EMOJI = '<:japanese:439733745390583819>'
 EN_EMOJI = '<:english:439733745591779328>'
-OL_EMOJI = '<:other_lang:439733745491116032>'
+OL_EMOJI = '<:other_lang:815698119810875453>'
 
 
 async def guess_lang(message):
