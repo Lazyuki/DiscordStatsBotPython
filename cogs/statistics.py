@@ -180,7 +180,7 @@ class Stats(commands.Cog):
     async def server(self, ctx):
         pass
 
-    @commands.command(aliases=['age'])
+    @commands.command(aliases=['joined'])
     async def age(self, ctx, *, member: commands.MemberConverter = None):
         if member is None:
             member = ctx.author
