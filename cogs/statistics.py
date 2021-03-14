@@ -201,7 +201,7 @@ class Stats(commands.Cog):
             return f'{rank}) {member.name}'
         now = datetime.now()
         def count_resolver(record):
-            return (now - record.joinedAt).days
+            return (now - record.joined_at).days
         def count_to_str(count):
             return f'{count} days'
         leaderboard = PaginatedLeaderboard(ctx, records=members_by_joined_date, title='Members by join date', description='Duration in days', field_name_resolver=name_resolver, record_to_count=count_resolver, count_to_string=count_to_str, record_to_value=lambda r: r.joined_at)
