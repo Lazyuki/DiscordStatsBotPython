@@ -9,6 +9,7 @@ class PaginatedLeaderboard:
         rank_for='user_id',
         find_record=None,
         field_name_resolver=None,
+        record_to_value=None,
         record_to_rank=lambda r: r['rank'],
         record_to_count=lambda r: r['count'],
         count_to_string=lambda x: x,
@@ -19,6 +20,7 @@ class PaginatedLeaderboard:
         self.records = records
         self.rank_for = rank_for
         self.find_record = find_record
+        self.record_to_value = record_to_value or lambda r: r[self.rank_for]
         self.name_resolver = field_name_resolver or self.user_resolver
         self.record_to_rank = record_to_rank
         self.record_to_count = record_to_count
@@ -32,7 +34,7 @@ class PaginatedLeaderboard:
 
         self.total_pages = total
         self.current_page = None
-        if find_record and 'rank' in find_record:
+        if find_record:
             self.find_record_page = self.record_to_rank(find_record) // per_page
         else:
             self.find_record_page = None
@@ -71,7 +73,7 @@ class PaginatedLeaderboard:
         embed.description = self.description
 
         for record in self.records[start:end]:
-            record_value = record[self.rank_for]
+            record_value = self.record_to_value(record)
             rank = self.record_to_rank(record)
             name = self.name_resolver(rank, record_value, record)
             embed.add_field(name=name, value=self.count_to_string(self.record_to_count(record)))

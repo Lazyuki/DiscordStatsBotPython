@@ -189,7 +189,7 @@ class Stats(commands.Cog):
         embed.timestamp = member.joined_at
         members_by_joined_date = sorted(ctx.guild.members, key=lambda m: m.joined_at)
         duration = datetime.now() - member.joined_at
-        rank = next((i for i, e in enumerate(members_by_joined_date) if e.id == member.id), None)
+        rank = next((i for i, e in enumerate(members_by_joined_date) if e.id == member.id), -1) + 1
         suffix = { 1: "st", 2: "nd", 3: "rd" }.get(rank if rank < 20 else rank % 10, 'th')
         embed.description = f'Member for {format_timedelta(duration)}\n({duration.days}) days\n\n**{rank}**{suffix} oldest member'
         await ctx.send(embed=embed)
@@ -204,7 +204,7 @@ class Stats(commands.Cog):
             return (now - record.joinedAt).days
         def count_to_str(count):
             return f'{count} days'
-        leaderboard = PaginatedLeaderboard(ctx, records=members_by_joined_date, title='Members by join date', description='Only current members', rank_for='emoji', field_name_resolver=name_resolver, record_to_count=count_resolver, count_to_string=count_to_str)
+        leaderboard = PaginatedLeaderboard(ctx, records=members_by_joined_date, title='Members by join date', description='Only current members', rank_for='emoji', field_name_resolver=name_resolver, record_to_count=count_resolver, count_to_string=count_to_str, record_to_value=lambda r: r.joined_at)
         await leaderboard.build()
 
 
