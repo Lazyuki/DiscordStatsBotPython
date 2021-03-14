@@ -191,20 +191,20 @@ class Stats(commands.Cog):
         duration = datetime.now() - member.joined_at
         rank = next((i for i, e in enumerate(members_by_joined_date) if e.id == member.id), -1) + 1
         suffix = { 1: "st", 2: "nd", 3: "rd" }.get(rank if rank < 20 else rank % 10, 'th')
-        embed.description = f'Member for {format_timedelta(duration)}\n({duration.days}) days\n\n**{rank}**{suffix} oldest member'
+        embed.description = f'Member for {format_timedelta(duration)}\n({duration.days} days)\n\n**{rank}** {suffix} member'
         await ctx.send(embed=embed)
 
     @commands.command(aliases=['al'])
     async def age_leaderboard(self, ctx):
         members_by_joined_date = sorted(ctx.guild.members, key=lambda m: m.joined_at)
-        def name_resolver(r, r2, record):
-            return record.name
+        def name_resolver(rank, r2, member):
+            return f'{rank}) {record.name}'
         now = datetime.now()
         def count_resolver(record):
             return (now - record.joinedAt).days
         def count_to_str(count):
             return f'{count} days'
-        leaderboard = PaginatedLeaderboard(ctx, records=members_by_joined_date, title='Members by join date', description='Only current members', rank_for='emoji', field_name_resolver=name_resolver, record_to_count=count_resolver, count_to_string=count_to_str, record_to_value=lambda r: r.joined_at)
+        leaderboard = PaginatedLeaderboard(ctx, records=members_by_joined_date, title='Members by join date', description='Duration in days', field_name_resolver=name_resolver, record_to_count=count_resolver, count_to_string=count_to_str, record_to_value=lambda r: r.joined_at)
         await leaderboard.build()
 
 

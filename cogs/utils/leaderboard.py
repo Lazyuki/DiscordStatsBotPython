@@ -7,6 +7,7 @@ class PaginatedLeaderboard:
         title='Leaderboard',
         description='For the last 30 days (UTC)',
         rank_for='user_id',
+        use_relative_rank=True,
         find_record=None,
         field_name_resolver=None,
         record_to_value=None,
@@ -72,9 +73,9 @@ class PaginatedLeaderboard:
         embed.title = self.title
         embed.description = self.description
 
-        for record in self.records[start:end]:
+        for [index, record] in enumerate(self.records[start:end], start=start):
             record_value = self.record_to_value(record)
-            rank = self.record_to_rank(record)
+            rank = index + 1 if use_relative_rank else self.record_to_rank(record)
             name = self.name_resolver(rank, record_value, record)
             embed.add_field(name=name, value=self.count_to_string(self.record_to_count(record)))
 
