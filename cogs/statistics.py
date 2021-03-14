@@ -198,7 +198,7 @@ class Stats(commands.Cog):
     async def age_leaderboard(self, ctx):
         members_by_joined_date = sorted(ctx.guild.members, key=lambda m: m.joined_at)
         def name_resolver(rank, r2, member):
-            return f'{rank}) {record.name}'
+            return f'{rank}) {member.name}'
         now = datetime.now()
         def count_resolver(record):
             return (now - record.joinedAt).days
