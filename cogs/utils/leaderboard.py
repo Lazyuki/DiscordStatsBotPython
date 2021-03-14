@@ -20,6 +20,7 @@ class PaginatedLeaderboard:
         self.bot = ctx.bot
         self.records = records
         self.rank_for = rank_for
+        self.use_relative_rank = use_relative_rank
         self.find_record = find_record
         self.record_to_value = record_to_value or (lambda r: r[self.rank_for])
         self.name_resolver = field_name_resolver or self.user_resolver
@@ -75,7 +76,7 @@ class PaginatedLeaderboard:
 
         for [index, record] in enumerate(self.records[start:end], start=start):
             record_value = self.record_to_value(record)
-            rank = index + 1 if use_relative_rank else self.record_to_rank(record)
+            rank = index + 1 if self.use_relative_rank else self.record_to_rank(record)
             name = self.name_resolver(rank, record_value, record)
             embed.add_field(name=name, value=self.count_to_string(self.record_to_count(record)))
 
