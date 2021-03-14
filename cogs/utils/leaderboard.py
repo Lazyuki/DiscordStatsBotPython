@@ -20,7 +20,7 @@ class PaginatedLeaderboard:
         self.records = records
         self.rank_for = rank_for
         self.find_record = find_record
-        self.record_to_value = record_to_value or lambda r: r[self.rank_for]
+        self.record_to_value = record_to_value or (lambda r: r[self.rank_for])
         self.name_resolver = field_name_resolver or self.user_resolver
         self.record_to_rank = record_to_rank
         self.record_to_count = record_to_count
