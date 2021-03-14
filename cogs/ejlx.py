@@ -472,7 +472,7 @@ class EJLX(commands.Cog):
         content = message.clean_content
         timestamp = discord.utils.snowflake_time(message.id)
         if N_WORD_REGEX.match(message.content.lower().replace(" ", "")):
-            await author.ban(delete_message_days=1, reason="Auto-banned for a new user using the N-word")
+            await author.ban(delete_message_days=1, reason="Auto-banned for new user using the N-word")
             await message.channel.send(f'{author.mention} has been banned automatically')
             return
 
@@ -522,7 +522,7 @@ class EJLX(commands.Cog):
                     continue
                 if author.joined and not has_any_role(author, LANG_ROLE_IDS):
                     if '死ね' in m.content:
-                        await author.ban(delete_message_days=1, reason="Auto-banned a new user for saying 死ね")
+                        await author.ban(delete_message_days=1, reason="Auto-banned for new user saying 死ね")
                         await message.channel.send(f'{author.mention} has been banned automatically')
                         continue
 

@@ -171,7 +171,7 @@ def parse_language(message):
 
 QUESTION = ['how', 'why', 'y', "can't", 'can', 'cant']
 VERB = ['access', 'join', 'use', 'unlock', 'enter']
-VC = ['vc', 'vcs', 'voice']
+VC = ['vc', 'vcs', 'voice', 'call', 'room', 'calls']
 LOCK = ['locked', 'lock']
 
 
@@ -187,3 +187,23 @@ async def asking_vc(message):
             asking = True
     if vc and asking:
         await message.channel.send(f'{message.author.mention} As mentioned in <#189585230972190720>, you need a language role to join voice chat. Please say what your native language is {"here" if message.channel.id == 189571157446492161 else "in <#189571157446492161>"}')
+
+def format_timedelta(timedelta):
+    seconds = int(timedelta.total_seconds())
+    periods = [
+        ('year',        60*60*24*365),
+        ('month',       60*60*24*30),
+        ('day',         60*60*24),
+        ('hour',        60*60),
+        ('minute',      60),
+        ('second',      1)
+    ]
+
+    strings=[]
+    for period_name, period_seconds in periods:
+        if seconds > period_seconds:
+            period_value , seconds = divmod(seconds, period_seconds)
+            has_s = 's' if period_value > 1 else ''
+            strings.append("%s %s%s" % (period_value, period_name, has_s))
+
+    return ", ".join(strings)

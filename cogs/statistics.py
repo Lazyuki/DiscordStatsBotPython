@@ -6,7 +6,7 @@ import asyncio
 import asyncpg
 import re
 from datetime import datetime, date, timedelta
-from .utils.parser import REGEX_CUSTOM_EMOJIS, REGEX_BOT_COMMANDS
+from .utils.parser import REGEX_CUSTOM_EMOJIS, REGEX_BOT_COMMANDS, format_timedelta
 from .utils.resolver import resolve_minimum_channel, resolve_user_id, has_role, resolve_role, resolve_options
 from .utils.leaderboard import PaginatedLeaderboard
 from .ejlx import JP_EMOJI, EN_EMOJI, OL_EMOJI, NJ_ROLE
@@ -179,6 +179,34 @@ class Stats(commands.Cog):
     @commands.command(aliases=['s', 'sinfo'])
     async def server(self, ctx):
         pass
+
+    @commands.command(aliases=['age'])
+    async def age(self, ctx, *, member: commands.MemberConverter = None):
+        if member is None:
+            member = ctx.author
+        embed = discord.Embed(colour=0x3A8EDB) 
+        embed.set_footer(text='Joined')
+        embed.timestamp = member.joined_at
+        members_by_joined_date = sorted(ctx.guild.members, key=lambda m: m.joined_at)
+        duration = datetime.now() - member.joined_at
+        rank = next((i for i, e in enumerate(members_by_joined_date) if e.id == member.id), None)
+        suffix = { 1: "st", 2: "nd", 3: "rd" }.get(rank if rank < 20 else rank % 10, 'th')
+        embed.description = f'Joined {format_timedelta(duration)} ago\n{rank}{suffix} oldest member'
+        await ctx.send(embed=embed)
+
+    @commands.command(aliases=['al'])
+    async def age_leaderboard(self, ctx):
+        members_by_joined_date = sorted(ctx.guild.members, key=lambda m: m.joined_at)
+        def name_resolver(r, r2, record):
+            return record.name
+        now = datetime.now()
+        def count_resolver(record):
+            return (now - record.joinedAt).days
+        def count_to_str(count):
+            return f'{count} days'
+        leaderboard = PaginatedLeaderboard(ctx, records=members_by_joined_date, title='Members by join date', description='Only current members', rank_for='emoji', field_name_resolver=name_resolver, record_to_count=record_to_count, count_to_string=count_to_str)
+        await leaderboard.build()
+
 
 
     @commands.command(aliases=['l', 'lb'])
@@ -411,7 +439,7 @@ class Stats(commands.Cog):
     async def emoji_leaderboard(self, ctx, *, args=''):
         """
         Emoji leaderbaord.
-        Usage: ",,emoji [--server] [--percentile <number between 0-1>] [--users]"
+        Usage: ",,emoji [--server] [--percentile <number between 0-1>] [--users] [--emoji <emoji>]"
         Options:
            server: Only emojis in the server
            percentile: Emoji count in the percentile. Good for ignoring a few top users
