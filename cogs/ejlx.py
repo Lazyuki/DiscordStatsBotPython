@@ -65,7 +65,7 @@ ROLE_IDS = [r['id'] for r in ROLES]
 LANG_ROLE_IDS = [r for r in ROLE_IDS if r != NU_ROLE['id']]
 
 MUSIC_BOT_REGEX = re.compile(r'^[%=>][a-zA-Z]+')
-N_WORD_REGEX = re.compile(r'n(i|1)gg(e|3|a)r?s?')
+N_WORD_REGEX = re.compile(r'n(i|1)gg(e|3)r?s?')
 
 def get_role_by_short(short):
     for role in ROLES:
@@ -284,7 +284,7 @@ class EJLX(commands.Cog):
                 embed.set_footer(text=f'pinged by {message.author.name}#{message.author.discriminator}')
                 await message.channel.send(embed=embed)
             elif role.id == ACTIVE_STAFF_ROLE:
-                self.staff_ping(message)
+                await self.staff_ping(message)
 
 
     @commands.Cog.listener()
@@ -469,6 +469,7 @@ class EJLX(commands.Cog):
         author = message.author
         content = message.clean_content
         timestamp = message.created_at 
+        msg_len = len(re.sub(REGEX_DISCORD_OBJ, '', message.content))
 
         for nu in self.troll_msgs:
             if nu['id'] == author.id:
@@ -476,36 +477,34 @@ class EJLX(commands.Cog):
                     nu['count'] += 1
                     if nu['count'] >= 5:
                         if (timestamp - nu['timestamp']).total_seconds() <= 60:
-                            # ban is too harsh?
-                            # await author.ban(delete_message_days=1, resason="Troll detected. The user has sent the same message 3 times in a row within 10 seconds")
-                            # await message.channel.send(f'{author.mention} has been banned automatically due to spamming same messages')
-                            # await message.guild.get_channel(self.settings[message.guild.id].log_channel_id).send(f'{author.mention} repeatedly sent:\n{content}')
-                            await author.add_roles(CHAT_MUTE_ROLE, resason="Possible spam detected. The user has sent the same message 3 times in a row") 
-                            prompt = await message.channel.send(f'<@&{ACTIVE_STAFF_ROLE}> {author.mention} has been muted automatically due to spamming the same message 3 times in a row.\nMods can react with ❌ to ban them')
+                            await author.add_roles(CHAT_MUTE_ROLE, resason="Possible spam detected. The user has sent the same message 5 times in a row")
+                            prompt = await message.channel.send(f'<@&{ACTIVE_STAFF_ROLE}> {author.mention} has been muted automatically due to spamming the same message 5 times in a row.\nMods can click ❌ to ban them')
                             await reaction_ban(prompt, [author]) 
                         nu['count'] = 1
                         nu['timestamp'] = timestamp
 
-                elif len(content) >= 5:
+                elif msg_len >= 12:
                     nu['content'] = content
                     nu['count'] = 1
                     nu['timestamp'] = timestamp
                 break
         else:
-            if len(content) >= 5:
-                self.nu_troll_msgs.append({
+            if msg_len >= 12:
+                self.troll_msgs.append({
                     "id": author.id,
                     "content": content,
                     "count": 1,
                     "timestamp": timestamp
                 })
-        if len(self.nu_troll_msgs) > 30:
-            self.nu_troll_msgs.pop(0)
+        if len(self.troll_msgs) > 30:
+            self.troll_msgs.pop(0)
 
     async def new_user_troll_check(self, message):
         author = message.author
         content = message.clean_content
         timestamp = discord.utils.snowflake_time(message.id)
+        msg_len = len(re.sub(REGEX_DISCORD_OBJ, '', message.content))
+
         if N_WORD_REGEX.match(message.content.lower().replace(" ", "")):
             await author.ban(delete_message_days=1, reason="Auto-banned for new user using the N-word")
             await message.channel.send(f'{author.mention} has been banned automatically')
@@ -522,18 +521,18 @@ class EJLX(commands.Cog):
                             # await message.channel.send(f'{author.mention} has been banned automatically due to spamming same messages')
                             # await message.guild.get_channel(self.settings[message.guild.id].log_channel_id).send(f'{author.mention} repeatedly sent:\n{content}')
                             await author.add_roles(CHAT_MUTE_ROLE, resason="Possible spam detected. The user has sent the same message 3 times in a row") 
-                            prompt = await message.channel.send(f'<@&{ACTIVE_STAFF_ROLE}> {author.mention} has been muted automatically due to spamming the same message 3 times in a row.\nMods can react with ❌ to ban them')
+                            prompt = await message.channel.send(f'<@&{ACTIVE_STAFF_ROLE}> {author.mention} has been muted automatically due to spamming the same message 3 times in a row.\nMods can click ❌ once to ban them')
                             await reaction_ban(prompt, [author]) 
                         nu['count'] = 1
                         nu['timestamp'] = timestamp
 
-                elif len(content) >= 5:
+                elif msg_len >= 7:
                     nu['content'] = content
                     nu['count'] = 1
                     nu['timestamp'] = timestamp
                 break
         else:
-            if len(content) >= 5:
+            if msg_len >= 7:
                 self.nu_troll_msgs.append({
                     "id": author.id,
                     "content": content,
@@ -546,7 +545,15 @@ class EJLX(commands.Cog):
 
     async def staff_ping(self, message):
         msg_content = re.sub(REGEX_DISCORD_OBJ, '', message.content)
+        now = datetime.now()
         if has_any_role(message.author, LANG_ROLE_IDS) and len(msg_content) < 20:
+            if message.reference:
+                if message.reference.cached_message:
+                    bannee = message.reference.cached_message.author
+                    ciri_message = await message.channel.send(
+                        f'{bannee}: {bannee.name} joined {(now - bannee.joined).total_seconds() / 60}mins ago\n\nMods can click ❌ once to BAN them')
+                    await reaction_ban(ciri_message, [bannee])
+                return
             messages = await message.channel.history(limit=20).flatten()
             new_users = {}
             for m in messages:
@@ -565,9 +572,9 @@ class EJLX(commands.Cog):
                         new_users[author.id] = author
                     
             if len(new_users) > 1:
-                now = datetime.now()
                 nl = '\n'
-                ciri_message = await message.channel.send(f'Found {len(new_users)} new users:\n{[f"{new_users[n].mention}: {new_users[n].name} joined {(now - new_users[n].joined).total_seconds() / 60}mins ago{nl}" for n in new_users]}\n\nMods can react with ❌ to BAN them')
+                ciri_message = await message.channel.send(
+                    f'Found {len(new_users)} new users:\n{[f"{new_users[n].mention}: {new_users[n].name} joined {(now - new_users[n].joined).total_seconds() / 60}mins ago{nl}" for n in new_users]}\n\nMods can click ❌ once to BAN all of them')
                 await reaction_ban(ciri_message, [new_users[n] for n in new_users])
 
 
