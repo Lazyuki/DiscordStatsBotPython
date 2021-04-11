@@ -578,15 +578,16 @@ class EJLX(commands.Cog):
                 await reaction_ban(ciri_message, [new_users[n] for n in new_users])
 
     async def check_jap(self, message):
-        logging.info(f'first: {message.content[0]}')
         if message.content[0] in [',', '.', ';']:
             return
         words = re.split(r'\W+', message.content.lower())
-        logging.info(f'words: {words}')
         bucket = self._message_cooldown.get_bucket(message)
+        logging.info(f'words: {words}')
         for word in words:
             if word == 'jap' or word == 'japs':
+                logging.info(f'word: {word}')
                 current = message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
+                logging.info(f'curr: {current}')
                 retry_after = bucket.update_rate_limit(current) 
                 logging.info(f'retry after: {retry_after}')
                 if not retry_after:
