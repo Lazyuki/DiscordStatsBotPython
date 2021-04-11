@@ -130,6 +130,7 @@ class EJLX(commands.Cog):
         self.troll_msgs = []
         self.nu_troll_msgs = []
         self.raidwatcher = RaidWatcher()
+        self._message_cooldown = commands.CooldownMapping.from_cooldown(1, 120, commands.BucketType.channel)
 
     async def cog_check(self, ctx):
         return ctx.guild.id == EJLX_ID
@@ -358,9 +359,8 @@ class EJLX(commands.Cog):
         message = await channel.fetch_message(message_id)
 
         if is_add:
-            reaction = discord.utils.find(lambda r: ('name' in r.emoji) and (r.emoji.name == emoji.name), message.reactions)
+            reaction = discord.utils.find(lambda r: r.emoji.name == emoji.name, message.reactions)
             if not reaction:
-                logging.warn(f'Reaction could not be found {emoji.name}, in message {message_id} in channel {channel_id}, reactions size: {len(message.reactions)}')
                 return
             await self.reaction_language(reaction, member)
         else:
@@ -577,6 +577,24 @@ class EJLX(commands.Cog):
                     f'Found {len(new_users)} new users:\n{[f"{new_users[n].mention}: {new_users[n].name} joined {(now - new_users[n].joined).total_seconds() / 60}mins ago{nl}" for n in new_users]}\n\nMods can click ❌ once to BAN all of them')
                 await reaction_ban(ciri_message, [new_users[n] for n in new_users])
 
+    async def check_jap(self, message):
+        if message.content[0] in [',', '.', ';']:
+            return
+        words = re.split(r'\W+', message.content.lower())
+        bucket = self._message_cooldown.get_bucket(message)
+        for word in words:
+            if word == 'jap' or word == 'japs':
+                current = message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
+                if not bucket.update_rate_limit(current):
+                    embed = discord.Embed(colour=0xFF5500)
+                    embed.description = """
+                    We avoid "jap" on this server due to its historical use as a racial slur. We prefer "jp", "jpn", or "Japanese". Thanks for understanding.\n
+                    ([Some picture examples](https://imgur.com/a/lPVBo2y))\n
+                    ([Read more here](https://gist.github.com/ScoreUnder/e08b37a8af3c257107fc55fc7a8fcad6))
+                    """
+                    await message.reply(embed=embed)
+                return
+
 
 
     @commands.Cog.listener()
@@ -603,6 +621,7 @@ class EJLX(commands.Cog):
         if message.channel.id == BOT_CHANNEL:
             if MUSIC_BOT_REGEX.match(message.content):
                 await send_music_bot_notif(message)
+        await self.check_jap(message)
 
 
     @commands.Cog.listener()
