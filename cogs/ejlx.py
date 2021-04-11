@@ -9,7 +9,7 @@ from collections import namedtuple
 from .utils.resolver import has_role, has_any_role
 from .utils.parser import guess_lang, JP_EMOJI, EN_EMOJI, OL_EMOJI, asking_vc, REGEX_DISCORD_OBJ
 from .utils.user_interaction import wait_for_reaction
-from datetime import datetime
+from datetime import datetime, timezone
 
 EJLX_ID = 189571157446492161
 
@@ -582,14 +582,10 @@ class EJLX(commands.Cog):
             return
         words = re.split(r'\W+', message.content.lower())
         bucket = self._message_cooldown.get_bucket(message)
-        logging.info(f'words: {words}')
         for word in words:
             if word == 'jap' or word == 'japs':
-                logging.info(f'word: {word}')
-                current = message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
-                logging.info(f'curr: {current}')
+                current = message.created_at.replace(tzinfo=timezone.utc).timestamp()
                 retry_after = bucket.update_rate_limit(current) 
-                logging.info(f'retry after: {retry_after}')
                 if not retry_after:
                     embed = discord.Embed(colour=0xFF5500)
                     embed.description = """
