@@ -586,7 +586,7 @@ class EJLX(commands.Cog):
             if word == 'jap' or word == 'japs':
                 current = message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
                 retry_after = bucket.update_rate_limit(current) 
-                print(retry_after)
+                logging.info(retry_after)
                 if not retry_after:
                     embed = discord.Embed(colour=0xFF5500)
                     embed.description = """
