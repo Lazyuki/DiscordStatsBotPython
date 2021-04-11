@@ -585,7 +585,9 @@ class EJLX(commands.Cog):
         for word in words:
             if word == 'jap' or word == 'japs':
                 current = message.created_at.replace(tzinfo=datetime.timezone.utc).timestamp()
-                if not bucket.update_rate_limit(current):
+                retry_after = bucket.update_rate_limit(current) 
+                print(retry_after)
+                if not retry_after:
                     embed = discord.Embed(colour=0xFF5500)
                     embed.description = """
                     We avoid "jap" on this server due to its historical use as a racial slur. We prefer "jp", "jpn", or "Japanese". Thanks for understanding.\n
