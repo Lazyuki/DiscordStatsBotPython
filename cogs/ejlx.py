@@ -589,8 +589,8 @@ class EJLX(commands.Cog):
                 if not retry_after:
                     embed = discord.Embed(colour=0xFF5500)
                     embed.description = """
-                    We avoid "jap" on this server due to its historical use as a racial slur. We prefer "jp", "jpn", or "Japanese". Thanks for understanding.\n
-                    ([Some picture examples](https://imgur.com/a/lPVBo2y))\n
+                    We avoid "jap" on this server due to its historical use as a racial slur. We prefer "jp", "jpn", or "Japanese". Thanks for understanding.
+                    ([Some picture examples](https://imgur.com/a/lPVBo2y))
                     ([Read more here](https://gist.github.com/ScoreUnder/e08b37a8af3c257107fc55fc7a8fcad6))
                     """
                     await message.reply(embed=embed, mention_author=True)
