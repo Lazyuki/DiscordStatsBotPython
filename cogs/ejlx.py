@@ -593,7 +593,7 @@ class EJLX(commands.Cog):
                     ([Some picture examples](https://imgur.com/a/lPVBo2y))\n
                     ([Read more here](https://gist.github.com/ScoreUnder/e08b37a8af3c257107fc55fc7a8fcad6))
                     """
-                    await message.reply(embed=embed)
+                    await message.reply(embed=embed, mention_author=True)
                 return
 
 
