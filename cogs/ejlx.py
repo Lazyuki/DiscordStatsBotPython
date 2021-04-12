@@ -573,7 +573,7 @@ class EJLX(commands.Cog):
             await reaction_ban(ciri_message, [message.author], reason='Role mention spam', unmute_dismissed=True)
         elif len(message.mentions) > 10:
             await message.author.add_roles(CHAT_MUTE_ROLE, reason='User mention spam')
-            content = f'**POSSIBLE USER MENTION SPAM**\n{message.author.name} pinged {len(message.mentions)} people and has been automatically muted. <@&{ACTIVE_STAFF_ROLE}>\n\nMinimos can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message and unmute them')
+            content = f'**POSSIBLE USER MENTION SPAM**\n{message.author.name} pinged {len(message.mentions)} people and has been automatically muted. <@&{ACTIVE_STAFF_ROLE}>\n\nMinimos can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message and unmute them'
             ciri_message = await message.channel.send(content)
             await reaction_ban(ciri_message, [message.author], reason='User mention spam', delete_dismissed=True, unmute_dismissed=True)
 
