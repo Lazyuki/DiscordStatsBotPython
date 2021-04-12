@@ -733,7 +733,7 @@ class EJLX(commands.Cog):
 
                     clean_content = re.sub(REGEX_DISCORD_OBJ, '', m.content)
                     lower_content = clean_content.lower().replace(" ", "").replace("\n", "")
-                    if N_WORD_REGEX.match(lower_content)):
+                    if N_WORD_REGEX.match(lower_content):
                         user_points[author.id]["points"] += 100
                         user_points[author.id]["reasons"].append("Hard R N-word")
                     if ARABIC_REGEX.macth(lower_content) or HEBREW_REGEX.match(lower_content) or HANGUL_REGEX.match(lower_content) or CYRILLIC_REGEX.match(lower_content):
