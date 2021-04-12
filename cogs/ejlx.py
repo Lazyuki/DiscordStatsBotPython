@@ -74,7 +74,7 @@ HEBREW_REGEX = re.compile(r'^[\u0590-\u05FF\u200f\u200e]+$')
 HANGUL_REGEX = re.compile(r'^[\u3131-\uD79D]+$')
 CYRILLIC_REGEX = re.compile(r'^[\u0400-\u04FF]+$')
 N_WORD_REGEX = re.compile(r'n(i|1)gg(e|3)r?s?')
-BAD_WORDS_REGEX = re.compile(r'(fags?|faggots?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|japs?)')
+BAD_WORDS_REGEX = re.compile(r'(fags?|faggots?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|japs?|niggas?)')
 BAD_JP_WORDS_REGEX = re.compile(r'(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ)')
 INVITES_REGEX = re.compile(r'(https?://)?(www.)?(discord.(gg|io|me|li)|discord(app)?.com/invite)/.+[a-z]')
 
@@ -719,29 +719,23 @@ class EJLX(commands.Cog):
                         continue
                     if author.id not in user_points:
                         joined_hours_ago = time_since_join(author, unit='hour')
+                        user_points[author.id] = {
+                            "points": 0,
+                            "reasons": [],
+                            "user": author
+                        }
                         if joined_hours_ago < 1:
-                            user_points[author.id] = {
-                                "points": 5,
-                                "reasons": [],
-                                "user": author
-                            }
+                            user_points[author.id]["points"] = 5
                         elif joined_hours_ago < 24:
-                            user_points[author.id] = {
-                                "points": 3,
-                                "reasons": [],
-                                "user": author
-                            }
-                        else:
-                            user_points[author.id] = {
-                                "points": 0,
-                                "reasons": [],
-                                "user": author
-                            }
+                            user_points[author.id]["points"] = 3
+                        elif joined_hours_ago < 24 * 7:
+                            user_points[author.id]["points"] = 1
+
                     clean_content = re.sub(REGEX_DISCORD_OBJ, '', m.content)
                     lower_content = clean_content.lower().replace(" ", "").replace("\n", "")
                     if N_WORD_REGEX.match(lower_content)):
                         user_points[author.id]["points"] += 100
-                        user_points[author.id]["reasons"].append("N-word")
+                        user_points[author.id]["reasons"].append("Hard R N-word")
                     if ARABIC_REGEX.macth(lower_content) or HEBREW_REGEX.match(lower_content) or HANGUL_REGEX.match(lower_content) or CYRILLIC_REGEX.match(lower_content):
                         user_points[author.id]["points"] += 10
                         user_points[author.id]["reasons"].append(clean_and_truncate(m.content))
@@ -768,13 +762,17 @@ class EJLX(commands.Cog):
                     if re.match(r'^[A-Z0-9 ?!\']$', clean_content):
                         user_points[author.id]["points"] += 2
                         user_points[author.id]["reasons"].append(clean_and_truncate(clean_content))
+                    elif not has_any_role(author, LANG_ROLE_IDS): 
+                        user_points[author.id]["points"] += 1
+                        user_points[author.id]["reasons"].append(clean_and_truncate(clean_content))
+
 
                 sorted_users = sorted(user_points.values(), key=lambda u: u["points"], reverse=True)
                 filtered_users = list(filter(lambda u: u["points"] > 5, sorted_users))[:10]
                 bannees = [b["user"] for b in filtered_users]
                 if not bannees:
                     return
-                embed.description = '\n'.join(f'{NUMBER_EMOJIS[i]}: {b["user"]} {joined_to_relative_time(b["user"])}. Reasons: {",".join(b["reasons"])}' for i, b in enumerate(filtered_users)) 
+                embed.description = '\n'.join(f'{NUMBER_EMOJIS[i]}: {b["user"]} {joined_to_relative_time(b["user"])}. Reason/Messages: {",".join(b["reasons"])}' for i, b in enumerate(filtered_users)) 
                 embed.set_footer(text=f'Minimos can click each number 3 times to ban them individually, {BAN_EMOJI} 3 times to BAN all of them, or ✅ to dismiss this message')
                 ciri_message = await message.channel.send(embed=embed)
                 await reaction_ban_multiple(ciri_message, bannees, reason='Active Staff ping auto detection', delete_dismissed=True)
