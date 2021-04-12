@@ -7,7 +7,7 @@ import logging
 from collections import namedtuple
 
 from .utils.resolver import has_role, has_any_role
-from .utils.parser import guess_lang, JP_EMOJI, EN_EMOJI, OL_EMOJI, asking_vc, REGEX_DISCORD_OBJ
+from .utils.parser import guess_lang, JP_EMOJI, EN_EMOJI, OL_EMOJI, asking_vc, REGEX_DISCORD_OBJ, REGEX_URL
 from .utils.user_interaction import wait_for_reaction
 from datetime import datetime, timezone
 
@@ -58,6 +58,10 @@ NU_ROLE = {
 NF_ROLE = 196106229813215234
 NF_ONLY_ROLE = 378668720417013760
 CHAT_MUTE_ROLE = 259181555803619329
+WP_ROLE = 250907197075226625
+MINIMO_ROLE = 250907197075226625
+STAFF_ROLE = 543721608506900480
+ADMIN_ROLE = 189594666365091850
 ACTIVE_STAFF_ROLE = 240647591770062848
 
 ROLES = [NJ_ROLE, FJ_ROLE, NE_ROLE, FE_ROLE, OL_ROLE, NU_ROLE]
@@ -65,7 +69,17 @@ ROLE_IDS = [r['id'] for r in ROLES]
 LANG_ROLE_IDS = [r for r in ROLE_IDS if r != NU_ROLE['id']]
 
 MUSIC_BOT_REGEX = re.compile(r'^[%=>][a-zA-Z]+')
+ARABIC_REGEX = re.compile(r'^[\u0600-\u06FF\u200f\u200e0-9]+$')
+HEBREW_REGEX = re.compile(r'^[\u0590-\u05FF\u200f\u200e]+$')
+HANGUL_REGEX = re.compile(r'^[\u3131-\uD79D]+$')
+CYRILLIC_REGEX = re.compile(r'^[\u0400-\u04FF]+$')
 N_WORD_REGEX = re.compile(r'n(i|1)gg(e|3)r?s?')
+BAD_WORDS_REGEX = re.compile(r'(fags?|faggots?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|japs?)')
+BAD_JP_WORDS_REGEX = re.compile(r'(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ)')
+INVITES_REGEX = re.compile(r'(https?://)?(www.)?(discord.(gg|io|me|li)|discord(app)?.com/invite)/.+[a-z]')
+
+BAN_EMOJI = '<:ban:423687199385452545>' # EJLX BAN emoji
+NUMBER_EMOJIS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
 
 def get_role_by_short(short):
     for role in ROLES:
@@ -119,6 +133,34 @@ def is_in_ejlx():
     async def predicate(ctx):
         return ctx.guild and ctx.guild.id == EJLX_ID
     return commands.check(predicate)
+
+def joined_to_relative_time(user):
+    if not user or not user.joined_at:
+        return 'already left'
+    now = datetime.now()
+    seconds = (now - user.joined_at).total_seconds()
+    if seconds < 60 * 60:
+        return f'joined {seconds // 60} mins ago'
+    if seconds < 60 * 60 * 72:
+        return f'joined {seconds // 3600} hours ago'
+    if seconds < 60 * 60 * 24 * 30:
+        return f'joined {seconds // 86400} days ago'
+    return f'joined {seconds // 2592000} months ago'
+
+def time_since_join(user, unit='day'):
+    if not user or not user.joined_at:
+        return -1
+    now = datetime.now()
+    seconds = (now - user.joined_at).total_seconds()
+    
+    return seconds // (60 * 60 * 24) if unit == 'day' else seconds // 60 * 60 if unit == 'hour' else seconds // 60
+
+def clean_and_truncate(content):
+    clean_content = content.replace('\n', ' ')
+    if not clean_content:
+        return ''
+    clean_content = f"`{clean_content[:10] + ('...' if len(clean_content) > 10 else '')}`"
+    return clean_content
 
 class EJLX(commands.Cog):
     def __init__(self, bot):
@@ -285,6 +327,10 @@ class EJLX(commands.Cog):
                 embed.set_footer(text=f'pinged by {message.author.name}#{message.author.discriminator}')
                 await message.channel.send(embed=embed)
             elif role.id == ACTIVE_STAFF_ROLE:
+                if 'role' in message.content or 'fluent' in message.content or 'native' in message.content :
+                    # probably asking for a role
+                    await message.reply('If you need help with roles, ping `@Welcoming Party` instead or message <@713245294657273856>. Active Staff is only for emergencies such as trolls.', mention_author=True)
+                    continue
                 await self.staff_ping(message)
 
 
@@ -437,18 +483,82 @@ class EJLX(commands.Cog):
                 msg.channel.send(f"**{msg.author.name}**, you've been tagged as <@&{tagged}> by {user.name}!")
             )
 
-    async def reaction_ban(self, message, bannees):
-        await message.add_reaction('\N{CROSS MARK}')
-        banner = await wait_for_reaction(self.bot, message, '\N{CROSS MARK}')
-        await message.clear_reaction('\N{CROSS MARK}')
+    async def reaction_ban(self, message, bannees, reason='Unspecified', minimo=True, wp=False, delete_dismissed=False, unmute_dismissed=False):
+        """
+        React with ban emoji to ban
+        """
+        await message.add_reaction(BAN_EMOJI)
+        await message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
+        ban = wait_for_reaction(self.bot, message, BAN_EMOJI, minimo=minimo, wp=wp,  triple_click=True)
+        dismiss = wait_for_reaction(self.bot, message, '\N{WHITE HEAVY CHECK MARK}', minimo=minimo, wp=wp, return_false=True)
+        done, pending = await asyncio.wait([ban, dismiss], return_when=asyncio.FIRST_COMPLETED)
+        for p in pending:
+            p.cancel()
+        await message.clear_reactions()
+        banner = done.pop().result()
         if banner is not None:
-            for bannee in bannees:
+            if banner is False:
+                if delete_dismissed:
+                    await message.delete()
+                if unmute_dismissed:
+                    for bannee in bannees:
+                        try:
+                            await bannee.remove_roles(CHAT_MUTE_ROLE, reason=f'Auto mute dismissed')
+                            await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} Unmuted {bannee.name}')
+                        except:
+                            pass
+
+            else:
+                for bannee in bannees:
+                    try:
+                        await bannee.ban(delete_message_days=1, reason=f'Issued by: {banner.name}. Reason: {reason}')
+                        await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} {bannee} has been banned.')
+                    except:
+                        await message.channel.send(f'\N{CROSS MARK} {bannee} could not be banned.')
+        return True
+
+
+    async def reaction_ban_multiple(self, message, bannees, reason='Unspecified', minimo=True, wp=False, delete_dismissed=False, unmute_dismissed=False):
+        """
+        Ban multiple members
+        """
+        individual_bans = []
+        async def _individual_ban(bannee, emoji):
+            banner = await wait_for_reaction(self.bot, message, emoji, minimo, wp, triple_click=True)
+            if banner is not None:
                 try:
-                    await bannee.ban(delete_message_days=1, reason=f'Issued by: {banner.name}. Role mention spam')
+                    await bannee.ban(delete_message_days=1, reason=f'Issued by: {banner.name}. Reason: {reason}')
                     await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} {bannee} has been banned.')
                 except:
                     await message.channel.send(f'\N{CROSS MARK} {bannee} could not be banned.')
+            return False
 
+        for i, bannee in enumerate(bannees):
+            if i == 10:
+                break
+            emoji = NUMBER_EMOJIS[i] 
+            await message.add_reaction(emoji)
+            individual_bans.append(asyncio.create_task(_individual_ban(bannee, emoji)))
+        
+        finished = False
+        banned_count = 0
+        ban_all_or_dismiss = asyncio.create_task(reaction_ban(message, bannees, reason, minimo, wp, delete_dismissed, unmute_dismissed))
+        
+        for coro in asyncio.as_completed(individual_bans + [ban_all_or_dismiss])
+            try:
+                next_result = await coro
+                # ban_all_or_dismiss returns True upon completion
+                if next_result:
+                    for t in individual_bans:
+                        t.cancel()
+                else:
+                    banned_count += 1
+                    if banned_count == len(bannees) or banned_count == 10:
+                        # individually banned all
+                        await message.clear_reactions()
+                        ban_all_or_dismiss.cancel()
+            except:
+                pass
 
     async def mention_spam(self, message):
         if len(message.role_mentions) > 3:
@@ -456,13 +566,16 @@ class EJLX(commands.Cog):
             await message.author.add_roles(CHAT_MUTE_ROLE, reason='Role mention spam')
             embed = discord.Embed(colour=0xff0000)
             embed.title = f'FOR THOSE WHO GOT PINGED'
-            embed.description = f'{message.author} pinged roles: {", ".join(message.role_mentions)}\n\nWhile this message was most likely a spam, all of these roles are **self-assignable** in <#189585230972190720> and you probably assigned the roles yourself without reading the rules. Head over there to and unreact to remove the pingable roles.'
+            embed.description = f'{message.author} pinged roles: {", ".join(message.role_mentions)}\n\nWhile this message was most likely a spam, all of these roles are **self-assignable** in <#189585230972190720>. Head over there to and unreact to remove the pingable roles.'
             embed.timestamp = datetime.utcnow()
-            embed.set_footer(text=f'{message.author.name} has been muted. Mods can react with ❌ to ban them.')
+            embed.set_footer(text=f'{message.author.name} has been muted. Minimos can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message and unmute them')
             ciri_message = await message.channel.send(f'<@&{ACTIVE_STAFF_ROLE}>', embed=embed)
-            await reaction_ban(ciri_message, [message.author])
-        elif len(message.mentions) > 7:
-            pass
+            await reaction_ban(ciri_message, [message.author], reason='Role mention spam', unmute_dismissed=True)
+        elif len(message.mentions) > 10:
+            await message.author.add_roles(CHAT_MUTE_ROLE, reason='User mention spam')
+            content = f'**POSSIBLE USER MENTION SPAM**\n{message.author.name} pinged {len(message.mentions)} people and has been automatically muted. <@&{ACTIVE_STAFF_ROLE}>\n\nMinimos can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message and unmute them')
+            ciri_message = await message.channel.send(content)
+            await reaction_ban(ciri_message, [message.author], reason='User mention spam', delete_dismissed=True, unmute_dismissed=True)
 
 
     async def troll_check(self, message):
@@ -476,10 +589,10 @@ class EJLX(commands.Cog):
                 if nu['content'] == content or nu['content'] + nu['content'] == content:
                     nu['count'] += 1
                     if nu['count'] >= 5:
-                        if (timestamp - nu['timestamp']).total_seconds() <= 60:
+                        if (timestamp - nu['timestamp']).total_seconds() <= 120:
                             await author.add_roles(CHAT_MUTE_ROLE, resason="Possible spam detected. The user has sent the same message 5 times in a row")
-                            prompt = await message.channel.send(f'<@&{ACTIVE_STAFF_ROLE}> {author.mention} has been muted automatically due to spamming the same message 5 times in a row.\nMods can click ❌ to ban them')
-                            await reaction_ban(prompt, [author]) 
+                            prompt = await message.channel.send(f'{author.mention} has been muted automatically due to spamming the same message 5 times in a row. <@&{ACTIVE_STAFF_ROLE}>\n\nMinimos can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message and unmute them')
+                            await reaction_ban(prompt, [author], reason='Spamming the same message 5 times in a row', delete_dismissed=True, unmute_dismissed=True) 
                         nu['count'] = 1
                         nu['timestamp'] = timestamp
 
@@ -515,14 +628,10 @@ class EJLX(commands.Cog):
                 if nu['content'] == content or nu['content'] + nu['content'] == content:
                     nu['count'] += 1
                     if nu['count'] >= 3:
-                        if (timestamp - nu['timestamp']).total_seconds() <= 10:
-                            # ban is too harsh?
-                            # await author.ban(delete_message_days=1, resason="Troll detected. The user has sent the same message 3 times in a row within 10 seconds")
-                            # await message.channel.send(f'{author.mention} has been banned automatically due to spamming same messages')
-                            # await message.guild.get_channel(self.settings[message.guild.id].log_channel_id).send(f'{author.mention} repeatedly sent:\n{content}')
-                            await author.add_roles(CHAT_MUTE_ROLE, resason="Possible spam detected. The user has sent the same message 3 times in a row") 
-                            prompt = await message.channel.send(f'<@&{ACTIVE_STAFF_ROLE}> {author.mention} has been muted automatically due to spamming the same message 3 times in a row.\nMods can click ❌ once to ban them')
-                            await reaction_ban(prompt, [author]) 
+                        if (timestamp - nu['timestamp']).total_seconds() <= 60:
+                            await author.add_roles(CHAT_MUTE_ROLE, resason="Possible spam detected. This new user has sent the same message 3 times in a row") 
+                            prompt = await message.channel.send(f'This new user {author.mention} has been muted automatically due to spamming the same message 3 times in a row. <@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>\n\nWPs can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message.')
+                            await reaction_ban(prompt, [author], reason='New user spamming the same message 3 times in a row', wp=True, delete_dismissed=True, unmute_dismissed=True) 
                         nu['count'] = 1
                         nu['timestamp'] = timestamp
 
@@ -540,47 +649,141 @@ class EJLX(commands.Cog):
                     "timestamp": timestamp
                 })
         
-        if len(self.nu_troll_msgs) > 10:
+        if len(self.nu_troll_msgs) > 20:
             self.nu_troll_msgs.pop(0)
 
     async def staff_ping(self, message):
         msg_content = re.sub(REGEX_DISCORD_OBJ, '', message.content)
-        now = datetime.now()
-        if has_any_role(message.author, LANG_ROLE_IDS) and len(msg_content) < 20:
+
+        # new users shouldn't trigger ban detections
+        if has_any_role(message.author, LANG_ROLE_IDS) and time_since_join(message.author) >= 3:
+            embed = discord.Embed(colour=0xfc3838)
+            embed.title = 'Active Staff Ban Wizard'
+
+            # if staff ping is replying to a message
             if message.reference:
                 if message.reference.cached_message:
                     bannee = message.reference.cached_message.author
-                    ciri_message = await message.channel.send(
-                        f'{bannee}: {bannee.name} joined {(now - bannee.joined).total_seconds() / 60}mins ago\n\nMods can click ❌ once to BAN them')
-                    await reaction_ban(ciri_message, [bannee])
+                    embed.description = f'{bannee} {joined_to_relative_time(bannee)}')
+                    embed.set_footer(text=f'Minimos can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message')
+                    ciri_message = await message.channel.send(embed=embed)
+                    await reaction_ban(ciri_message, [bannee], reason='Active Staff ping auto detection', delete_dismissed=True)
                 return
-            messages = await message.channel.history(limit=20).flatten()
-            new_users = {}
-            for m in messages:
-                author = m.author
-                if N_WORD_REGEX.match(m.content.lower().replace(" ", "")):
-                    await author.ban(delete_message_days=1, reason="Auto-banned for using the N-word")
-                    await message.channel.send(f'{author.mention} has been banned automatically')
-                    continue
-                if author.joined and not has_any_role(author, LANG_ROLE_IDS):
-                    if '死ね' in m.content:
-                        await author.ban(delete_message_days=1, reason="Auto-banned for new user saying 死ね")
-                        await message.channel.send(f'{author.mention} has been banned automatically')
-                        continue
 
-                    if author.id not in new_users:
-                        new_users[author.id] = author
-                    
-            if len(new_users) > 1:
-                nl = '\n'
-                ciri_message = await message.channel.send(
-                    f'Found {len(new_users)} new users:\n{[f"{new_users[n].mention}: {new_users[n].name} joined {(now - new_users[n].joined).total_seconds() / 60}mins ago{nl}" for n in new_users]}\n\nMods can click ❌ once to BAN all of them')
-                await reaction_ban(ciri_message, [new_users[n] for n in new_users])
+            messages = await message.channel.history(limit=50).flatten()
+            user_set = set([m.author for m in messages if not m.author.bot])
+            user_dict = { u.id: { 'user': u, 'count': 0 } for u in user_set }
+            stats = self.bot.get_cog('Stats')
+            user_records = await stats.get_messages_for_users(message.guild.id, user_dict.keys())
+            for record in user_records:
+                user_dict[record['user_id']]['count'] = record['count']
+
+            # if staff ping is from an active user 
+            if has_any_role(message.author, [WP_ROLE, MINIMO_ROLE, STAFF_ROLE, ADMIN_ROLE]) or user_dict[message.author.id]['count'] > 100:
+                # if staff ping contains mentions
+                if message.mentions:
+                    embed.description = '\n'.join([f'{NUMBER_EMOJIS[i]}: {m} {joined_to_relative_time(m)}' for i, m in enumerate(message.mentions[:10])])
+                    embed.set_footer(text=f'Minimos can click each number 3 times to ban them individually, {BAN_EMOJI} 3 times to BAN all of them, or ✅ to dismiss this message')
+                    ciri_message = await message.channel.send(embed=embed)
+                    await reaction_ban_multiple(ciri_message, message.mentions, reason='Active Staff ping auto detection', delete_dismissed=True)
+                    return
+
+                # check raid if last 4 people joined within 3 minutes
+                members_by_joined_date = sorted(message.guild.members, key=lambda m: m.joined_at)
+                last_4_in = (members_by_joined_date[-1].joined_at - members_by_joined_date[-4].joined_at).total_seconds()
+                if last_4_in < 180:
+                    # possible raid so just add new users who's said anything
+                    new_users = dict()
+                    for m in messages:
+                        joined_minutes_ago = time_since_join(m.author, unit='minute')
+                        if joined_minutes_ago < 15:
+                            clean_content = clean_and_truncate(m.clean_content)
+                            if m.author.id in new_users:
+                                clean_content = new_users[m.author.id]["contents"] + ', ' + (clean_content or '*file*')
+                            new_users[m.author.id] = { "contents": clean_content, "user": m.author }
+
+                    bannees = [n["user"] for n in new_users.values()]
+                    if not bannees:
+                        return
+                    embed.description = '\n'.join(f'{NUMBER_EMOJIS[i]}: {b} {joined_to_relative_time(b)}. Messages: {new_users[b.id]["contents"]}' for i, b in enumerate(bannees[:10])) 
+                    embed.set_footer(text=f'Minimos can click each number 3 times to ban them individually, {BAN_EMOJI} 3 times to BAN all of them, or ✅ to dismiss this message')
+                    ciri_message = await message.channel.send(embed=embed)
+                    await reaction_ban_multiple(ciri_message, bannees, reason='Active Staff ping auto detection', delete_dismissed=True)
+                    return
+
+                # read history to determine trolls
+                user_points = dict()
+                for m in messages:
+                    author = m.author
+                    if author.bot or has_any_role(author, [WP_ROLE, MINIMO_ROLE, STAFF_ROLE, ADMIN_ROLE]) or user_dict[author.id]['count'] > 100:
+                        continue
+                    if author.id not in user_points:
+                        joined_hours_ago = time_since_join(author, unit='hour')
+                        if joined_hours_ago < 1:
+                            user_points[author.id] = {
+                                "points": 5,
+                                "reasons": [],
+                                "user": author
+                            }
+                        elif joined_hours_ago < 24:
+                            user_points[author.id] = {
+                                "points": 3,
+                                "reasons": [],
+                                "user": author
+                            }
+                        else:
+                            user_points[author.id] = {
+                                "points": 0,
+                                "reasons": [],
+                                "user": author
+                            }
+                    clean_content = re.sub(REGEX_DISCORD_OBJ, '', m.content)
+                    lower_content = clean_content.lower().replace(" ", "").replace("\n", "")
+                    if N_WORD_REGEX.match(lower_content)):
+                        user_points[author.id]["points"] += 100
+                        user_points[author.id]["reasons"].append("N-word")
+                    if ARABIC_REGEX.macth(lower_content) or HEBREW_REGEX.match(lower_content) or HANGUL_REGEX.match(lower_content) or CYRILLIC_REGEX.match(lower_content):
+                        user_points[author.id]["points"] += 10
+                        user_points[author.id]["reasons"].append(clean_and_truncate(m.content))
+                    if  REGEX_URL.match(m.content) and 'discord.gg/japanese' not in m.content:
+                        if INVITES_REGEX.match(m.content):
+                            user_points[author.id]["points"] += 5
+                            user_points[author.id]["reasons"].append(clean_and_truncate(INVITES_REGEX.match(m.content)[1]))
+                        else:
+                            user_points[author.id]["points"] += 3
+                            user_points[author.id]["reasons"].append(clean_and_truncate(REGEX_URL.match(m.content)[1]))
+                    if BAD_JP_WORDS_REGEX.match(m.content):
+                        match = BAD_JP_WORDS_REGEX(m.content)[1]
+                        user_points[author.id]["points"] += 3
+                        user_points[author.id]["reasons"].append(clean_and_truncate(match))
+                    words = m.content.lower().split()
+                    for w in words:
+                        match = BAD_WORDS_REGEX(w)
+                        if match:
+                            user_points[author.id]["points"] += 3
+                            user_points[author.id]["reasons"].append(clean_and_truncate(match[1]))
+                    if m.attachments:
+                        user_points[author.id]["points"] += 2
+                        user_points[author.id]["reasons"].append("FileUpload")
+                    if re.match(r'^[A-Z0-9 ?!\']$', clean_content):
+                        user_points[author.id]["points"] += 2
+                        user_points[author.id]["reasons"].append(clean_and_truncate(clean_content))
+
+                sorted_users = sorted(user_points.values(), key=lambda u: u["points"], reverse=True)
+                filtered_users = list(filter(lambda u: u["points"] > 5, sorted_users))[:10]
+                bannees = [b["user"] for b in filtered_users]
+                if not bannees:
+                    return
+                embed.description = '\n'.join(f'{NUMBER_EMOJIS[i]}: {b["user"]} {joined_to_relative_time(b["user"])}. Reasons: {",".join(b["reasons"])}' for i, b in enumerate(filtered_users)) 
+                embed.set_footer(text=f'Minimos can click each number 3 times to ban them individually, {BAN_EMOJI} 3 times to BAN all of them, or ✅ to dismiss this message')
+                ciri_message = await message.channel.send(embed=embed)
+                await reaction_ban_multiple(ciri_message, bannees, reason='Active Staff ping auto detection', delete_dismissed=True)
 
     async def check_jap(self, message):
         if message.content[0] in [',', '.', ';']:
             return
-        words = re.split(r'\W+', message.content.lower())
+        sanitized = re.sub(r'["`]japs?["`]', '', message.content.lower())
+        words = re.split(r'\W+', sanitized)
         bucket = self._message_cooldown.get_bucket(message)
         for word in words:
             if word == 'jap' or word == 'japs':
@@ -589,9 +792,7 @@ class EJLX(commands.Cog):
                 if not retry_after:
                     embed = discord.Embed(colour=0xFF5500)
                     embed.description = """
-                    We avoid "jap" on this server due to its historical use as a racial slur. We prefer "jp", "jpn", or "Japanese". Thanks for understanding.
-                    ([Some picture examples](https://imgur.com/a/lPVBo2y))
-                    ([Read more here](https://gist.github.com/ScoreUnder/e08b37a8af3c257107fc55fc7a8fcad6))
+                    We avoid "jap" on this server due to its historical use as a racial slur. We prefer "jp", "jpn", or "Japanese". Thanks for understanding.\n[[Some picture examples](https://imgur.com/a/lPVBo2y)][[Read more here](https://gist.github.com/ScoreUnder/e08b37a8af3c257107fc55fc7a8fcad6)]
                     """
                     await message.reply(embed=embed, mention_author=True)
                 return
@@ -609,10 +810,13 @@ class EJLX(commands.Cog):
             await asking_vc(message)
             await self.new_user_troll_check(message)
         else:
-            await self.troll_check(message)
+            if time_since_join(message.author) == 0:
+                await self.new_user_troll_check(message)
+            else:
+                await self.troll_check(message)
         await self.mention_spam(message)
         if message.channel.id == JP_CHAT:
-            await jp_only(message) # kwargs has lang info
+            await jp_only(message)
         elif message.channel.id == JP_BEGINNER:
             await check_kanji(message)
         elif message.channel.id == LANG_SWITCH:

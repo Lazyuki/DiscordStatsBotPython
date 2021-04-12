@@ -33,7 +33,7 @@ initial_extensions = (
 
 async def safe_message(message): pass
 
-PREFIX_OVERRIDES_REGEX = re.compile(fr'^,(?:help\s)?({"|".join(config.ciri_overrides)})(?:\s|$)')
+PREFIX_OVERRIDES_REGEX = re.compile(fr'^,(?:h(elp)?\s)?({"|".join(config.ciri_overrides)})(?:\s|$)')
 def dynamic_prefix(bot, message): 
     if message.content.startswith(','):
         if PREFIX_OVERRIDES_REGEX.match(message.content):

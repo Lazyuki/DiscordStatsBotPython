@@ -18,7 +18,7 @@ REGEX_BOT_COMMANDS = re.compile(r'^(?:[trkhHm]?q?!|[,.&+>$%;=\]])')
 LANGS = ['german', 'italian', 'french', 'spanish',
          'portuguese', 'korean', 'chinese', 'telugu', 'hindi', 'urdu', 'tamil', 'malay',
          'dutch', 'arabic', 'russian', 'turkish', 'mandarin', 'cantonese', 'polish', 'swedish',
-         'tagalog', 'norwegian', 'vietnamese', 'fillipino', 'thai', 'indonesian']
+         'tagalog', 'norwegian', 'vietnamese', 'fillipino', 'thai', 'indonesian', 'hebrew']
 
 COUNTRIES = ['germany', 'italy', 'france', 'spain', 'portugal', 'brazil', 'korea', 'china',
              'taiwan', 'india', 'malaysia', 'netherland', 'russia', 'poland', 'sweden', 'turkey', 'norway'
@@ -30,8 +30,8 @@ NATIVEJP = re.compile(r'母国?語.(.+?)語')
 FROM = re.compile(r"i(?:'?m| am) from (?:the )?(?:united )?(\w+)")
 IM = re.compile(r"i(?:'?m| am)(?: a)? (\w+)")
 STUDY = re.compile(
-    r'(?:learn|study|studied|fluent in|beginner at|beginner)(?:ing)? (japanese|english)')
-JP_STUDY = re.compile(r'(?:日本語|英語).?勉強')
+    r'(?:learn|study|studied|in|at|to|beginner|taking|took|speak)(?:ing| some| the| more)? (japanese|english)')
+JP_STUDY = re.compile(r'(日本語|英語).?(?:勉強|学練習)')
 
 # Emojis
 JP_EMOJI = '<:japanese:439733745390583819>'
@@ -176,6 +176,9 @@ LOCK = ['locked', 'lock']
 
 
 async def asking_vc(message):
+    # introductions
+    if message.channel.id == 395741560840519680:
+        return
     msg = message.content.lower()
     vc = False
     asking = False
@@ -186,7 +189,7 @@ async def asking_vc(message):
         elif w in QUESTION or w in VERB or w in LOCK:
             asking = True
     if vc and asking:
-        await message.channel.send(f'{message.author.mention} As mentioned in <#189585230972190720>, you need a language role to join voice chat. Please say what your native language is {"here" if message.channel.id == 189571157446492161 else "in <#189571157446492161>"}')
+        await message.reply(f'As mentioned in <#189585230972190720>, you need a language role to join voice chat. Please say what your native language is {"here" if message.channel.id == 189571157446492161 else "in <#189571157446492161>"}', mention_author=True)
 
 def format_timedelta(timedelta):
     seconds = int(timedelta.total_seconds())

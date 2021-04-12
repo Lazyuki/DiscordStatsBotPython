@@ -41,6 +41,15 @@ class Stats(commands.Cog):
                         if is_vc(member.voice):
                             vc[member.id] = datetime.utcnow()
 
+    async def get_messages_for_users(self, guild_id, user_ids):
+        records = await self.pool.fecth('''
+            SELECT user_id, SUM(message_count) as count
+            FROM messages
+            WHERE guild_id = $1 AND user_id = ANY ($2::BIGINT[])
+            GROUP_BY user_id
+        ''', guild_id, user_ids)
+        return records
+
     @commands.command(aliases=['u', 'uinfo'])
     async def user(self, ctx, *, arg = None):
         user_id = ctx.author.id
