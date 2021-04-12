@@ -21,7 +21,7 @@ LANGS = ['german', 'italian', 'french', 'spanish',
          'tagalog', 'norwegian', 'vietnamese', 'fillipino', 'thai', 'indonesian', 'hebrew']
 
 COUNTRIES = ['germany', 'italy', 'france', 'spain', 'portugal', 'brazil', 'korea', 'china',
-             'taiwan', 'india', 'malaysia', 'netherland', 'russia', 'poland', 'sweden', 'turkey', 'norway'
+             'taiwan', 'india', 'malaysia', 'netherland', 'russia', 'poland', 'sweden', 'turkey', 'norway',
              'vietnam', 'philippines', 'indonesia', 'saudi', 'netherlands']
 
 NATIVE = re.compile(r'native(?: language)?(?: is)? (\w+)')

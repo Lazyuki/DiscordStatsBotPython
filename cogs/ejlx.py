@@ -544,7 +544,7 @@ class EJLX(commands.Cog):
         banned_count = 0
         ban_all_or_dismiss = asyncio.create_task(reaction_ban(message, bannees, reason, minimo, wp, delete_dismissed, unmute_dismissed))
         
-        for coro in asyncio.as_completed(individual_bans + [ban_all_or_dismiss])
+        for coro in asyncio.as_completed(individual_bans + [ban_all_or_dismiss]):
             try:
                 next_result = await coro
                 # ban_all_or_dismiss returns True upon completion
