@@ -664,7 +664,7 @@ class EJLX(commands.Cog):
             if message.reference:
                 if message.reference.cached_message:
                     bannee = message.reference.cached_message.author
-                    embed.description = f'{bannee} {joined_to_relative_time(bannee)}')
+                    embed.description = f'{bannee} {joined_to_relative_time(bannee)}'
                     embed.set_footer(text=f'Minimos can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message')
                     ciri_message = await message.channel.send(embed=embed)
                     await reaction_ban(ciri_message, [bannee], reason='Active Staff ping auto detection', delete_dismissed=True)
