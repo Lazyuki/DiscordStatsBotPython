@@ -619,7 +619,7 @@ class EJLX(commands.Cog):
         msg_len = len(re.sub(REGEX_DISCORD_OBJ, '', message.content))
 
         if N_WORD_REGEX.match(message.content.lower().replace(" ", "")):
-            await author.ban(delete_message_days=1, reason="Auto-banned for new user using the N-word")
+            await author.ban(delete_message_days=1, reason="Auto-banned. New user using the N-word")
             await message.channel.send(f'{author.mention} has been banned automatically')
             return
 
