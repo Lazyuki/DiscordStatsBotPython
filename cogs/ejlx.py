@@ -58,6 +58,7 @@ NU_ROLE = {
 NF_ROLE = 196106229813215234
 NF_ONLY_ROLE = 378668720417013760
 CHAT_MUTE_ROLE = 259181555803619329
+BOOSTER_ROLE = 585540075769823235
 WP_ROLE = 250907197075226625
 MINIMO_ROLE = 250907197075226625
 STAFF_ROLE = 543721608506900480
@@ -370,6 +371,7 @@ class EJLX(commands.Cog):
             embed = discord.Embed(colour=BOOSTER_COLOR)
             if before.premium_since is None:
                 embed.title = f'{before} just boosted the server!'
+                await before.add_roles(before.guild.get_role(BOOSTER_PINK_ROLE)) 
             else:
                 embed.title = f'{before}\'s boost was removed/expired...'
                 await before.remove_roles(before.guild.get_role(BOOSTER_PINK_ROLE))
@@ -692,7 +694,7 @@ class EJLX(commands.Cog):
                 user_dict[record['user_id']]['count'] = record['count']
 
             # if staff ping is from an active user 
-            if has_any_role(message.author, [WP_ROLE, MINIMO_ROLE, STAFF_ROLE, ADMIN_ROLE]) or user_dict[message.author.id]['count'] > 100:
+            if has_any_role(message.author, [BOOSTER_ROLE, WP_ROLE, MINIMO_ROLE, STAFF_ROLE, ADMIN_ROLE]) or user_dict[message.author.id]['count'] > 100:
                 # if staff ping contains mentions
                 if message.mentions:
                     embed.description = '\n'.join([f'{NUMBER_EMOJIS[i]}: {m} {joined_to_relative_time(m)}' for i, m in enumerate(message.mentions[:10])])
@@ -728,7 +730,7 @@ class EJLX(commands.Cog):
                 user_points = dict()
                 for m in messages:
                     author = m.author
-                    if author.bot or has_any_role(author, [WP_ROLE, MINIMO_ROLE, STAFF_ROLE, ADMIN_ROLE]) or user_dict[author.id]['count'] > 100:
+                    if author.bot or has_any_role(author, [BOOSTER_ROLE, WP_ROLE, MINIMO_ROLE, STAFF_ROLE, ADMIN_ROLE]) or user_dict[author.id]['count'] > 100:
                         continue
                     if author.id not in user_points:
                         joined_hours_ago = time_since_join(author, unit='hour')
