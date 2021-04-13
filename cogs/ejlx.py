@@ -590,7 +590,7 @@ class EJLX(commands.Cog):
                     nu['count'] += 1
                     if nu['count'] >= 5:
                         if (timestamp - nu['timestamp']).total_seconds() <= 120:
-                            await author.add_roles(CHAT_MUTE_ROLE, resason="Possible spam detected. The user has sent the same message 5 times in a row")
+                            await author.add_roles(CHAT_MUTE_ROLE, reason="Possible spam detected. The user has sent the same message 5 times in a row")
                             prompt = await message.channel.send(f'{author.mention} has been muted automatically due to spamming the same message 5 times in a row. <@&{ACTIVE_STAFF_ROLE}>\n\nMinimos can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message and unmute them')
                             await reaction_ban(prompt, [author], reason='Spamming the same message 5 times in a row', delete_dismissed=True, unmute_dismissed=True) 
                         nu['count'] = 1
@@ -629,7 +629,7 @@ class EJLX(commands.Cog):
                     nu['count'] += 1
                     if nu['count'] >= 3:
                         if (timestamp - nu['timestamp']).total_seconds() <= 60:
-                            await author.add_roles(CHAT_MUTE_ROLE, resason="Possible spam detected. This new user has sent the same message 3 times in a row") 
+                            await author.add_roles(CHAT_MUTE_ROLE, reason="Possible spam detected. This new user has sent the same message 3 times in a row") 
                             prompt = await message.channel.send(f'This new user {author.mention} has been muted automatically due to spamming the same message 3 times in a row. <@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>\n\nWPs can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message.')
                             await reaction_ban(prompt, [author], reason='New user spamming the same message 3 times in a row', wp=True, delete_dismissed=True, unmute_dismissed=True) 
                         nu['count'] = 1
@@ -778,7 +778,7 @@ class EJLX(commands.Cog):
                 await reaction_ban_multiple(ciri_message, bannees, reason='Active Staff ping auto detection', delete_dismissed=True)
 
     async def check_jap(self, message):
-        if message.content[0] in [',', '.', ';']:
+        if message.content and message.content[0] in [',', '.', ';']:
             return
         sanitized = re.sub(r'["`]japs?["`]', '', message.content.lower())
         words = re.split(r'\W+', sanitized)

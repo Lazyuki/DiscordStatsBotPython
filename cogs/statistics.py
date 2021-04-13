@@ -42,7 +42,7 @@ class Stats(commands.Cog):
                             vc[member.id] = datetime.utcnow()
 
     async def get_messages_for_users(self, guild_id, user_ids):
-        records = await self.pool.fecth('''
+        records = await self.pool.fetch('''
             SELECT user_id, SUM(message_count) as count
             FROM messages
             WHERE guild_id = $1 AND user_id = ANY ($2::BIGINT[])
