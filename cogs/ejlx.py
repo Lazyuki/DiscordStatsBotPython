@@ -658,15 +658,18 @@ class EJLX(commands.Cog):
     @commands.command(aliases=['autobahn'])
     @commands.check(has_ban)
     async def autoban(self, ctx):
-        await self.staff_ping(ctx.message)
+        """
+        Open up the ban wizard to easily ban trolls
+        """
+        await self.staff_ping(ctx.message, "Auto Ban Menu")
 
-    async def staff_ping(self, message):
+    async def staff_ping(self, message, title="Active Staff Smart Ban Menu"):
         msg_content = re.sub(REGEX_DISCORD_OBJ, '', message.content)
 
         # new users shouldn't trigger ban detections
         if has_any_role(message.author, LANG_ROLE_IDS) and time_since_join(message.author) >= 3:
             embed = discord.Embed(colour=0xfc3838)
-            embed.title = 'Active Staff Ban Wizard'
+            embed.title = title
 
             # if staff ping is replying to a message
             if message.reference:
