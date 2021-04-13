@@ -661,7 +661,9 @@ class EJLX(commands.Cog):
         """
         Open up the ban wizard to easily ban trolls
         """
-        await self.staff_ping(ctx.message, "Auto Ban Menu")
+        detected = await self.staff_ping(ctx.message, "Auto Ban Menu")
+        if detected == 0:
+            await ctx.send(f"\N{CROSS MARK} Could not find potential trolls")
 
     async def staff_ping(self, message, title="Active Staff Smart Ban Menu"):
         msg_content = re.sub(REGEX_DISCORD_OBJ, '', message.content)
@@ -782,11 +784,12 @@ class EJLX(commands.Cog):
                 filtered_users = list(filter(lambda u: u["points"] > 5, sorted_users))[:10]
                 bannees = [b["user"] for b in filtered_users]
                 if not bannees:
-                    return
+                    return 0
                 embed.description = '\n'.join(f'{NUMBER_EMOJIS[i]}: {b["user"]} {joined_to_relative_time(b["user"])}. Reason/Messages: {",".join(b["reasons"])}' for i, b in enumerate(filtered_users)) 
                 embed.set_footer(text=f'Minimos can click each number 3 times to ban them individually, {BAN_EMOJI} 3 times to BAN all of them, or ✅ to dismiss this message')
                 ciri_message = await message.channel.send(embed=embed)
                 await reaction_ban_multiple(ciri_message, bannees, reason='Active Staff ping auto detection', delete_dismissed=True)
+                return len(bannees)
 
     async def check_jap(self, message):
         if message.content and message.content[0] in [',', '.', ';']:
