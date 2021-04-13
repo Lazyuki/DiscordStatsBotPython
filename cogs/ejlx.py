@@ -94,6 +94,9 @@ async def has_manage_roles(ctx):
 async def has_manage_guild(ctx):
     return ctx.author.guild_permissions.manage_guild
 
+async def has_ban(ctx):
+    return ctx.author.guild_permissions.ban_members
+
 class ClubRole:
     def __init__(self, role):
         self.role = role # discord.Role or str
@@ -651,6 +654,11 @@ class EJLX(commands.Cog):
         
         if len(self.nu_troll_msgs) > 20:
             self.nu_troll_msgs.pop(0)
+
+    @commands.command(aliases=['autobahn'])
+    @commands.check(has_ban)
+    async def autoban(self, ctx):
+        await self.staff_ping(ctx.message)
 
     async def staff_ping(self, message):
         msg_content = re.sub(REGEX_DISCORD_OBJ, '', message.content)
