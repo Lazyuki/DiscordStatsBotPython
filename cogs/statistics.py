@@ -46,7 +46,7 @@ class Stats(commands.Cog):
             SELECT user_id, SUM(message_count) as count
             FROM messages
             WHERE guild_id = $1 AND user_id = ANY ($2::BIGINT[])
-            GROUP_BY user_id
+            GROUP BY user_id
         ''', guild_id, user_ids)
         return records
 

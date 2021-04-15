@@ -18,7 +18,7 @@ REGEX_BOT_COMMANDS = re.compile(r'^(?:[trkhHm]?q?!|[,.&+>$%;=\]])')
 LANGS = ['german', 'italian', 'french', 'spanish',
          'portuguese', 'korean', 'chinese', 'telugu', 'hindi', 'urdu', 'tamil', 'malay',
          'dutch', 'arabic', 'russian', 'turkish', 'mandarin', 'cantonese', 'polish', 'swedish',
-         'tagalog', 'norwegian', 'vietnamese', 'fillipino', 'thai', 'indonesian', 'hebrew']
+         'tagalog', 'norwegian', 'vietnamese', 'filipino', 'fillipino', 'thai', 'indonesian', 'hebrew']
 
 COUNTRIES = ['germany', 'italy', 'france', 'spain', 'portugal', 'brazil', 'korea', 'china',
              'taiwan', 'india', 'malaysia', 'netherland', 'russia', 'poland', 'sweden', 'turkey', 'norway',
