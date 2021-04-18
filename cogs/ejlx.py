@@ -177,6 +177,7 @@ class EJLX(commands.Cog):
         self.nu_troll_msgs = []
         self.raidwatcher = RaidWatcher()
         self._message_cooldown = commands.CooldownMapping.from_cooldown(1, 120, commands.BucketType.channel)
+        
 
     async def cog_check(self, ctx):
         return ctx.guild.id == EJLX_ID
@@ -508,7 +509,7 @@ class EJLX(commands.Cog):
                 if unmute_dismissed:
                     for bannee in bannees:
                         try:
-                            await bannee.remove_roles(CHAT_MUTE_ROLE, reason=f'Auto mute dismissed')
+                            await bannee.remove_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason=f'Auto mute dismissed')
                             await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} Unmuted {bannee.name}')
                         except:
                             pass
@@ -568,7 +569,7 @@ class EJLX(commands.Cog):
     async def mention_spam(self, message):
         if len(message.role_mentions) > 3:
             # role mention spam
-            await message.author.add_roles(CHAT_MUTE_ROLE, reason='Role mention spam')
+            await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason='Role mention spam')
             embed = discord.Embed(colour=0xff0000)
             embed.title = f'FOR THOSE WHO GOT PINGED'
             embed.description = f'{message.author} pinged roles: {", ".join(message.role_mentions)}\n\nWhile this message was most likely a spam, all of these roles are **self-assignable** in <#189585230972190720>. Head over there to and unreact to remove the pingable roles.'
@@ -577,7 +578,7 @@ class EJLX(commands.Cog):
             ciri_message = await message.channel.send(f'<@&{ACTIVE_STAFF_ROLE}>', embed=embed)
             await reaction_ban(ciri_message, [message.author], reason='Role mention spam', unmute_dismissed=True)
         elif len(message.mentions) > 10:
-            await message.author.add_roles(CHAT_MUTE_ROLE, reason='User mention spam')
+            await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason='User mention spam')
             content = f'**POSSIBLE USER MENTION SPAM**\n{message.author.name} pinged {len(message.mentions)} people and has been automatically muted. <@&{ACTIVE_STAFF_ROLE}>\n\nMinimos can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message and unmute them'
             ciri_message = await message.channel.send(content)
             await reaction_ban(ciri_message, [message.author], reason='User mention spam', delete_dismissed=True, unmute_dismissed=True)
@@ -595,7 +596,7 @@ class EJLX(commands.Cog):
                     nu['count'] += 1
                     if nu['count'] >= 5:
                         if (timestamp - nu['timestamp']).total_seconds() <= 120:
-                            await author.add_roles(CHAT_MUTE_ROLE, reason="Possible spam detected. The user has sent the same message 5 times in a row")
+                            await author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible spam detected. The user has sent the same message 5 times in a row")
                             prompt = await message.channel.send(f'{author.mention} has been muted automatically due to spamming the same message 5 times in a row. <@&{ACTIVE_STAFF_ROLE}>\n\nMinimos can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message and unmute them')
                             await reaction_ban(prompt, [author], reason='Spamming the same message 5 times in a row', delete_dismissed=True, unmute_dismissed=True) 
                         nu['count'] = 1
@@ -634,7 +635,7 @@ class EJLX(commands.Cog):
                     nu['count'] += 1
                     if nu['count'] >= 3:
                         if (timestamp - nu['timestamp']).total_seconds() <= 60:
-                            await author.add_roles(CHAT_MUTE_ROLE, reason="Possible spam detected. This new user has sent the same message 3 times in a row") 
+                            await author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible spam detected. This new user has sent the same message 3 times in a row") 
                             prompt = await message.channel.send(f'This new user {author.mention} has been muted automatically due to spamming the same message 3 times in a row. <@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>\n\nWPs can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message.')
                             await reaction_ban(prompt, [author], reason='New user spamming the same message 3 times in a row', wp=True, delete_dismissed=True, unmute_dismissed=True) 
                         nu['count'] = 1
