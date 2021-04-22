@@ -20,8 +20,8 @@ async def wait_for_reaction(client: discord.client, message: discord.Message, re
     roles = WP_ROLES if wp else MINIMO_ROLES if minimo else MOD_ROLES
     clicked_once = []
 
-    def check(reaction, user):
-        if str(reaction.emoji) != reaction:
+    def check(rxn, user):
+        if str(rxn.emoji) != reaction:
             return False
 
         if triple_click:

@@ -409,9 +409,11 @@ class EJLX(commands.Cog):
         channel = guild.get_channel(channel_id)
         member = guild.get_member(user_id)
         message = await channel.fetch_message(message_id)
+        def emoji_name(e):
+            return e if type(e) is str else e.name
 
         if is_add:
-            reaction = discord.utils.find(lambda r: r.emoji.name == emoji.name, message.reactions)
+            reaction = discord.utils.find(lambda r: emoji_name(r.emoji) == emoji_name(emoji), message.reactions)
             if not reaction:
                 return
             await self.reaction_language(reaction, member)
@@ -634,7 +636,7 @@ class EJLX(commands.Cog):
                 if nu['content'] == content or nu['content'] + nu['content'] == content:
                     nu['count'] += 1
                     if nu['count'] >= 3:
-                        if (timestamp - nu['timestamp']).total_seconds() <= 60:
+                        if (timestamp - nu['timestamp']).total_seconds() <= 30:
                             await author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible spam detected. This new user has sent the same message 3 times in a row") 
                             prompt = await message.channel.send(f'This new user {author.mention} has been muted automatically due to spamming the same message 3 times in a row. <@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>\n\nWPs can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message.')
                             await reaction_ban(prompt, [author], reason='New user spamming the same message 3 times in a row', wp=True, delete_dismissed=True, unmute_dismissed=True) 
