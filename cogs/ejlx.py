@@ -332,7 +332,7 @@ class EJLX(commands.Cog):
                 embed.set_footer(text=f'pinged by {message.author.name}#{message.author.discriminator}')
                 await message.channel.send(embed=embed)
             elif role.id == ACTIVE_STAFF_ROLE:
-                if 'role' in message.content or 'fluent' in message.content or 'native' in message.content :
+                if 'role' in message.content or 'fluent' in message.content or 'native' in message.content or 'language' in message.content:
                     # probably asking for a role
                     await message.reply('If you need help with roles, ping `@Welcoming Party` instead or message <@713245294657273856>. Active Staff is only for emergencies such as trolls.', mention_author=True)
                     continue
@@ -506,8 +506,6 @@ class EJLX(commands.Cog):
         banner = done.pop().result()
         if banner is not None:
             if banner is False:
-                if delete_dismissed:
-                    await message.delete()
                 if unmute_dismissed:
                     for bannee in bannees:
                         try:
@@ -515,14 +513,29 @@ class EJLX(commands.Cog):
                             await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} Unmuted {bannee.name}')
                         except:
                             pass
+                if delete_dismissed:
+                    await message.delete()
+                elif len(message.embeds) > 0:
+                    embed = message.embeds[0]
+                    embed.set_footer(f'False alarm. {bannee.name} has been unmuted')
+                    await message.edit(message.content, embed=embed)
 
             else:
                 for bannee in bannees:
                     try:
-                        await bannee.ban(delete_message_days=1, reason=f'Issued by: {banner.name}. Reason: {reason}')
+                        await bannee.ban(delete_message_days=1, reason=f'Issued by: {banner.name}#{banner.discriminator}. Reason: {reason}')
                         await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} {bannee} has been banned.')
                     except:
                         await message.channel.send(f'\N{CROSS MARK} {bannee} could not be banned.')
+                if len(message.embeds) > 0:
+                    embed = message.embeds[0]
+                    embed.set_footer(f'Banned by {banner.name}')
+                    await message.edit(message.content, embed=embed)
+        elif len(message.embeds) > 0:
+            embed = message.embeds[0]
+            embed.set_footer(f'Timed out after 5 minutes')
+            await message.edit(message.content, embed=embed)
+
         return True
 
 
@@ -535,7 +548,7 @@ class EJLX(commands.Cog):
             banner = await wait_for_reaction(self.bot, message, emoji, minimo, wp, triple_click=True)
             if banner is not None:
                 try:
-                    await bannee.ban(delete_message_days=1, reason=f'Issued by: {banner.name}. Reason: {reason}')
+                    await bannee.ban(delete_message_days=1, reason=f'Issued by: {banner.name}#{banner.discriminator}. Reason: {reason}')
                     await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} {bannee} has been banned.')
                 except:
                     await message.channel.send(f'\N{CROSS MARK} {bannee} could not be banned.')
@@ -565,6 +578,11 @@ class EJLX(commands.Cog):
                         # individually banned all
                         await message.clear_reactions()
                         ban_all_or_dismiss.cancel()
+                        if len(message.embeds) > 0:
+                            embed = message.embeds[0]
+                            embed.set_footer(f'Done')
+                            await message.edit(message.content, embed=embed)
+                    
             except:
                 pass
 
@@ -574,16 +592,18 @@ class EJLX(commands.Cog):
             await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason='Role mention spam')
             embed = discord.Embed(colour=0xff0000)
             embed.title = f'FOR THOSE WHO GOT PINGED'
-            embed.description = f'{message.author} pinged roles: {", ".join(message.role_mentions)}\n\nWhile this message was most likely a spam, all of these roles are **self-assignable** in <#189585230972190720>. Head over there to and unreact to remove the pingable roles.'
-            embed.timestamp = datetime.utcnow()
-            embed.set_footer(text=f'{message.author.name} has been muted. Minimos can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message and unmute them')
-            ciri_message = await message.channel.send(f'<@&{ACTIVE_STAFF_ROLE}>', embed=embed)
+            embed.description = f'{message.author} has been **muted** for pinging multiple roles: {", ".join(message.role_mentions)}\n\nWhile this message was most likely a spam, all of these roles are **self-assignable**. Head over to <#189585230972190720> and unreact to remove the pingable roles or type `,leave club_name` for roles not in that channel.'
+            embed.set_footer(text=f'Minimos can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message and unmute them')
+            ciri_message = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}>', embed=embed, mention_author=False)
             await reaction_ban(ciri_message, [message.author], reason='Role mention spam', unmute_dismissed=True)
         elif len(message.mentions) > 10:
             await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason='User mention spam')
-            content = f'**POSSIBLE USER MENTION SPAM**\n{message.author.name} pinged {len(message.mentions)} people and has been automatically muted. <@&{ACTIVE_STAFF_ROLE}>\n\nMinimos can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message and unmute them'
-            ciri_message = await message.channel.send(content)
-            await reaction_ban(ciri_message, [message.author], reason='User mention spam', delete_dismissed=True, unmute_dismissed=True)
+            embed = discord.Embed(colour=0xff0000)
+            embed.title = f'Possible User Mention Spam'
+            embed.description = f'{message.author} pinged {len(message.mentions)} people and has been **automatically muted**.'
+            embed.set_footer(text=f'Minimos can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message and unmute them')
+            ciri_message = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}>', embed=embed, mention_author=False)
+            await reaction_ban(ciri_message, [message.author], reason='User mention spam', unmute_dismissed=True)
 
 
     async def troll_check(self, message):
@@ -597,10 +617,13 @@ class EJLX(commands.Cog):
                 if nu['content'] == content or nu['content'] + nu['content'] == content:
                     nu['count'] += 1
                     if nu['count'] >= 5:
-                        if (timestamp - nu['timestamp']).total_seconds() <= 120:
+                        if (timestamp - nu['timestamp']).total_seconds() <= 60:
                             await author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible spam detected. The user has sent the same message 5 times in a row")
-                            prompt = await message.channel.send(f'{author.mention} has been muted automatically due to spamming the same message 5 times in a row. <@&{ACTIVE_STAFF_ROLE}>\n\nMinimos can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message and unmute them')
-                            await reaction_ban(prompt, [author], reason='Spamming the same message 5 times in a row', delete_dismissed=True, unmute_dismissed=True) 
+                            embed = discord.Embed(colour=0xff0000)
+                            embed.description = f'{author.mention} has been **muted automatically** due to spamming the same message 5 times in a row.\nMessage: {content[:20] + "..." if len(content) > 20 else content}'
+                            embed.set_footer(text='Minimos can click {BAN_EMOJI} **3 times** to BAN them or ✅ to dismiss this message and unmute them.')
+                            prompt = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}>', embed=embed, mention_author=False)
+                            await reaction_ban(prompt, [author], reason='Spamming the same message 5 times in a row', unmute_dismissed=True) 
                         nu['count'] = 1
                         nu['timestamp'] = timestamp
 
@@ -638,8 +661,11 @@ class EJLX(commands.Cog):
                     if nu['count'] >= 3:
                         if (timestamp - nu['timestamp']).total_seconds() <= 30:
                             await author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible spam detected. This new user has sent the same message 3 times in a row") 
-                            prompt = await message.channel.send(f'This new user {author.mention} has been muted automatically due to spamming the same message 3 times in a row. <@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>\n\nWPs can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message.')
-                            await reaction_ban(prompt, [author], reason='New user spamming the same message 3 times in a row', wp=True, delete_dismissed=True, unmute_dismissed=True) 
+                            embed = discord.Embed(colour=0xff0000)
+                            embed.description = f'**New User** {author.mention} has been **muted automatically** due to spamming the same message 3 times in a row.\nMessage: {content[:20] + "..." if len(content) > 20 else content}'
+                            embed.set_footer(text='WPs can click {BAN_EMOJI} **3 times** to BAN them or ✅ to dismiss this message and unmute them.')
+                            prompt = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>', embed=embed, mention_author=False)
+                            await reaction_ban(prompt, [author], reason='New user spamming the same message 3 times in a row', wp=True, unmute_dismissed=True) 
                         nu['count'] = 1
                         nu['timestamp'] = timestamp
 
