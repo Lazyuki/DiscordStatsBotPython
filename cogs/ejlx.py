@@ -517,7 +517,7 @@ class EJLX(commands.Cog):
                     await message.delete()
                 elif len(message.embeds) > 0:
                     embed = message.embeds[0]
-                    embed.set_footer(f'False alarm. {bannee.name} has been unmuted')
+                    embed.set_footer(f'False alarm. They have been unmuted')
                     await message.edit(message.content, embed=embed)
 
             else:
@@ -593,7 +593,7 @@ class EJLX(commands.Cog):
             embed = discord.Embed(colour=0xff0000)
             embed.title = f'FOR THOSE WHO GOT PINGED'
             embed.description = f'{message.author} has been **muted** for pinging multiple roles: {", ".join(message.role_mentions)}\n\nWhile this message was most likely a spam, all of these roles are **self-assignable**. Head over to <#189585230972190720> and unreact to remove the pingable roles or type `,leave club_name` for roles not in that channel.'
-            embed.set_footer(text=f'Minimos can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message and unmute them')
+            embed.set_footer(text=f'Minimos can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them')
             ciri_message = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}>', embed=embed, mention_author=False)
             await reaction_ban(ciri_message, [message.author], reason='Role mention spam', unmute_dismissed=True)
         elif len(message.mentions) > 10:
@@ -601,7 +601,7 @@ class EJLX(commands.Cog):
             embed = discord.Embed(colour=0xff0000)
             embed.title = f'Possible User Mention Spam'
             embed.description = f'{message.author} pinged {len(message.mentions)} people and has been **automatically muted**.'
-            embed.set_footer(text=f'Minimos can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message and unmute them')
+            embed.set_footer(text=f'Minimos can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them')
             ciri_message = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}>', embed=embed, mention_author=False)
             await reaction_ban(ciri_message, [message.author], reason='User mention spam', unmute_dismissed=True)
 
@@ -620,8 +620,8 @@ class EJLX(commands.Cog):
                         if (timestamp - nu['timestamp']).total_seconds() <= 60:
                             await author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible spam detected. The user has sent the same message 5 times in a row")
                             embed = discord.Embed(colour=0xff0000)
-                            embed.description = f'{author.mention} has been **muted automatically** due to spamming the same message 5 times in a row.\nMessage: {content[:20] + "..." if len(content) > 20 else content}'
-                            embed.set_footer(text='Minimos can click {BAN_EMOJI} **3 times** to BAN them or ✅ to dismiss this message and unmute them.')
+                            embed.description = f'{author.mention} has been **muted automatically** due to spamming the same message 5 times in a row.\n> {content[:100] + "..." if len(content) > 100 else content}'
+                            embed.set_footer(text=f'Minimos can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them.')
                             prompt = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}>', embed=embed, mention_author=False)
                             await reaction_ban(prompt, [author], reason='Spamming the same message 5 times in a row', unmute_dismissed=True) 
                         nu['count'] = 1
@@ -662,8 +662,8 @@ class EJLX(commands.Cog):
                         if (timestamp - nu['timestamp']).total_seconds() <= 30:
                             await author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible spam detected. This new user has sent the same message 3 times in a row") 
                             embed = discord.Embed(colour=0xff0000)
-                            embed.description = f'**New User** {author.mention} has been **muted automatically** due to spamming the same message 3 times in a row.\nMessage: {content[:20] + "..." if len(content) > 20 else content}'
-                            embed.set_footer(text='WPs can click {BAN_EMOJI} **3 times** to BAN them or ✅ to dismiss this message and unmute them.')
+                            embed.description = f'**New User** {author.mention} has been **muted automatically** due to spamming the same message 3 times in a row.\n> {content[:100] + "..." if len(content) > 100 else content}'
+                            embed.set_footer(text=f'WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them.')
                             prompt = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>', embed=embed, mention_author=False)
                             await reaction_ban(prompt, [author], reason='New user spamming the same message 3 times in a row', wp=True, unmute_dismissed=True) 
                         nu['count'] = 1
@@ -709,7 +709,7 @@ class EJLX(commands.Cog):
                 if message.reference.cached_message:
                     bannee = message.reference.cached_message.author
                     embed.description = f'{bannee} {joined_to_relative_time(bannee)}'
-                    embed.set_footer(text=f'Minimos can click {BAN_EMOJI} 3 times to BAN them or ✅ to dismiss this message')
+                    embed.set_footer(text=f'Minimos can click the BAN emoji 3 times to ban them or ✅ to dismiss this message')
                     ciri_message = await message.channel.send(embed=embed)
                     await reaction_ban(ciri_message, [bannee], reason='Active Staff ping auto detection', delete_dismissed=True)
                 return
@@ -727,7 +727,7 @@ class EJLX(commands.Cog):
                 # if staff ping contains mentions
                 if message.mentions:
                     embed.description = '\n'.join([f'{NUMBER_EMOJIS[i]}: {m} {joined_to_relative_time(m)}' for i, m in enumerate(message.mentions[:10])])
-                    embed.set_footer(text=f'Minimos can click each number 3 times to ban them individually, {BAN_EMOJI} 3 times to BAN all of them, or ✅ to dismiss this message')
+                    embed.set_footer(text=f'Minimos can click each number 3 times to ban them individually, BAN emoji 3 times to ban all of them, or ✅ to dismiss this message')
                     ciri_message = await message.channel.send(embed=embed)
                     await reaction_ban_multiple(ciri_message, message.mentions, reason='Active Staff ping auto detection', delete_dismissed=True)
                     return
@@ -750,7 +750,7 @@ class EJLX(commands.Cog):
                     if not bannees:
                         return
                     embed.description = '\n'.join(f'{NUMBER_EMOJIS[i]}: {b} {joined_to_relative_time(b)}. Messages: {new_users[b.id]["contents"]}' for i, b in enumerate(bannees[:10])) 
-                    embed.set_footer(text=f'Minimos can click each number 3 times to ban them individually, {BAN_EMOJI} 3 times to BAN all of them, or ✅ to dismiss this message')
+                    embed.set_footer(text=f'Minimos can click each number 3 times to ban them individually, BAN emoji 3 times to ban all of them, or ✅ to dismiss this message')
                     ciri_message = await message.channel.send(embed=embed)
                     await reaction_ban_multiple(ciri_message, bannees, reason='Active Staff ping auto detection', delete_dismissed=True)
                     return
@@ -817,7 +817,7 @@ class EJLX(commands.Cog):
                 if not bannees:
                     return 0
                 embed.description = '\n'.join(f'{NUMBER_EMOJIS[i]}: {b["user"]} {joined_to_relative_time(b["user"])}. Reason/Messages: {",".join(b["reasons"])}' for i, b in enumerate(filtered_users)) 
-                embed.set_footer(text=f'Minimos can click each number 3 times to ban them individually, {BAN_EMOJI} 3 times to BAN all of them, or ✅ to dismiss this message')
+                embed.set_footer(text=f'Minimos can click each number 3 times to ban them individually, BAN emoji 3 times to ban all of them, or ✅ to dismiss this message')
                 ciri_message = await message.channel.send(embed=embed)
                 await reaction_ban_multiple(ciri_message, bannees, reason='Active Staff ping auto detection', delete_dismissed=True)
                 return len(bannees)
