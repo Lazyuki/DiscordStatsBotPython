@@ -501,8 +501,10 @@ class EJLX(commands.Cog):
         done, pending = await asyncio.wait([ban, dismiss], return_when=asyncio.FIRST_COMPLETED)
         for p in pending:
             p.cancel()
+        logging.info('reaction_ban complete')
         await message.clear_reactions()
         banner = done.pop().result()
+        logging.info(f'banner {banner}')
         if banner is not None:
             if banner is False:
                 if unmute_dismissed:
@@ -515,24 +517,24 @@ class EJLX(commands.Cog):
                 if delete_dismissed:
                     await message.delete()
                 elif len(message.embeds) > 0:
-                    embed = message.embeds[0]
-                    embed.set_footer(f'False alarm. They have been unmuted')
+                    embed = message.embeds[0].copy()
+                    embed.set_footer(text=f'False alarm. They have been unmuted')
                     await message.edit(content=message.content, embed=embed)
 
             else:
                 for bannee in bannees:
                     try:
                         await bannee.ban(delete_message_days=1, reason=f'Issued by: {banner}. Reason: {reason}')
-                        await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} {bannee} has been banned.')
+                        await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} {bannee} has been banned by {banner}')
                     except:
                         await message.channel.send(f'\N{CROSS MARK} {bannee} could not be banned.')
                 if len(message.embeds) > 0:
                     embed = message.embeds[0]
-                    embed.set_footer(f'Banned by {banner.name}')
+                    embed.set_footer(text=f'Banned by {banner.name}')
                     await message.edit(content=message.content, embed=embed)
         elif len(message.embeds) > 0:
             embed = message.embeds[0]
-            embed.set_footer(f'Timed out after 5 minutes')
+            embed.set_footer(text=f'Timed out after 5 minutes')
             await message.edit(content=message.content, embed=embed)
 
         return True
@@ -548,7 +550,7 @@ class EJLX(commands.Cog):
             if banner is not None:
                 try:
                     await bannee.ban(delete_message_days=1, reason=f'Issued by: {banner}. Reason: {reason}')
-                    await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} {bannee} has been banned.')
+                    await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} {bannee} has been banned by {banner}.')
                 except:
                     await message.channel.send(f'\N{CROSS MARK} {bannee} could not be banned.')
             return False
@@ -567,6 +569,7 @@ class EJLX(commands.Cog):
         for coro in asyncio.as_completed(individual_bans + [ban_all_or_dismiss]):
             try:
                 next_result = await coro
+                logging.info(f'next= {next_result}')
                 # ban_all_or_dismiss returns True upon completion
                 if next_result:
                     for t in individual_bans:
@@ -575,11 +578,12 @@ class EJLX(commands.Cog):
                     banned_count += 1
                     if banned_count == len(bannees) or banned_count == 10:
                         # individually banned all
+                        logging.info('multi ban complete')
                         await message.clear_reactions()
                         ban_all_or_dismiss.cancel()
                         if len(message.embeds) > 0:
                             embed = message.embeds[0]
-                            embed.set_footer(f'Done')
+                            embed.set_footer(text=f'Done')
                             await message.edit(content=message.content, embed=embed)
                     
             except:
