@@ -802,7 +802,7 @@ class EJLX(commands.Cog):
                         user_points[author.id]["reasons"].append(clean_and_truncate(match))
                     words = m.content.lower().split()
                     for w in words:
-                        match = BAD_WORDS_REGEX(w)
+                        match = BAD_WORDS_REGEX.match(w)
                         if match:
                             user_points[author.id]["points"] += 4
                             user_points[author.id]["reasons"].append(clean_and_truncate(match[1]))
