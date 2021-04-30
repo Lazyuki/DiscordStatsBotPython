@@ -597,7 +597,7 @@ class EJLX(commands.Cog):
             ciri_message = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}>', embed=embed, mention_author=False)
             await reaction_ban(ciri_message, [message.author], reason='Role mention spam', unmute_dismissed=True)
         elif len(message.mentions) > 10:
-            if message.channel.id === VOICE_BOT_CHANNEL:
+            if message.channel.id == VOICE_BOT_CHANNEL:
                 return
             await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason='User mention spam')
             embed = discord.Embed(colour=0xff0000)
