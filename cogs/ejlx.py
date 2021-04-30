@@ -367,7 +367,6 @@ class EJLX(commands.Cog):
             return
         # Boost change
         if before.premium_since != after.premium_since:
-            logging.info(f'boost by {before} {before.premium_since} {after.premium_since}')
             ewbf = before.guild.get_channel(EWBF)
             embed = discord.Embed(colour=BOOSTER_COLOR)
             if before.premium_since is None:
@@ -513,15 +512,12 @@ class EJLX(commands.Cog):
                             await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} Unmuted {bannee.name}')
                         except:
                             pass
-                print(len(message.embeds))
                 if delete_dismissed:
                     await message.delete()
                 elif len(message.embeds) > 0:
                     embed = message.embeds[0]
-                    print(embed.description)
                     embed.set_footer(f'False alarm. They have been unmuted')
-                    print('sending...')
-                    await message.edit(message.content, embed=embed)
+                    await message.edit(content=message.content, embed=embed)
 
             else:
                 for bannee in bannees:
@@ -533,11 +529,11 @@ class EJLX(commands.Cog):
                 if len(message.embeds) > 0:
                     embed = message.embeds[0]
                     embed.set_footer(f'Banned by {banner.name}')
-                    await message.edit(message.content, embed=embed)
+                    await message.edit(content=message.content, embed=embed)
         elif len(message.embeds) > 0:
             embed = message.embeds[0]
             embed.set_footer(f'Timed out after 5 minutes')
-            await message.edit(message.content, embed=embed)
+            await message.edit(content=message.content, embed=embed)
 
         return True
 
@@ -575,7 +571,7 @@ class EJLX(commands.Cog):
                 if next_result:
                     for t in individual_bans:
                         t.cancel()
-                else:
+                elif next_result is not None:
                     banned_count += 1
                     if banned_count == len(bannees) or banned_count == 10:
                         # individually banned all
@@ -584,7 +580,7 @@ class EJLX(commands.Cog):
                         if len(message.embeds) > 0:
                             embed = message.embeds[0]
                             embed.set_footer(f'Done')
-                            await message.edit(message.content, embed=embed)
+                            await message.edit(content=message.content, embed=embed)
                     
             except:
                 pass
