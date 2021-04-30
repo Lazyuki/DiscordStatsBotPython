@@ -59,11 +59,11 @@ NF_ROLE = 196106229813215234
 NF_ONLY_ROLE = 378668720417013760
 CHAT_MUTE_ROLE = 259181555803619329
 BOOSTER_ROLE = 585540075769823235
-WP_ROLE = 837477827845554177 #250907197075226625
+WP_ROLE = 250907197075226625
 MINIMO_ROLE = 250907197075226625
 STAFF_ROLE = 543721608506900480
 ADMIN_ROLE = 189594666365091850
-ACTIVE_STAFF_ROLE = 837477827845554177 #  240647591770062848
+ACTIVE_STAFF_ROLE = 240647591770062848
 
 ROLES = [NJ_ROLE, FJ_ROLE, NE_ROLE, FE_ROLE, OL_ROLE, NU_ROLE]
 ROLE_IDS = [r['id'] for r in ROLES]
@@ -697,11 +697,11 @@ class EJLX(commands.Cog):
         """
         Open up the ban wizard to easily ban trolls
         """
-        detected = await self.staff_ping(ctx.message, "Auto Ban Menu")
+        detected = await self.staff_ping(ctx.message, title="Auto Ban Menu", delete_dismissed=False)
         if detected == 0:
             await ctx.send(f"\N{CROSS MARK} Could not find potential trolls")
 
-    async def staff_ping(self, message, title="Active Staff Ping Ban Menu"):
+    async def staff_ping(self, message, title="Active Staff Ping Ban Menu", delete_dismissed=True):
         msg_content = re.sub(REGEX_DISCORD_OBJ, '', message.content)
 
         # new users shouldn't trigger ban detections
@@ -716,7 +716,7 @@ class EJLX(commands.Cog):
                     embed.description = f'{bannee} {joined_to_relative_time(bannee)}'
                     embed.set_footer(text=f'Minimos can click the BAN emoji 3 times to ban them or ✅ to dismiss this message')
                     ciri_message = await message.channel.send(embed=embed)
-                    await self.reaction_ban(ciri_message, [bannee], reason='Active Staff ping auto detection', delete_dismissed=True)
+                    await self.reaction_ban(ciri_message, [bannee], reason='Active Staff ping auto detection', delete_dismissed=delete_dismissed)
                 return
 
             messages = await message.channel.history(limit=50).flatten()
@@ -734,7 +734,7 @@ class EJLX(commands.Cog):
                     embed.description = '\n'.join([f'{NUMBER_EMOJIS[i]}: {m} {joined_to_relative_time(m)}' for i, m in enumerate(message.mentions[:10])])
                     embed.set_footer(text=f'Minimos can click each number 3 times to ban them individually, BAN emoji 3 times to ban all of them, or ✅ to dismiss this message')
                     ciri_message = await message.channel.send(embed=embed)
-                    await self.reaction_ban_multiple(ciri_message, message.mentions, reason='Active Staff ping auto detection', delete_dismissed=True)
+                    await self.reaction_ban_multiple(ciri_message, message.mentions, reason='Active Staff ping auto detection', delete_dismissed=delete_dismissed)
                     return
 
                 # check raid if last 4 people joined within 3 minutes
@@ -757,7 +757,7 @@ class EJLX(commands.Cog):
                     embed.description = '\n'.join(f'{NUMBER_EMOJIS[i]}: {b} {joined_to_relative_time(b)}. Messages: {new_users[b.id]["contents"]}' for i, b in enumerate(bannees[:10])) 
                     embed.set_footer(text=f'Minimos can click each number 3 times to ban them individually, BAN emoji 3 times to ban all of them, or ✅ to dismiss this message')
                     ciri_message = await message.channel.send(embed=embed)
-                    await self.reaction_ban_multiple(ciri_message, bannees, reason='Active Staff ping auto detection', delete_dismissed=True)
+                    await self.reaction_ban_multiple(ciri_message, bannees, reason='Active Staff ping auto detection', delete_dismissed=delete_dismissed)
                     return
 
                 # read history to determine trolls
@@ -821,17 +821,17 @@ class EJLX(commands.Cog):
                 bannees = [b["user"] for b in filtered_users]
                 if not bannees:
                     return 0
-                # if len(bannees) == 1:
-                #     embed.description = f'{b["user"].mention} {joined_to_relative_time(b["user"])}.\n__Reasons__: {",".join(b["reasons"])}'
-                #     embed.set_footer(text=f'Minimos can click the BAN emoji 3 times to ban them, or ✅ to dismiss this message')
-                #     ciri_message = await message.channel.send(embed=embed)
-                #     await self.reaction_ban(ciri_message, bannees, reason='Active Staff ping auto detection', delete_dismissed=True)
-                #     return 1
+                if len(bannees) == 1:
+                    embed.description = f'{b["user"].mention} {joined_to_relative_time(b["user"])}.\n__Reasons__: {",".join(b["reasons"])}'
+                    embed.set_footer(text=f'Minimos can click the BAN emoji 3 times to ban them, or ✅ to dismiss this message')
+                    ciri_message = await message.channel.send(embed=embed)
+                    await self.reaction_ban(ciri_message, bannees, reason='Active Staff ping auto detection', delete_dismissed=delete_dismissed)
+                    return 1
 
                 embed.description = '\n'.join(f'{NUMBER_EMOJIS[i]} {b["user"].mention} {joined_to_relative_time(b["user"])}. __Reasons__: {",".join(b["reasons"])}' for i, b in enumerate(filtered_users)) 
                 embed.set_footer(text=f'Minimos can click each number 3 times to ban them individually, BAN emoji 3 times to ban all of them, or ✅ to dismiss this message')
                 ciri_message = await message.channel.send(embed=embed)
-                await self.reaction_ban_multiple(ciri_message, bannees, reason='Active Staff ping auto detection', delete_dismissed=True)
+                await self.reaction_ban_multiple(ciri_message, bannees, reason='Active Staff ping auto detection', delete_dismissed=delete_dismissed)
                 return len(bannees)
 
     async def check_jap(self, message):
