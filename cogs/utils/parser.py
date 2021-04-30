@@ -12,7 +12,7 @@ REGEX_CHAN = re.compile(r'<#\d+>')
 REGEX_ROLE = re.compile(r'<@&\d+>')
 REGEX_DISCORD_OBJ = re.compile(r'<(?:@!?|#|@&|a?:\S+?:)\d+>')
 REGEX_RAW_ID = re.compile(r'(\d{17,21})')
-REGEX_BOT_COMMANDS = re.compile(r'^(?:[trkhHm]?q?!|[,.&+>$%;=\]])')
+REGEX_BOT_COMMANDS = re.compile(r'^(?:[trkhHm]?q?!|[,.&+>$%;=\]-])')
 
 # Languages
 LANGS = ['german', 'italian', 'french', 'spanish',

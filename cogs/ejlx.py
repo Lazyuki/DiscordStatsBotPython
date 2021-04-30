@@ -59,11 +59,11 @@ NF_ROLE = 196106229813215234
 NF_ONLY_ROLE = 378668720417013760
 CHAT_MUTE_ROLE = 259181555803619329
 BOOSTER_ROLE = 585540075769823235
-WP_ROLE = 250907197075226625
+WP_ROLE = 837477827845554177 #250907197075226625
 MINIMO_ROLE = 250907197075226625
 STAFF_ROLE = 543721608506900480
 ADMIN_ROLE = 189594666365091850
-ACTIVE_STAFF_ROLE = 240647591770062848
+ACTIVE_STAFF_ROLE = 837477827845554177 #  240647591770062848
 
 ROLES = [NJ_ROLE, FJ_ROLE, NE_ROLE, FE_ROLE, OL_ROLE, NU_ROLE]
 ROLE_IDS = [r['id'] for r in ROLES]
@@ -597,6 +597,8 @@ class EJLX(commands.Cog):
             ciri_message = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}>', embed=embed, mention_author=False)
             await reaction_ban(ciri_message, [message.author], reason='Role mention spam', unmute_dismissed=True)
         elif len(message.mentions) > 10:
+            if message.channel.id === VOICE_BOT_CHANNEL:
+                return
             await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason='User mention spam')
             embed = discord.Embed(colour=0xff0000)
             embed.title = f'Possible User Mention Spam'
@@ -607,6 +609,8 @@ class EJLX(commands.Cog):
 
 
     async def troll_check(self, message):
+        if message.channel.id in [BOT_CHANNEL, VOICE_BOT_CHANNEL]:
+            return
         author = message.author
         content = message.clean_content
         timestamp = message.created_at 
@@ -617,7 +621,7 @@ class EJLX(commands.Cog):
                 if nu['content'] == content or nu['content'] + nu['content'] == content:
                     nu['count'] += 1
                     if nu['count'] >= 5:
-                        if (timestamp - nu['timestamp']).total_seconds() <= 60:
+                        if (timestamp - nu['timestamp']).total_seconds() <= 30:
                             await author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible spam detected. The user has sent the same message 5 times in a row")
                             embed = discord.Embed(colour=0xff0000)
                             embed.description = f'{author.mention} has been **muted automatically** due to spamming the same message 5 times in a row.\n> {content[:100] + "..." if len(content) > 100 else content}'
@@ -644,6 +648,8 @@ class EJLX(commands.Cog):
             self.troll_msgs.pop(0)
 
     async def new_user_troll_check(self, message):
+        if message.channel.id in [BOT_CHANNEL, VOICE_BOT_CHANNEL]:
+            return
         author = message.author
         content = message.clean_content
         timestamp = discord.utils.snowflake_time(message.id)
@@ -792,13 +798,13 @@ class EJLX(commands.Cog):
                             user_points[author.id]["reasons"].append(clean_and_truncate(REGEX_URL.match(m.content)[1]))
                     if BAD_JP_WORDS_REGEX.match(m.content):
                         match = BAD_JP_WORDS_REGEX(m.content)[1]
-                        user_points[author.id]["points"] += 3
+                        user_points[author.id]["points"] += 4
                         user_points[author.id]["reasons"].append(clean_and_truncate(match))
                     words = m.content.lower().split()
                     for w in words:
                         match = BAD_WORDS_REGEX(w)
                         if match:
-                            user_points[author.id]["points"] += 3
+                            user_points[author.id]["points"] += 4
                             user_points[author.id]["reasons"].append(clean_and_truncate(match[1]))
                     if m.attachments:
                         user_points[author.id]["points"] += 2
