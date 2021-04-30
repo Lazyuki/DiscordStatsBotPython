@@ -232,7 +232,7 @@ class EJLX(commands.Cog):
         created_role = False
         role = clubRole.role
         if isinstance(role, str):
-            role = await ctx.guild.create_role(reason=f'Create Club Role issued by {ctx.author.name}#{ctx.author.discriminator} ({ctx.author.id})', name=role, mentionable=True)
+            role = await ctx.guild.create_role(reason=f'Create Club Role issued by {ctx.author} ({ctx.author.id})', name=role, mentionable=True)
             created_role = True
         
         if role >= ctx.author.top_role:
@@ -329,7 +329,7 @@ class EJLX(commands.Cog):
                 embed = discord.Embed(colour=CLUB_COLOR)
                 embed.title = f'Club "{role.name}" Pinged'
                 embed.description = f'If you want to leave this club, type `,leave {role.name}`'
-                embed.set_footer(text=f'pinged by {message.author.name}#{message.author.discriminator}')
+                embed.set_footer(text=f'pinged by {message.author}')
                 await message.channel.send(embed=embed)
             elif role.id == ACTIVE_STAFF_ROLE:
                 if 'role' in message.content or 'fluent' in message.content or 'native' in message.content or 'language' in message.content:
@@ -513,17 +513,20 @@ class EJLX(commands.Cog):
                             await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} Unmuted {bannee.name}')
                         except:
                             pass
+                print(len(message.embeds))
                 if delete_dismissed:
                     await message.delete()
                 elif len(message.embeds) > 0:
                     embed = message.embeds[0]
+                    print(embed.description)
                     embed.set_footer(f'False alarm. They have been unmuted')
+                    print('sending...')
                     await message.edit(message.content, embed=embed)
 
             else:
                 for bannee in bannees:
                     try:
-                        await bannee.ban(delete_message_days=1, reason=f'Issued by: {banner.name}#{banner.discriminator}. Reason: {reason}')
+                        await bannee.ban(delete_message_days=1, reason=f'Issued by: {banner}. Reason: {reason}')
                         await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} {bannee} has been banned.')
                     except:
                         await message.channel.send(f'\N{CROSS MARK} {bannee} could not be banned.')
@@ -548,7 +551,7 @@ class EJLX(commands.Cog):
             banner = await wait_for_reaction(self.bot, message, emoji, minimo, wp, triple_click=True)
             if banner is not None:
                 try:
-                    await bannee.ban(delete_message_days=1, reason=f'Issued by: {banner.name}#{banner.discriminator}. Reason: {reason}')
+                    await bannee.ban(delete_message_days=1, reason=f'Issued by: {banner}. Reason: {reason}')
                     await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} {bannee} has been banned.')
                 except:
                     await message.channel.send(f'\N{CROSS MARK} {bannee} could not be banned.')
@@ -702,7 +705,7 @@ class EJLX(commands.Cog):
         if detected == 0:
             await ctx.send(f"\N{CROSS MARK} Could not find potential trolls")
 
-    async def staff_ping(self, message, title="Active Staff Smart Ban Menu"):
+    async def staff_ping(self, message, title="Active Staff Ping Ban Menu"):
         msg_content = re.sub(REGEX_DISCORD_OBJ, '', message.content)
 
         # new users shouldn't trigger ban detections
@@ -822,7 +825,14 @@ class EJLX(commands.Cog):
                 bannees = [b["user"] for b in filtered_users]
                 if not bannees:
                     return 0
-                embed.description = '\n'.join(f'{NUMBER_EMOJIS[i]}: {b["user"]} {joined_to_relative_time(b["user"])}. Reason/Messages: {",".join(b["reasons"])}' for i, b in enumerate(filtered_users)) 
+                # if len(bannees) == 1:
+                #     embed.description = f'{b["user"].mention} {joined_to_relative_time(b["user"])}.\n__Reasons__: {",".join(b["reasons"])}'
+                #     embed.set_footer(text=f'Minimos can click the BAN emoji 3 times to ban them, or ✅ to dismiss this message')
+                #     ciri_message = await message.channel.send(embed=embed)
+                #     await self.reaction_ban(ciri_message, bannees, reason='Active Staff ping auto detection', delete_dismissed=True)
+                #     return 1
+
+                embed.description = '\n'.join(f'{NUMBER_EMOJIS[i]} {b["user"].mention} {joined_to_relative_time(b["user"])}. __Reasons__: {",".join(b["reasons"])}' for i, b in enumerate(filtered_users)) 
                 embed.set_footer(text=f'Minimos can click each number 3 times to ban them individually, BAN emoji 3 times to ban all of them, or ✅ to dismiss this message')
                 ciri_message = await message.channel.send(embed=embed)
                 await self.reaction_ban_multiple(ciri_message, bannees, reason='Active Staff ping auto detection', delete_dismissed=True)
