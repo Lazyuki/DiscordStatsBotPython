@@ -786,7 +786,7 @@ class EJLX(commands.Cog):
                     if N_WORD_REGEX.match(lower_content):
                         user_points[author.id]["points"] += 100
                         user_points[author.id]["reasons"].append("Hard R N-word")
-                    if ARABIC_REGEX.macth(lower_content) or HEBREW_REGEX.match(lower_content) or HANGUL_REGEX.match(lower_content) or CYRILLIC_REGEX.match(lower_content):
+                    if ARABIC_REGEX.match(lower_content) or HEBREW_REGEX.match(lower_content) or HANGUL_REGEX.match(lower_content) or CYRILLIC_REGEX.match(lower_content):
                         user_points[author.id]["points"] += 10
                         user_points[author.id]["reasons"].append(clean_and_truncate(m.content))
                     if  REGEX_URL.match(m.content) and 'discord.gg/japanese' not in m.content:
