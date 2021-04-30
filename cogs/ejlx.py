@@ -797,7 +797,7 @@ class EJLX(commands.Cog):
                             user_points[author.id]["points"] += 3
                             user_points[author.id]["reasons"].append(clean_and_truncate(REGEX_URL.match(m.content)[1]))
                     if BAD_JP_WORDS_REGEX.match(m.content):
-                        match = BAD_JP_WORDS_REGEX(m.content)[1]
+                        match = BAD_JP_WORDS_REGEX.match(m.content)[1]
                         user_points[author.id]["points"] += 4
                         user_points[author.id]["reasons"].append(clean_and_truncate(match))
                     words = m.content.lower().split()
