@@ -80,7 +80,7 @@ async def guess_lang(message):
         if orig == 'japanese':
             await message.add_reaction(JP_EMOJI)
             return
-        elif orig in ['english', 'canadian', 'australian', 'british']:
+        elif orig in ['english', 'canadian', 'australian', 'british', 'american']:
             await message.add_reaction(EN_EMOJI)
             return
         elif orig in LANGS:
