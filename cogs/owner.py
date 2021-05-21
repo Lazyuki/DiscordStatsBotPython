@@ -67,7 +67,8 @@ class Owner(commands.Cog):
     async def update(self, ctx):
         async with ctx.typing():
             stdout, _ = await self.run_process('git pull')
-            if 'bot.py' in stdout:
+            if 'bot.py' in stdout or 'cogs/utils' in stdout:
+                await ctx.send('Restarting...')
                 await self._restart(ctx)
             else:
                 cogs = re.findall(r'cogs/(\w+?)\.py', stdout)

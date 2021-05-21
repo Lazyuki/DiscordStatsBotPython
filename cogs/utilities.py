@@ -117,8 +117,9 @@ class Utilities(commands.Cog):
         reason = None
         guild = member.guild
         await asyncio.sleep(1)
+        now = datetime.now()
         async for entry in guild.audit_logs(action=discord.AuditLogAction.kick):
-            if entry.target.id == member.id:
+            if entry.target.id == member.id and (now - entry.created_at).total_seconds() < 10:
                 kicker = entry.user
                 reason = entry.reason
                 break
