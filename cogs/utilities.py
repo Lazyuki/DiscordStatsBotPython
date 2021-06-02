@@ -9,6 +9,9 @@ log = logging.getLogger(__name__)
 
 BOOSTER_COLOR = 0xf47fff
 
+async def has_manage_guild(ctx):
+    return ctx.author.guild_permissions.manage_guild
+
 class Utilities(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
@@ -23,6 +26,28 @@ class Utilities(commands.Cog):
         embed.timestamp = datetime.utcnow()
         embed.set_footer(text=f'Nitro Boosts: {ctx.guild.premium_subscription_count} (Tier {ctx.guild.premium_tier})')
         await ctx.send(embed=embed)
+
+    @commands.group(name='bookmark', aliases=['bm'])
+    async def bookmark(self, ctx):
+        """
+        React with the bookmark emoji to send a copy of the reacted message into your DM
+        You must enable "Allow direct messages from server members" for this server in Privacy Settings.
+        """
+        bookmark_emoji = self.settings[ctx.guild.id].bookmark_emoji
+        await ctx.send(f'''
+        React with {bookmark_emoji} to any message to send a copy into your DM
+        You must enable "Allow direct messages from server members" for this server in Privacy Settings. 
+        ''')
+
+    @bookmark.command(name='set')
+    @commands.check(has_manage_guild)
+    async def bookmark_set(self, ctx, *, emoji: discord.Emoji):
+        """
+        React with the bookmark emoji to send any message into your DM
+        ,bookmark set <emoji> to change emoji
+        """
+        self.settings.update_settings(ctx.guild, bookmark_emoji: str(emoji))
+        await ctx.send(f'\N{WHITE HEAVY CHECK MARK} Bookmark emoji has been set to {emoji}')
 
     @commands.command(aliases=['vp'])
     async def voiceping(self, ctx, *, message=''):
@@ -95,16 +120,15 @@ class Utilities(commands.Cog):
         # Fetch audit log to get who banned them
         banner = None
         await asyncio.sleep(1)
-        log.info(f'Member unbanned {user.name}')
         async for entry in guild.audit_logs(action=discord.AuditLogAction.unban):
             if entry.target.id == user.id:
                 banner = entry.user
                 break
-        log.info(f'Unbanned by {banner.name if banner else "Unknown"}')
+        unbanner = banner.name if banner else "Unknown"
         embed = discord.Embed(colour=0xeeeeee)
         embed.description = f'\N{WHITE EXCLAMATION MARK ORNAMENT} **{user.name}#{user.discriminator}** was `unbanned`. ({user.id})\n\n*by* {banner.mention if banner else "Unknown"}'
         embed.timestamp = datetime.utcnow()
-        embed.set_footer(text=f'User Unbanned', icon_url=user.avatar_url_as(static_format='png'))
+        embed.set_footer(text=f'User Unbanned by {unbanner}', icon_url=user.avatar_url_as(static_format='png'))
         chan = guild.get_channel(self.settings[guild.id].log_channel_id)
         if chan:
             await chan.send(embed=embed)
@@ -133,6 +157,68 @@ class Utilities(commands.Cog):
         chan = guild.get_channel(self.settings[guild.id].log_channel_id)
         if chan:
             await chan.send(embed=embed)
+
+    async def handle_reaction(self, reaction, user):
+        if user.id == self.bot.user.id:
+            return
+        
+        if reaction.message.guild:
+            # Is a guild event
+            if str(reaction.emoji) == self.settings[ctx.guild.id].bookmark_emoji:
+                message = reaction.message
+                embed = discord.Embed(colour=0x03befc)
+                embed.description = message.content or '*Empty*'
+                embed.add_field(name=f'#{message.channel.name} by @{message.author.name}', value=f'([Jump]({message.jump_url}))', inline=True)
+                embed.set_footer(text=f'React with \N{CROSS MARK} to delete this bookmark')
+                try:
+                    await user.send(embed=embed)
+                except:
+                    log.info(f'{user} tried to bookmark but could not send the message')
+
+    async def handle_raw_reaction(self, payload, is_add):
+        message_id = payload.message_id
+        user_id = payload.user_id
+        channel_id = payload.channel_id
+        guild_id = payload.guild_id
+        emoji = payload.emoji
+
+        if user_id == self.bot.user.id:
+            return
+
+        cached = discord.utils.find(lambda m: m.id == message_id, self.bot.cached_messages)
+        if cached:
+            return
+
+        if not guild_id:
+            # Inside DM
+            if str(emoji) == '\N{CROSS MARK}':
+                await user = self.bot.fetch_user(user_id)
+                message = await user.fetch_message(message_id)
+                await message.delete()
+            return
+             
+        
+        guild = self.bot.get_guild(guild_id)
+        channel = guild.get_channel(channel_id)
+        member = guild.get_member(user_id)
+        message = await channel.fetch_message(message_id)
+
+        if is_add:
+            reaction = discord.utils.find(lambda r: str(r.emoji) == str(emoji), message.reactions)
+            if not reaction:
+                return
+            await self.handle_reaction(reaction, member)
+        else:
+            pass
+
+    @commands.Cog.listener()
+    async def on_raw_reaction_add(self, payload):
+        await self.handle_raw_reaction(payload, True)
+
+    @commands.Cog.listener()
+    async def on_reaction_add(self, reaction, user):
+        await self.handle_reaction(reaction, user)
+
 
 def setup(bot):
     bot.add_cog(Utilities(bot))

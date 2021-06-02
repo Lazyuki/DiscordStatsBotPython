@@ -26,6 +26,10 @@ class Server:
     emoji_role_message_id: int = None
     emoji_roles: Dict[int, str] = None
     clubs: List[int] = field(default_factory=list)
+    bookmark_emoji: str = '\N{BOOKMARK}'
+    stage_instaban_regexes: List[str] = field(default=[r'\b(fag(got)?s?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|n[i1](?P<nixxer>\S)(?P=nixxer)([e3]r|a|let)s?|penis|cum|hitler)\b', r'o?chin ?chin', r'(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ|死ね)'])
+    stage_warn_regexes: List[str] = field(default=[r'\b(japs?|rape|discord\.gg)\b', r'(ゲイ|黒人)'])
+
     # hidden fields
     _mod_log_channel_id: int = None
     _mod_channel_ids: List[int] = field(default_factory=list)
@@ -102,7 +106,7 @@ class Settings(commands.Cog):
     @commands.check(has_manage_server)
     async def set_jp_role(self, ctx, jp_role_id: int):
         old_id = self.settings[ctx.guild.id].jp_role_id
-        self.updateSettings(ctx.guild, jp_role_id=jp_role_id)
+        self.update_settings(ctx.guild, jp_role_id=jp_role_id)
         if old_id is None:
             await ctx.send(f"This server's Japanese Role has been set to <@&{jp_role_id}>")
         else:
@@ -113,13 +117,13 @@ class Settings(commands.Cog):
     @commands.check(has_manage_server)
     async def set_mod_channels(self, ctx, channels: commands.Greedy[discord.TextChannel]):
         channel_ids = [c.id for c in channels]
-        self.updateSettings(ctx.guild, _mod_channel_ids=channel_ids)
+        self.update_settings(ctx.guild, _mod_channel_ids=channel_ids)
         await ctx.send(f"\N{WHITE HEAVY CHECK MARK} Mod channels have been set to {', '.join([c.mention for c in channels])}")
 
     @commands.command(aliases=['setlog'])
     @commands.check(has_manage_server)
     async def set_log_channel(self, ctx, *, channel: discord.TextChannel):
-        self.updateSettings(ctx.guild, log_channel_id=channel.id)
+        self.update_settings(ctx.guild, log_channel_id=channel.id)
         await ctx.send(f"\N{WHITE HEAVY CHECK MARK} Log channel has been set to {channel}")
 
     @commands.Cog.listener()
@@ -137,7 +141,7 @@ class Settings(commands.Cog):
             await self.run_process(f'cp {guild.id}-settings.json backups/{guild.id}-settings-{today}.json')
 
 
-    def updateSettings(self, guild, **kwargs):
+    def update_settings(self, guild, **kwargs):
         for key, value in kwargs.items():
             self.settings[guild.id][key] = value
         self.save(guild)

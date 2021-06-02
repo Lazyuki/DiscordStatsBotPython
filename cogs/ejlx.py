@@ -29,6 +29,7 @@ NF_CHANNEL = 193966083886153729
 NF_VOICE_TEXT = 390796551796293633
 NF_VOICE = 196684007402897408
 EWBF = 277384105245802497
+STAGE_QUARANTINE = 000
 
 # Roles
 NJ_ROLE = {
@@ -114,13 +115,6 @@ class ClubRole:
 
         return cls(role)
 
-class RaidWatcher:
-    def __init__(self):
-        self._bucket = []
-
-    def add(self, user_id: int):
-        pass
-
 async def send_music_bot_notif(message):
     await message.channel.send(f'{message.author.mention} All music bot commands should be in <#{VOICE_BOT_CHANNEL}> now.')
 
@@ -175,7 +169,6 @@ class EJLX(commands.Cog):
         self._recently_tagged = None
         self.troll_msgs = []
         self.nu_troll_msgs = []
-        self.raidwatcher = RaidWatcher()
         self._message_cooldown = commands.CooldownMapping.from_cooldown(1, 120, commands.BucketType.channel)
         
 
@@ -346,7 +339,6 @@ class EJLX(commands.Cog):
         self.newbies.append(member.id)
         if len(self.newbies) > 3:
             self.newbies.pop(0)
-        self.raidwatcher.add(member.id)
 
 
     @commands.Cog.listener()
@@ -852,7 +844,8 @@ class EJLX(commands.Cog):
                     await message.reply(embed=embed, mention_author=True)
                 return
 
-
+    async def moderate_stage(self, message):
+        pass
 
     @commands.Cog.listener()
     async def on_safe_message(self, message, **kwargs):
@@ -882,6 +875,8 @@ class EJLX(commands.Cog):
             if MUSIC_BOT_REGEX.match(message.content):
                 await send_music_bot_notif(message)
         await self.check_jap(message)
+        if message.channel.id == STAGE_QUARANTINE:
+            await self.moderate_stage(message)
 
 
     @commands.Cog.listener()
