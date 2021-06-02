@@ -192,7 +192,7 @@ class Utilities(commands.Cog):
         if not guild_id:
             # Inside DM
             if str(emoji) == '\N{CROSS MARK}':
-                await user = self.bot.fetch_user(user_id)
+                user = await self.bot.fetch_user(user_id)
                 message = await user.fetch_message(message_id)
                 await message.delete()
             return
