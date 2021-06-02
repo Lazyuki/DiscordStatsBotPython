@@ -74,7 +74,6 @@ class Settings(commands.Cog):
                 with open(filename, 'r') as data:
                     server_settings = json.load(data)
                     self.settings[guild.id] = Server(**server_settings)
-                    if self.settings[guild.id].
                     logging.info(f'Successfully loaded {filename}')
             except FileNotFoundError:
                 self.settings[guild.id] = Server(guild_id=guild.id)
