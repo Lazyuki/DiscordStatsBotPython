@@ -172,7 +172,7 @@ You must enable `Allow direct messages from server members` for this server in P
 
                 embed = discord.Embed(colour=0x03befc)
                 embed.description = shortened_content or '*Empty*'
-                embed.add_field(name=f'', value=f'([Go to message]({message.jump_url}))', inline=True)
+                embed.add_field(name=f'-----------------------', value=f'[\N{LINK SYMBOL} Go to message ↦]({message.jump_url})', inline=True)
                 embed.set_author(name=message.author.name, icon_url=message.author.avatar_url_as(static_format='png'))
                 embed.set_footer(text=f'#{message.channel.name}\nReact with \N{CROSS MARK} to delete this bookmark')
                 try:
