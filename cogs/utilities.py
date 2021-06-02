@@ -27,7 +27,7 @@ class Utilities(commands.Cog):
         embed.set_footer(text=f'Nitro Boosts: {ctx.guild.premium_subscription_count} (Tier {ctx.guild.premium_tier})')
         await ctx.send(embed=embed)
 
-    @commands.group(name='bookmark', aliases=['bm'])
+    @commands.group(name='bookmark', aliases=['bm'], invoke_without_command=True)
     async def bookmark(self, ctx):
         """
         React with the bookmark emoji to send a copy of the reacted message into your DM
@@ -35,8 +35,8 @@ class Utilities(commands.Cog):
         """
         bookmark_emoji = self.settings[ctx.guild.id].bookmark_emoji
         await ctx.send(f'''
-        React with {bookmark_emoji} to any message to send a copy into your DM
-        You must enable "Allow direct messages from server members" for this server in Privacy Settings. 
+        React with {bookmark_emoji} to any message to send a copy into your DM.
+You must enable `Allow direct messages from server members` for this server in Privacy Settings. 
         ''')
 
     @bookmark.command(name='set')
@@ -164,7 +164,7 @@ class Utilities(commands.Cog):
         
         if reaction.message.guild:
             # Is a guild event
-            if str(reaction.emoji) == self.settings[ctx.guild.id].bookmark_emoji:
+            if str(reaction.emoji) == self.settings[reaction.message.guild.id].bookmark_emoji:
                 message = reaction.message
                 embed = discord.Embed(colour=0x03befc)
                 embed.description = message.content or '*Empty*'
