@@ -8,6 +8,10 @@ import subprocess
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
 
+INSTABAN_REGEXES = [r'\b(fag(got)?s?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|n[i1](?P<nixxer>\S)(?P=nixxer)([e3]r|a|let)s?|penis|cum|hitler|pussy)\b', r'o?chin ?chin', r'(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ|死ね)']
+WARN_REGEXES = [r'\b(japs?|rape|discord\.gg|simps?)\b', r'(ゲイ|黒人)']
+
+
 @dataclass
 class Server:
     """
@@ -27,8 +31,8 @@ class Server:
     emoji_roles: Dict[int, str] = None
     clubs: List[int] = field(default_factory=list)
     bookmark_emoji: str = '\N{BOOKMARK}'
-    stage_instaban_regexes: List[str] = field(default=[r'\b(fag(got)?s?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|n[i1](?P<nixxer>\S)(?P=nixxer)([e3]r|a|let)s?|penis|cum|hitler)\b', r'o?chin ?chin', r'(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ|死ね)'])
-    stage_warn_regexes: List[str] = field(default=[r'\b(japs?|rape|discord\.gg)\b', r'(ゲイ|黒人)'])
+    stage_instaban_regexes: List[str] = field(default_factory=list)
+    stage_warn_regexes: List[str] = field(default_factory=list)
 
     # hidden fields
     _mod_log_channel_id: int = None
@@ -70,6 +74,7 @@ class Settings(commands.Cog):
                 with open(filename, 'r') as data:
                     server_settings = json.load(data)
                     self.settings[guild.id] = Server(**server_settings)
+                    if self.settings[guild.id].
                     logging.info(f'Successfully loaded {filename}')
             except FileNotFoundError:
                 self.settings[guild.id] = Server(guild_id=guild.id)
