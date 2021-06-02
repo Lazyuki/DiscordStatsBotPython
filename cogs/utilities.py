@@ -166,14 +166,30 @@ You must enable `Allow direct messages from server members` for this server in P
             # Is a guild event
             if str(reaction.emoji) == self.settings[reaction.message.guild.id].bookmark_emoji:
                 message = reaction.message
+
+                too_long = len(message.content) > 2048
+                shortened_content = message.content[:2040] + ' (...)' if too_long else message.content
+
                 embed = discord.Embed(colour=0x03befc)
-                embed.description = message.content or '*Empty*'
-                embed.add_field(name=f'#{message.channel.name} by @{message.author.name}', value=f'([Jump]({message.jump_url}))', inline=True)
-                embed.set_footer(text=f'React with \N{CROSS MARK} to delete this bookmark')
+                embed.description = shortened_content or '*Empty*'
+                embed.add_field(name=f'--------------', value=f'([Go to message]({message.jump_url}))', inline=True)
+                embed.set_author(name=message.author.name, icon_url=message.author.avatar_url_as('png'))
+                embed.set_footer(text=f'#{message.channel.name}\nReact with \N{CROSS MARK} to delete this bookmark')
                 try:
                     await user.send(embed=embed)
+                    if too_long:
+                        embed_cont = embed.copy()
+                        embed_cont.description = message.content[2040:]
+                        embed_cont.title = '(continued)'
+                        await user.send(embed=embed_cont)
+
                 except:
                     log.info(f'{user} tried to bookmark but could not send the message')
+        else:
+            if str(reaction.emoji) == '\N{CROSS MARK}':
+                message = await user.fetch_message(reaction.message.id)
+                await message.delete()
+            return
 
     async def handle_raw_reaction(self, payload, is_add):
         message_id = payload.message_id
@@ -218,7 +234,6 @@ You must enable `Allow direct messages from server members` for this server in P
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
         await self.handle_reaction(reaction, user)
-
 
 def setup(bot):
     bot.add_cog(Utilities(bot))
