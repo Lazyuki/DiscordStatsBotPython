@@ -167,24 +167,20 @@ You must enable `Allow direct messages from server members` for this server in P
             if str(reaction.emoji) == self.settings[reaction.message.guild.id].bookmark_emoji:
                 message = reaction.message
 
-                too_long = len(message.content) > 2048
-                shortened_content = message.content[:2040] + ' (...)' if too_long else message.content
-
                 embed = discord.Embed(colour=0x03befc)
-                embed.description = shortened_content or '*Empty*'
-                embed.add_field(name=f'-----------------------', value=f'[\N{LINK SYMBOL} Go to message ↦]({message.jump_url})', inline=True)
+                embed.description = message.content[:2048] or '*Empty*'
+                if len(message.content) > 2048:
+                    embed.add_field(name='(continued)', value=message.content[2048:4096])
+                    if len(message.content) > 4096:
+                        embed.add_field(name='(continued)', value=message.content[4096:])
+
+                embed.add_field(name=f' ', value=f'[\N{LINK SYMBOL} Go to message ↦]({message.jump_url})', inline=True)
                 embed.set_author(name=message.author.name, icon_url=message.author.avatar_url_as(static_format='png'))
                 embed.set_footer(text=f'#{message.channel.name}\nReact with \N{CROSS MARK} to delete this bookmark')
                 try:
                     await user.send(embed=embed)
-                    if too_long:
-                        embed_cont = embed.copy()
-                        embed_cont.description = message.content[2040:]
-                        embed_cont.title = '(continued)'
-                        await user.send(embed=embed_cont)
-
                 except:
-                    log.info(f'{user} tried to bookmark but could not send the message')
+                    pass
         else:
             if str(reaction.emoji) == '\N{CROSS MARK}':
                 message = await user.fetch_message(reaction.message.id)
