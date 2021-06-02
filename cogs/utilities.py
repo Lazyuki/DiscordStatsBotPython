@@ -184,7 +184,7 @@ You must enable `Allow direct messages from server members` for this server in P
         else:
             if str(reaction.emoji) == '\N{CROSS MARK}':
                 message = await user.fetch_message(reaction.message.id)
-                if message.author.id != self.bot.user.id:
+                if message.author.id == self.bot.user.id:
                     await message.delete()
             return
 
@@ -207,7 +207,7 @@ You must enable `Allow direct messages from server members` for this server in P
             if str(emoji) == '\N{CROSS MARK}':
                 user = await self.bot.fetch_user(user_id)
                 message = await user.fetch_message(message_id)
-                if message.author.id != self.bot.user.id:
+                if message.author.id == self.bot.user.id:
                     await message.delete()
             return
              
