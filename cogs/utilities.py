@@ -46,7 +46,7 @@ class Utilities(commands.Cog):
         React with the bookmark emoji to send any message into your DM
         ,bookmark set <emoji> to change emoji
         """
-        self.settings.update_settings(ctx.guild, bookmark_emoji: str(emoji))
+        self.settings.update_settings(ctx.guild, bookmark_emoji=str(emoji))
         await ctx.send(f'\N{WHITE HEAVY CHECK MARK} Bookmark emoji has been set to {emoji}')
 
     @commands.command(aliases=['vp'])
