@@ -4,13 +4,26 @@ import discord
 import logging
 import asyncio 
 import re
+from .utils.resolver import has_role, resolve_options
 
 log = logging.getLogger(__name__)
 
 BOOSTER_COLOR = 0xf47fff
+MINIMO_ROLE = 250907197075226625
 
 async def has_manage_guild(ctx):
     return ctx.author.guild_permissions.manage_guild
+
+def async_call_later(seconds, callback):
+    async def schedule():
+        await asyncio.sleep(seconds)
+
+        if asyncio.iscoroutinefunction(callback):
+            await callback()
+        else:
+            callback()
+
+    asyncio.ensure_future(schedule())
 
 class Utilities(commands.Cog):
     def __init__(self, bot):
@@ -65,6 +78,91 @@ You must enable `Allow direct messages from server members` for this server in P
             return
         s += ' '.join(members)
         await ctx.send(s)
+
+    @commands.command(aliases=['mv'])
+    async def move(self, ctx, *, args):
+        """
+        Seamlessly move to a different channel.
+        `,mv <#destination-channel> <@mensions or IDs of users to move>`
+        e.g. `,mv #bot @Adiost 284840842026549259`
+        The command invoker is included by default. 
+        Mods can pass in the `-d` flag to delete the original messages in the source channel.
+        Mods can pass in the `-f` flag to temporarily mute them in the source channel.
+        """
+        dest = ctx.message.channel_mentions
+        await ctx.message.delete()
+
+        if len(dest) == 0:
+            await ctx.send('Please mention the destination channel')
+            return
+
+        dest = dest[0]
+        src = ctx.channel
+        delete = False
+        force = False
+
+        if ctx.author.guild_permissions.manage_guild or has_role(ctx.author, 250907197075226625):
+            _, options = resolve_options(args, { "delete": { "abbrev": "d", "boolean": True }, "force": { "abbrev": "f", "boolean": True } })
+            delete = options.get("delete")
+            force = options.get("force")
+        args = args.replace(dest.mention, '').strip()
+        if len(args) == 0:
+            await ctx.send('Please mention users to move')
+            return
+
+        user_ids = [ctx.author.id]
+        user_ids += [int(uid) for uid in re.findall(r'([0-9]{17,23})', args)]
+        
+        curr_uid = 0
+        src_messages = []
+        message_authors = []
+        messages_to_del = []
+
+        # look up past 30 messages
+        async for message in src.history(limit=20):
+            author = message.author.id
+            if author in user_ids:
+                if author == curr_uid:
+                    src_messages[-1] = message.content + '\n' + src_messages[-1]
+                    messages_to_del.append(message)
+                else:
+                    if len(src_messages) == 5:
+                        break
+                    src_messages.append(message.content)
+                    messages_to_del.append(message)
+                    message_authors.append(message.author)
+                    curr_uid = author
+
+        src_messages.reverse()
+        message_authors.reverse()
+
+        if delete:
+            await ctx.channel.delete_messages(messages_to_del)
+
+        src_embed = discord.Embed(colour=0x11e00d)
+        src_embed.description = f'Moved to {dest.mention}'
+        src_embed.set_footer(text=f'Initiated by {ctx.author}')
+        src_msg = await ctx.send(embed=src_embed)
+        dest_embed = discord.Embed(colour=0x36393f)
+        dest_embed.description = f'Moved from {src.mention}\n[Jump to the original context ↦]({src_msg.jump_url})'
+        for i, content in enumerate(src_messages):
+            author = message_authors[i]
+            chunks = [ content[i:i+2048] for i in range(0, len(content), 2048) ]
+            for j, chunk in enumerate(chunks):
+                dest_embed.add_field(name=f'{author.display_name if j == 0 else "\u200b"}', value=chunk)
+        
+        dest_embed.set_footer(text=f'Initiated by {ctx.author}')
+        dest_msg = await dest.send(''.join([ f'<@{id}>' for id in user_ids]), embed=dest_embed)
+        src_embed.description += f'\n[Continue the conversation ↦]({dest_msg.jump_url})'
+        await src_msg.edit(embed=src_embed)
+        if forced:
+            for uid in user_ids:
+                if uid == ctx.author.id:
+                    continue
+                member = ctx.guild.get_member(uid) 
+                await src.set_permissions(member, send_messages=False)
+                unmute = src.set_permissions(member, overwrite=None)
+                async_call_later(180, unmute)
 
     @commands.command()
     async def poll(self, ctx, *, arg = None):

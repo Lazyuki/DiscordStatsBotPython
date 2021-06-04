@@ -683,7 +683,7 @@ class EJLX(commands.Cog):
         if len(self.nu_troll_msgs) > 20:
             self.nu_troll_msgs.pop(0)
 
-    @commands.command(aliases=['autobahn'])
+    @commands.command(aliases=['autobahn', 'ab'])
     @commands.check(has_ban)
     async def autoban(self, ctx):
         """
