@@ -10,6 +10,7 @@ log = logging.getLogger(__name__)
 
 BOOSTER_COLOR = 0xf47fff
 MINIMO_ROLE = 250907197075226625
+NL = '\n'
 
 async def has_manage_guild(ctx):
     return ctx.author.guild_permissions.manage_guild
@@ -144,7 +145,7 @@ You must enable `Allow direct messages from server members` for this server in P
         src_embed.set_footer(text=f'Initiated by {ctx.author}')
         src_msg = await ctx.send(embed=src_embed)
         dest_embed = discord.Embed(colour=0x36393f)
-        dest_embed.description = f'Moved from {src.mention}\n[Jump to the original context ↦]({src_msg.jump_url})'
+        dest_embed.description = f'Moved from {src.mention}{NL}[Jump to the original context ↦]({src_msg.jump_url})'
         for i, content in enumerate(src_messages):
             author = message_authors[i]
             chunks = [ content[i:i+2048] for i in range(0, len(content), 2048) ]
@@ -153,7 +154,7 @@ You must enable `Allow direct messages from server members` for this server in P
         
         dest_embed.set_footer(text=f'Initiated by {ctx.author}')
         dest_msg = await dest.send(''.join([ f'<@{id}>' for id in user_ids]), embed=dest_embed)
-        src_embed.description += f'\n[Continue the conversation ↦]({dest_msg.jump_url})'
+        src_embed.description += f'{NL}[Continue the conversation ↦]({dest_msg.jump_url})'
         await src_msg.edit(embed=src_embed)
         if forced:
             for uid in user_ids:
