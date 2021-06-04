@@ -156,7 +156,7 @@ You must enable `Allow direct messages from server members` for this server in P
         dest_msg = await dest.send(''.join([ f'<@{id}>' for id in user_ids]), embed=dest_embed)
         src_embed.description += f'{NL}[Continue the conversation ↦]({dest_msg.jump_url})'
         await src_msg.edit(embed=src_embed)
-        if forced:
+        if force:
             for uid in user_ids:
                 if uid == ctx.author.id:
                     continue
