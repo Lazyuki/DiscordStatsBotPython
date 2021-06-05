@@ -729,10 +729,10 @@ class EJLX(commands.Cog):
                     await self.reaction_ban_multiple(ciri_message, message.mentions, reason='Active Staff ping auto detection', delete_dismissed=delete_dismissed)
                     return
 
-                # check raid if last 4 people joined within 3 minutes
+                # check raid if last 4 people joined within 2 minutes
                 members_by_joined_date = sorted(message.guild.members, key=lambda m: m.joined_at)
                 last_4_in = (members_by_joined_date[-1].joined_at - members_by_joined_date[-4].joined_at).total_seconds()
-                if last_4_in < 180:
+                if last_4_in < 120:
                     # possible raid so just add new users who's said anything
                     new_users = dict()
                     for m in messages:
@@ -814,6 +814,7 @@ class EJLX(commands.Cog):
                 if not bannees:
                     return 0
                 if len(bannees) == 1:
+                    b = bannees[0]
                     embed.description = f'{b["user"].mention} {joined_to_relative_time(b["user"])}.\n__Reasons__: {",".join(b["reasons"])}'
                     embed.set_footer(text=f'Minimos can click the BAN emoji 3 times to ban them, or ✅ to dismiss this message')
                     ciri_message = await message.channel.send(embed=embed)
