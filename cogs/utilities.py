@@ -141,7 +141,7 @@ You must enable `Allow direct messages from server members` for this server in P
             await ctx.channel.delete_messages(messages_to_del)
 
         src_embed = discord.Embed(colour=0x11e00d)
-        src_embed.description = f'Moved to {dest.mention}'
+        src_embed.description = f'Moved to {dest.mention}{"(Muted in this channel for 3 minutes)" if force else ""}'
         src_embed.set_footer(text=f'Initiated by {ctx.author}')
         src_msg = await ctx.send(embed=src_embed)
         dest_embed = discord.Embed(colour=0x36393f)
@@ -150,11 +150,11 @@ You must enable `Allow direct messages from server members` for this server in P
             author = message_authors[i]
             chunks = [ content[i:i+2048] for i in range(0, len(content), 2048) ]
             for j, chunk in enumerate(chunks):
-                dest_embed.add_field(name=f'\N{BUST IN SILHOUETTE}{author.mention}' if j == 0 else "\u200b", value=chunk)
+                dest_embed.add_field(name=f'\N{BUST IN SILHOUETTE}__**{author.display_name}**__' if j == 0 else "\u200b", value=chunk, inline=False)
         
         dest_embed.set_footer(text=f'Initiated by {ctx.author}')
         dest_msg = await dest.send(''.join([ f'<@{id}>' for id in user_ids]), embed=dest_embed)
-        src_embed.description += f'{NL}[Continue the conversation ↦]({dest_msg.jump_url})'
+        src_embed.description += f'{NL}[Click here to continue the conversation ↦]({dest_msg.jump_url})'
         await src_msg.edit(embed=src_embed)
         if force:
             for uid in user_ids:
