@@ -150,7 +150,7 @@ You must enable `Allow direct messages from server members` for this server in P
             author = message_authors[i]
             chunks = [ content[i:i+2048] for i in range(0, len(content), 2048) ]
             for j, chunk in enumerate(chunks):
-                dest_embed.add_field(name=f'\N{BUST IN SILHOUETTE}__**{author.mention}**__' if j == 0 else "\u200b", value=chunk)
+                dest_embed.add_field(name=f'\N{BUST IN SILHOUETTE}{author.mention}' if j == 0 else "\u200b", value=chunk)
         
         dest_embed.set_footer(text=f'Initiated by {ctx.author}')
         dest_msg = await dest.send(''.join([ f'<@{id}>' for id in user_ids]), embed=dest_embed)
