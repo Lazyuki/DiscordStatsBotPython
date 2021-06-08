@@ -81,7 +81,7 @@ You must enable `Allow direct messages from server members` for this server in P
         await ctx.send(s)
 
     @commands.command(aliases=['mv'])
-    async def move(self, ctx, *, args):
+    async def move(self, ctx, *, args=''):
         """
         Seamlessly move to a different channel.
         `,mv <#destination-channel> <@mensions or IDs of users to move>`
