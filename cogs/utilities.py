@@ -142,7 +142,7 @@ You must enable `Allow direct messages from server members` for this server in P
             await ctx.channel.delete_messages(messages_to_del)
 
         src_embed = discord.Embed(colour=0x11e00d)
-        src_embed.description = f'Moved to {dest.mention}{"(Muted in this channel for 3 minutes)" if force else ""}'
+        src_embed.description = f'Moved {", ".join([f"<@{u}>" for u in user_ids])} to {dest.mention}{"(Muted in this channel for 3 minutes)" if force else ""}'
         src_embed.set_footer(text=f'Initiated by {ctx.author}')
         src_msg = await ctx.send(embed=src_embed)
         dest_embed = discord.Embed(colour=0x36393f)
