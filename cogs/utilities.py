@@ -94,7 +94,7 @@ You must enable `Allow direct messages from server members` for this server in P
         await ctx.message.delete()
 
         if not dest:
-            await ctx.send('Please mention the destination channel')
+            await ctx.send('Please mention the destination channel', delete_after=10)
             return
 
         dest = dest[0]
@@ -108,7 +108,7 @@ You must enable `Allow direct messages from server members` for this server in P
             force = options.get("force")
         args = args.replace(dest.mention, '').strip()
         if len(args) == 0:
-            await ctx.send('Please mention users to move')
+            await ctx.send('Please mention users to move',  delete_after=10)
             return
 
         user_ids = [ctx.author.id]
