@@ -93,7 +93,7 @@ You must enable `Allow direct messages from server members` for this server in P
         dest = ctx.message.channel_mentions
         await ctx.message.delete()
 
-        if len(dest) == 0:
+        if not dest:
             await ctx.send('Please mention the destination channel')
             return
 
@@ -113,6 +113,7 @@ You must enable `Allow direct messages from server members` for this server in P
 
         user_ids = [ctx.author.id]
         user_ids += [int(uid) for uid in re.findall(r'([0-9]{17,23})', args)]
+        user_ids = list(set(user_ids))
         
         curr_uid = 0
         src_messages = []
