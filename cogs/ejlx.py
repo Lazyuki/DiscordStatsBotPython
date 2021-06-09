@@ -650,6 +650,19 @@ class EJLX(commands.Cog):
             await author.ban(delete_message_days=1, reason="Auto-banned. New user using the N-word")
             await message.channel.send(f'{author.mention} has been banned automatically')
             return
+        if '@everyone' in message.content:
+            if len(message.content.split('@everyone')) > 3:
+                await author.ban(delete_message_days=1, reason="Auto-banned. New user @everyone spam")
+                await message.channel.send(f'{author.mention} has been banned automatically')
+                return
+            await author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible spam detected. This new user tried to ping everyone") 
+            embed = discord.Embed(colour=0xff0000)
+            embed.description = f'**New User** {author.mention} has been **muted automatically** for trying to ping everyone.\n> {content[:100] + "..." if len(content) > 100 else content}'
+            embed.set_footer(text=f'WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them.')
+            prompt = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>', embed=embed, mention_author=False)
+            await self.reaction_ban(prompt, [author], reason='New user trying to ping everyone', wp=True, unmute_dismissed=True) 
+            return
+
 
         for nu in self.nu_troll_msgs:
             if nu['id'] == author.id:
@@ -852,7 +865,7 @@ class EJLX(commands.Cog):
     async def on_safe_message(self, message, **kwargs):
         if self.bot.config.debugging:
             return
-        if message.guild.id != EJLX_ID:
+        if not message.guild or message.guild.id != EJLX_ID:
             return
         if not has_any_role(message.author, LANG_ROLE_IDS):
             await guess_lang(message)
@@ -882,7 +895,7 @@ class EJLX(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
-        if message.guild.id != EJLX_ID:
+        if not message.guild or message.guild.id != EJLX_ID:
             return
         if message.author.bot:
             return

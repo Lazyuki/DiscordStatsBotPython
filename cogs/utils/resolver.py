@@ -11,12 +11,12 @@ def Map(dict):
     __delattr__ = dict.__delitem__
 
 def has_role(member, role_id):
-    if not member:
+    if not member or not member.roles:
         return False
     return discord.utils.find(lambda r: r.id == role_id, member.roles) is not None
 
 def has_any_role(member, role_ids):
-    if not member:
+    if not member or not member.roles:
         return False
     return discord.utils.find(lambda r: r.id in role_ids, member.roles) is not None
 
