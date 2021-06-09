@@ -15,10 +15,10 @@ NL = '\n'
 async def has_manage_guild(ctx):
     return ctx.author.guild_permissions.manage_guild
 
-def async_call_later(seconds, callback):
+def async_call_later(seconds: int, coro: asyncio.coroutines):
     async def schedule():
         await asyncio.sleep(seconds)
-        await callback()
+        await coro()
     asyncio.ensure_future(schedule())
 
 class Utilities(commands.Cog):
@@ -92,8 +92,8 @@ You must enable `Allow direct messages from server members` for this server in P
             await ctx.send('Please mention the destination channel', delete_after=10)
             return
 
-        dest = dest[0]
-        src = ctx.channel
+        dest: discord.TextChannel = dest[0]
+        src: discord.TextChannel = ctx.channel
         delete = False
         force = False
 
@@ -158,8 +158,10 @@ You must enable `Allow direct messages from server members` for this server in P
                     continue
                 member = ctx.guild.get_member(uid) 
                 await src.set_permissions(member, send_messages=False)
-                unmute = src.set_permissions(member, overwrite=None)
-                async_call_later(180, unmute)
+                async def unmute():
+                    await asyncio.sleep(180)
+                    await src.set_permissions(member, overwrite=None)
+                asyncio.ensure_future(unmute())
 
     @commands.command()
     async def poll(self, ctx, *, arg = None):
