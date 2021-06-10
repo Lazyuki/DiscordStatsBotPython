@@ -413,6 +413,7 @@ class EJLX(commands.Cog):
         else:
             # Failed to get invites for some people OR multi-join
             self._multi_queue.append(member)
+            aws.append(postBotLog(self.bot, f'{member} found {len(potential_invites)} invites' ))
 
         self._newbie_queue.remove(member.id)
         if len(self._newbie_queue) == 0:
