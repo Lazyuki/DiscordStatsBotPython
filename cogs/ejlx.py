@@ -1,4 +1,4 @@
-from discord.ext import commands, typed_commands
+from discord.ext import commands
 from typing import List
 import discord
 import asyncio
@@ -166,10 +166,10 @@ async def postBotLog(bot: discord.Client, message: str):
     bot_log = my_s.get_channel(325532503567761408)
     await bot_log.send(message)
 
-class EJLXContext(typed_commands.Context):
-    pass
+# class EJLXContext(typed_commands.Context):
+#     pass
 
-class EJLX(typed_commands.Cog[EJLXContext]):
+class EJLX(commands.Cog):
     def __init__(self, bot):
         self.bot: discord.Client = bot
         self.settings = bot.settings
