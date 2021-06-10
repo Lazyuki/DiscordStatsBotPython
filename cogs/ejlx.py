@@ -166,9 +166,6 @@ async def postBotLog(bot: discord.Client, message: str):
     bot_log = my_s.get_channel(325532503567761408)
     await bot_log.send(message)
 
-# class EJLXContext(typed_commands.Context):
-#     pass
-
 class EJLX(commands.Cog):
     def __init__(self, bot):
         self.bot: discord.Client = bot
@@ -423,7 +420,8 @@ class EJLX(commands.Cog):
             self.vanity_uses = vanity.uses
             for multi in self._multi_queue:
                 self.newbies.append({ "member": multi, "invites": potential_invites })
-            aws.append(postBotLog(self.bot, f'{", ".join([str(m) for m in self._multi_queue])} joined with {", ".join([i.id for i in potential_invites])}' ))
+            if self._multi_queue:
+                aws.append(postBotLog(self.bot, f'{", ".join([str(m) for m in self._multi_queue])} joined with {", ".join([i.id for i in potential_invites])} (multi)' ))
             self._multi_queue = []
         if len(self.newbies) > 20:
             self.newbies.pop(0)
