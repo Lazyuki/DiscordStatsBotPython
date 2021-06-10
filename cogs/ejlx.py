@@ -1,4 +1,4 @@
-from discord.ext import commands
+from discord.ext import commands, typed_commands
 from typing import List
 import discord
 import asyncio
@@ -29,7 +29,7 @@ NF_CHANNEL = 193966083886153729
 NF_VOICE_TEXT = 390796551796293633
 NF_VOICE = 196684007402897408
 EWBF = 277384105245802497
-STAGE_QUARANTINE = 000
+STAGE_QUARANTINE = 852380454546964490
 
 # Roles
 NJ_ROLE = {
@@ -65,6 +65,7 @@ MINIMO_ROLE = 250907197075226625
 STAFF_ROLE = 543721608506900480
 ADMIN_ROLE = 189594666365091850
 ACTIVE_STAFF_ROLE = 240647591770062848
+STAGE_VISITOR_ROLE = 645021058184773643
 
 ROLES = [NJ_ROLE, FJ_ROLE, NE_ROLE, FE_ROLE, OL_ROLE, NU_ROLE]
 ROLE_IDS = [r['id'] for r in ROLES]
@@ -160,9 +161,17 @@ def clean_and_truncate(content):
     clean_content = f"`{clean_content[:10] + ('...' if len(clean_content) > 10 else '')}`"
     return clean_content
 
-class EJLX(commands.Cog):
+async def postBotLog(bot: discord.Client, message: str):
+    my_s = discord.utils.find(lambda g: g.id == 293787390710120449, bot.guilds)
+    bot_log = my_s.get_channel(325532503567761408)
+    await bot_log.send(message)
+
+class EJLXContext(typed_commands.Context):
+    pass
+
+class EJLX(typed_commands.Cog[EJLXContext]):
     def __init__(self, bot):
-        self.bot = bot
+        self.bot: discord.Client = bot
         self.settings = bot.settings
         self.newbies = []
         self._role_lock = asyncio.Lock()
@@ -170,10 +179,30 @@ class EJLX(commands.Cog):
         self.troll_msgs = []
         self.nu_troll_msgs = []
         self._message_cooldown = commands.CooldownMapping.from_cooldown(1, 120, commands.BucketType.channel)
+        self.invites: dict[str, int] = dict()
+        self.vanity_uses: int = 0 
+        self._new_invites_cache: list[discord.Invite] = []
+        self._vanity_cache: discord.Invite = None
+        self._invite_lock = asyncio.Lock()
+        self._recent_invite: datetime = None
+        self._newbie_queue: list[int] = []
+        self._multi_queue: list[discord.Member] = []
         
 
     async def cog_check(self, ctx):
         return ctx.guild.id == EJLX_ID
+
+    @commands.Cog.listener()
+    async def on_ready(self):
+        for guild in self.bot.guilds:
+            if guild.id == EJLX_ID:
+                invites = await guild.invites()
+                vanity = await guild.vanity_invite()
+                self._recent_invite = datetime.now()
+                self.invites = { invite.id: invite.uses for invite in invites }
+                self._new_invites_cache = invites
+                self.vanity_uses = vanity.uses
+                self._vanity_cache = vanity
 
     # @commands.command()
     # @commands.check(has_manage_roles)
@@ -333,12 +362,73 @@ class EJLX(commands.Cog):
 
 
     @commands.Cog.listener()
-    async def on_member_join(self, member):
+    async def on_member_join(self, member: discord.Member):
         if member.guild.id != EJLX_ID:
             return
-        self.newbies.append(member.id)
-        if len(self.newbies) > 3:
+        if member.voice:
+            # stage channel
+            self.newbies.append({ "member": member, "discovery": True })
+            # await member.add_roles(member.guild.get_role(STAGE_VISITOR_ROLE)) 
+            await postBotLog(self.bot, f'Detected voice state upon joining {member}' )
+            if len(self.newbies) > 20:
+                self.newbies.pop(0)
+            return
+        self._newbie_queue.append(member.id)
+        asyncio.sleep(0.5) 
+        async with self._invite_lock:
+            if (datetime.now() - self._recent_invite).total_seconds() < 0.5:
+                new_invites = self._new_invites_cache
+                vanity = self._vanity_cache
+            else:
+                new_invites = await member.guild.invites()
+                vanity = await member.guild.vanity_invite()
+                self._new_invites_cache = new_invites
+                self._vanity_cache = vanity
+                self._recent_invite = datetime.now()
+        
+        potential_invites: list[discord.Invite] = []
+        for invite in new_invites:
+            new_usage = invite.uses
+            if invite.id in self.invites:
+                old_usage = self.invites[invite.id]
+            else:
+                old_usage = 0
+            if new_usage != old_usage:
+                potential_invites.append(invite)
+        if vanity.uses != self.vanity_uses:
+            potential_invites.append(vanity)
+        
+        aws = []
+        if len(potential_invites) == 0:
+            # Server discovery or one use invite?
+            self.newbies.append({ "member": member, "discovery": True })
+            # aws.append(member.add_roles(member.guild.get_role(STAGE_VISITOR_ROLE)))
+            aws.append(postBotLog(self.bot, f'Discovery join {member}'))
+        elif len(potential_invites) == 1:
+            # Found one
+            invite = potential_invites[0]
+            self.newbies.append({ "member": member, "invite": invite })
+            aws.append(postBotLog(self.bot, f'{member} joined with {invite.id} from {invite.inviter if invite.id != "japanese" else "vanity"}' ))
+            if invite.id == 'japanese':
+                self.vanity_uses += 1
+            else:
+                self.invites[invite.id] += 1
+        else:
+            # Failed to get invites for some people OR multi-join
+            self._multi_queue.append(member)
+
+        self._newbie_queue.remove(member.id)
+        if len(self._newbie_queue) == 0:
+            self.invites = { invite.id: invite.uses for invite in new_invites }
+            self.vanity_uses = vanity.uses
+            for multi in self._multi_queue:
+                self.newbies.append({ "member": multi, "invites": potential_invites })
+            aws.append(postBotLog(self.bot, f'{", ".join([str(m) for m in self._multi_queue])} joined with {", ".join([i.id for i in potential_invites])}' ))
+            self._multi_queue = []
+        if len(self.newbies) > 20:
             self.newbies.pop(0)
+
+        await asyncio.wait(aws)
 
 
     @commands.Cog.listener()
@@ -868,8 +958,9 @@ class EJLX(commands.Cog):
         if not message.guild or message.guild.id != EJLX_ID:
             return
         if not has_any_role(message.author, LANG_ROLE_IDS):
-            await guess_lang(message)
-            await asking_vc(message)
+            if message.channel.id != STAGE_QUARANTINE:
+                await guess_lang(message)
+                await asking_vc(message)
             await self.new_user_troll_check(message)
         else:
             if time_since_join(message.author) == 0:
@@ -900,9 +991,7 @@ class EJLX(commands.Cog):
         if message.author.bot:
             return
         if message.content.startswith(';report'):
-            my_s = discord.utils.find(lambda g: g.id == 293787390710120449, self.bot.guilds)
-            bot_log = my_s.get_channel(325532503567761408)
-            await bot_log.send(f'{message.author} made a report in {message.channel}')
+            await postBotLog(self.bot, f'{message.author} made a report in {message.channel}')
 
 def setup(bot):
     bot.add_cog(EJLX(bot))

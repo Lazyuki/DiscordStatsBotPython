@@ -7,3 +7,4 @@ config.py
 nohup.out
 *.log
 *.json
+env
