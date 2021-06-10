@@ -15,12 +15,6 @@ NL = '\n'
 async def has_manage_guild(ctx):
     return ctx.author.guild_permissions.manage_guild
 
-def async_call_later(seconds: int, coro: asyncio.coroutines):
-    async def schedule():
-        await asyncio.sleep(seconds)
-        await coro()
-    asyncio.ensure_future(schedule())
-
 class Utilities(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
