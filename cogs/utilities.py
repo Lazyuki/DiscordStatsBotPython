@@ -152,9 +152,9 @@ You must enable `Allow direct messages from server members` for this server in P
                     continue
                 member = ctx.guild.get_member(uid) 
                 await src.set_permissions(member, send_messages=False)
-                async def unmute():
+                async def unmute(m=member):
                     await asyncio.sleep(180)
-                    await src.set_permissions(member, overwrite=None)
+                    await src.set_permissions(m, overwrite=None)
                 asyncio.ensure_future(unmute())
 
     @commands.command()
