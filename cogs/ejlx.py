@@ -82,7 +82,7 @@ BAD_JP_WORDS_REGEX = re.compile(r'(ニガー|セックス|[チマ]ンコ(?!.(?<=
 INVITES_REGEX = re.compile(r'(https?://)?(www.)?(discord.(gg|io|me|li)|discord(app)?.com/invite)/.+[a-z]')
 
 # stage chanel regexes
-INSTABAN_REGEXES = [re.compile(r'\b(fag(got)?s?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|n[i1](?P<nixxer>\S)(?P=nixxer)([e3]r|a|let)s?|penis|cum|hitler|pussy)\b'), re.compile(r'(o?chin ?chin)', r'(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ|死ね)')]
+INSTABAN_REGEXES = [re.compile(r'\b(fag(got)?s?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|n[i1](?P<nixxer>\S)(?P=nixxer)([e3]r|a|let)s?|penis|cum|hitler|pussy)\b'), re.compile(r'(o?chin ?chin)'), re.compile(r'(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ|死ね)')]
 WARN_REGEXES = [re.compile(r'\b(japs?|rape|discord\.gg|simps?)\b'), re.compile(r'(ゲイ|黒人)')]
 
 BAN_EMOJI = '<:ban:423687199385452545>' # EJLX BAN emoji
