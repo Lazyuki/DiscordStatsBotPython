@@ -168,7 +168,6 @@ def clean_and_truncate(content):
 async def postBotLog(bot: discord.Client, message: str):
     my_s = discord.utils.find(lambda g: g.id == 293787390710120449, bot.guilds)
     bot_log = my_s.get_channel(325532503567761408)
-    logging.info(message)
     await bot_log.send(message)
 
 async def init_invites(self):
@@ -177,7 +176,7 @@ async def init_invites(self):
             invites = await guild.invites()
             vanity = await guild.vanity_invite()
             self._recent_invite = datetime.now()
-            self.invites = { invite.id: invite.uses for invite in invites }
+            self.invites = { invite.id: invite for invite in invites }
             self._new_invites_cache = invites
             self.vanity_uses = vanity.uses
             self._vanity_cache = vanity
@@ -193,9 +192,9 @@ class EJLX(commands.Cog):
         self.troll_msgs = []
         self.nu_troll_msgs = []
         self._message_cooldown = commands.CooldownMapping.from_cooldown(1, 120, commands.BucketType.channel)
-        self.invites: dict[str, int] = dict()
+        self.invites: dict[str, discord.Invite] = dict()
         self.vanity_uses: int = 0 
-        self._new_invites_cache: list[discord.Invite] = []
+        self._new_invites_cache: dict[str, discord.Invite] = []
         self._vanity_cache: discord.Invite = None
         self._invite_lock = asyncio.Lock()
         self._recent_invite: datetime = datetime.now()
@@ -364,6 +363,11 @@ class EJLX(commands.Cog):
 
 
     @commands.Cog.listener()
+    async def on_invite_create(self, invite: discord.Invite):
+        if invite.max_uses:
+            self.invites[invite.id] = invite
+
+    @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
         if member.guild.id != EJLX_ID:
             return
@@ -378,25 +382,32 @@ class EJLX(commands.Cog):
         self._newbie_queue.append(member.id)
         asyncio.sleep(0.5) 
         async with self._invite_lock:
-            if (datetime.now() - self._recent_invite).total_seconds() < 0.5:
+            if (datetime.now() - self._recent_invite).total_seconds() < 0.6:
                 new_invites = self._new_invites_cache
                 vanity = self._vanity_cache
+                logging.info(f'{member} is using invite caches')
             else:
                 new_invites = await member.guild.invites()
                 vanity = await member.guild.vanity_invite()
+                new_invites = { invite.id: invite for invite in new_invites }
                 self._new_invites_cache = new_invites
                 self._vanity_cache = vanity
                 self._recent_invite = datetime.now()
         
         potential_invites: list[discord.Invite] = []
-        for invite in new_invites:
+        for id, invite in new_invites.items():
             new_usage = invite.uses
-            if invite.id in self.invites:
-                old_usage = self.invites[invite.id]
+            if id in self.invites:
+                old_usage = self.invites[id].uses
             else:
                 old_usage = 0
             if new_usage != old_usage:
                 potential_invites.append(invite)
+        for id, invite in self.invites.items():
+            if invite.max_uses - invite.uses > 0:
+                if id not in new_invites:
+                    potential_invites.append(invite)
+
         if vanity.uses != self.vanity_uses:
             potential_invites.append(vanity)
         
@@ -404,8 +415,13 @@ class EJLX(commands.Cog):
         if len(potential_invites) == 0:
             # Server discovery or one use invite?
             self.newbies.append({ "member": member, "discovery": True })
-            # aws.append(member.add_roles(member.guild.get_role(STAGE_VISITOR_ROLE)))
-            aws.append(postBotLog(self.bot, f'Discovery join {member}'))
+            for sc in member.guild.stage_channels:
+                if len(sc.members):
+                    aws.append(member.add_roles(member.guild.get_role(STAGE_VISITOR_ROLE)))
+                    aws.append(postBotLog(self.bot, f'Discovery join {member} (probably stage)'))
+                    break
+            else:
+                aws.append(postBotLog(self.bot, f'Discovery join {member}'))
         elif len(potential_invites) == 1:
             # Found one
             invite = potential_invites[0]
@@ -413,8 +429,12 @@ class EJLX(commands.Cog):
             aws.append(postBotLog(self.bot, f'{member} joined with {invite.id} from {invite.inviter if invite.id != "japanese" else "vanity"}' ))
             if invite.id == 'japanese':
                 self.vanity_uses += 1
+                self._vanity_cache.uses += 1
             else:
-                self.invites[invite.id] += 1
+                if invite.id in self.invites:
+                    self.invites[invite.id].uses += 1
+                if invite.id in self._new_invites_cache:
+                    self._new_invites_cache[invite.id].uses += 1
         else:
             # Failed to get invites for some people OR multi-join
             self._multi_queue.append(member)
@@ -422,13 +442,17 @@ class EJLX(commands.Cog):
 
         self._newbie_queue.remove(member.id)
         if len(self._newbie_queue) == 0:
-            self.invites = { invite.id: invite.uses for invite in new_invites }
-            self.vanity_uses = vanity.uses
+            if len(potential_invites) != 1:
+                # i've manually updated uses
+                self.invites = new_invites
+                self.vanity_uses = vanity.uses
             for multi in self._multi_queue:
                 self.newbies.append({ "member": multi, "invites": potential_invites })
             if self._multi_queue:
                 aws.append(postBotLog(self.bot, f'{", ".join([str(m) for m in self._multi_queue])} joined with {", ".join([i.id for i in potential_invites])} (multi)' ))
                 self._multi_queue = []
+        else:
+            logging.info(f'newbie_queue: {", ".join(self._newbie_queue)}')
         if len(self.newbies) > 20:
             self.newbies.pop(0)
 
