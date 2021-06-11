@@ -427,7 +427,7 @@ class EJLX(commands.Cog):
         if len(self.newbies) > 20:
             self.newbies.pop(0)
 
-        await asyncio.wait(aws)
+        await asyncio.wait(*aws)
 
 
     @commands.Cog.listener()
