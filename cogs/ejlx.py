@@ -957,7 +957,7 @@ class EJLX(commands.Cog):
             for r in INSTABAN_REGEXES:
                 m = r.search(message.content)
                 if m:
-                    await message.author.ban(delete_days=1, reason=f'Stage channel visitor troll {m[1]}')
+                    await message.author.ban(delete_message_days=1, reason=f'Stage channel visitor troll {m[1]}')
                     return
 
 
