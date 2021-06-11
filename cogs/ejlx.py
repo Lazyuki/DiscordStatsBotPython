@@ -167,6 +167,18 @@ async def postBotLog(bot: discord.Client, message: str):
     logging.info(message)
     await bot_log.send(message)
 
+async def init_invites(self):
+    for guild in self.bot.guilds:
+        if guild.id == EJLX_ID:
+            invites = await guild.invites()
+            vanity = await guild.vanity_invite()
+            self._recent_invite = datetime.now()
+            self.invites = { invite.id: invite.uses for invite in invites }
+            self._new_invites_cache = invites
+            self.vanity_uses = vanity.uses
+            self._vanity_cache = vanity
+
+
 class EJLX(commands.Cog):
     def __init__(self, bot):
         self.bot: discord.Client = bot
@@ -185,22 +197,17 @@ class EJLX(commands.Cog):
         self._recent_invite: datetime = datetime.now()
         self._newbie_queue: list[int] = []
         self._multi_queue: list[discord.Member] = []
-        
+        if bot.is_ready():
+            asyncio.ensure_future(init_invites(self))
 
     async def cog_check(self, ctx):
         return ctx.guild.id == EJLX_ID
 
+    
+
     @commands.Cog.listener()
     async def on_ready(self):
-        for guild in self.bot.guilds:
-            if guild.id == EJLX_ID:
-                invites = await guild.invites()
-                vanity = await guild.vanity_invite()
-                self._recent_invite = datetime.now()
-                self.invites = { invite.id: invite.uses for invite in invites }
-                self._new_invites_cache = invites
-                self.vanity_uses = vanity.uses
-                self._vanity_cache = vanity
+        await init_invites(self)
 
     # @commands.command()
     # @commands.check(has_manage_roles)
