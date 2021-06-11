@@ -9,7 +9,7 @@ from collections import namedtuple
 from .utils.resolver import has_role, has_any_role
 from .utils.parser import guess_lang, JP_EMOJI, EN_EMOJI, OL_EMOJI, asking_vc, REGEX_DISCORD_OBJ, REGEX_URL
 from .utils.user_interaction import wait_for_reaction
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 EJLX_ID = 189571157446492161
 
@@ -173,8 +173,10 @@ async def postBotLog(bot: discord.Client, message: str):
 async def init_invites(self):
     for guild in self.bot.guilds:
         if guild.id == EJLX_ID:
+            start = datetime.now()
             invites = await guild.invites()
             vanity = await guild.vanity_invite()
+            self._invite_elapsed = datetime.now() - start
             self._recent_invite = datetime.now()
             self.invites = { invite.id: invite for invite in invites }
             self._new_invites_cache = invites
@@ -200,6 +202,7 @@ class EJLX(commands.Cog):
         self._recent_invite: datetime = datetime.now()
         self._newbie_queue: list[int] = []
         self._multi_queue: list[discord.Member] = []
+        self._invite_elapsed: timedelta = None
         if bot.is_ready():
             asyncio.ensure_future(init_invites(self))
 
@@ -386,15 +389,17 @@ class EJLX(commands.Cog):
             logging.info(f'{member} multi join event bug')
             return
         self._newbie_queue.append(member.id)
-        asyncio.sleep(0.5) 
         async with self._invite_lock:
-            if (datetime.now() - self._recent_invite).total_seconds() < 0.6:
+            if (datetime.now() - self._recent_invite) < self._invite_elapsed:
                 new_invites = self._new_invites_cache
                 vanity = self._vanity_cache
                 logging.info(f'{member} is using invite caches')
             else:
+                start = datetime.now()
                 new_invites = await member.guild.invites()
                 vanity = await member.guild.vanity_invite()
+                elapsed = datetime.now() - start
+                self._invite_elapsed = elapsed
                 new_invites = { invite.id: invite for invite in new_invites }
                 self._new_invites_cache = new_invites
                 self._vanity_cache = vanity
