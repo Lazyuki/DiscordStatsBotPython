@@ -371,6 +371,9 @@ class EJLX(commands.Cog):
     async def on_member_join(self, member: discord.Member):
         if member.guild.id != EJLX_ID:
             return
+        if member.bot:
+            return
+        logging.info(f'{member} join event')
         if member.voice:
             # stage channel
             self.newbies.append({ "member": member, "discovery": True })
@@ -378,6 +381,9 @@ class EJLX(commands.Cog):
             await postBotLog(self.bot, f'Detected voice state upon joining {member}' )
             if len(self.newbies) > 20:
                 self.newbies.pop(0)
+            return
+        if member.id in self._newbie_queue:
+            logging.info(f'{member} multi join event bug')
             return
         self._newbie_queue.append(member.id)
         asyncio.sleep(0.5) 
@@ -429,12 +435,9 @@ class EJLX(commands.Cog):
             aws.append(postBotLog(self.bot, f'{member} joined with {invite.id} from {invite.inviter if invite.id != "japanese" else "vanity"}' ))
             if invite.id == 'japanese':
                 self.vanity_uses += 1
-                self._vanity_cache.uses += 1
             else:
                 if invite.id in self.invites:
                     self.invites[invite.id].uses += 1
-                if invite.id in self._new_invites_cache:
-                    self._new_invites_cache[invite.id].uses += 1
         else:
             # Failed to get invites for some people OR multi-join
             self._multi_queue.append(member)
@@ -443,7 +446,7 @@ class EJLX(commands.Cog):
         self._newbie_queue.remove(member.id)
         if len(self._newbie_queue) == 0:
             if len(potential_invites) != 1:
-                # i've manually updated uses
+                # I haven't manually updated uses
                 self.invites = new_invites
                 self.vanity_uses = vanity.uses
             for multi in self._multi_queue:
@@ -453,6 +456,7 @@ class EJLX(commands.Cog):
                 self._multi_queue = []
         else:
             logging.info(f'newbie_queue: {", ".join(self._newbie_queue)}')
+
         if len(self.newbies) > 20:
             self.newbies.pop(0)
 
