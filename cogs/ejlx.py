@@ -76,7 +76,7 @@ ARABIC_REGEX = re.compile(r'^[\u0600-\u06FF\u200f\u200e0-9]+$')
 HEBREW_REGEX = re.compile(r'^[\u0590-\u05FF\u200f\u200e]+$')
 HANGUL_REGEX = re.compile(r'^[\u3131-\uD79D]+$')
 CYRILLIC_REGEX = re.compile(r'^[\u0400-\u04FF]+$')
-N_WORD_REGEX = re.compile(r'n(i|1)gg(e|3)r?s?')
+N_WORD_REGEX = re.compile(r'n[i1]gg[ae3]r?s?')
 BAD_WORDS_REGEX = re.compile(r'(fags?|faggots?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|japs?|niggas?)')
 BAD_JP_WORDS_REGEX = re.compile(r'(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ)')
 INVITES_REGEX = re.compile(r'(https?://)?(www.)?(discord.(gg|io|me|li)|discord(app)?.com/invite)/.+[a-z]')
@@ -203,17 +203,10 @@ class EJLX(commands.Cog):
     async def cog_check(self, ctx):
         return ctx.guild.id == EJLX_ID
 
-    
 
     @commands.Cog.listener()
     async def on_ready(self):
         await init_invites(self)
-
-    # @commands.command()
-    # @commands.check(has_manage_roles)
-    # async def tag(self, ctx, *, member: discord.Member = None):
-    #     member = member or self.newbies[-1]
-    #     pass
 
     @commands.group(name='clubs', aliases=['club'], invoke_without_command=True)
     async def clubs(self, ctx):
@@ -373,7 +366,7 @@ class EJLX(commands.Cog):
         if member.voice:
             # stage channel
             self.newbies.append({ "member": member, "discovery": True })
-            # await member.add_roles(member.guild.get_role(STAGE_VISITOR_ROLE)) 
+            await member.add_roles(member.guild.get_role(STAGE_VISITOR_ROLE)) 
             await postBotLog(self.bot, f'Detected voice state upon joining {member}' )
             if len(self.newbies) > 20:
                 self.newbies.pop(0)
@@ -384,9 +377,7 @@ class EJLX(commands.Cog):
             if (datetime.now() - self._recent_invite).total_seconds() < 0.5:
                 new_invites = self._new_invites_cache
                 vanity = self._vanity_cache
-                logging.info('reusing new/vanity invites')
             else:
-                logging.info('fetching new/vanity invites')
                 new_invites = await member.guild.invites()
                 vanity = await member.guild.vanity_invite()
                 self._new_invites_cache = new_invites
@@ -402,16 +393,14 @@ class EJLX(commands.Cog):
                 old_usage = 0
             if new_usage != old_usage:
                 potential_invites.append(invite)
-                logging.info(f'invite found: {invite.id} {new_usage} vs {old_usage}')
         if vanity.uses != self.vanity_uses:
             potential_invites.append(vanity)
-            logging.info(f'vanity found: {vanity.uses} vs {self.vanity_uses}')
         
         aws = []
         if len(potential_invites) == 0:
             # Server discovery or one use invite?
             self.newbies.append({ "member": member, "discovery": True })
-            # aws.append(member.add_roles(member.guild.get_role(STAGE_VISITOR_ROLE)))
+            aws.append(member.add_roles(member.guild.get_role(STAGE_VISITOR_ROLE)))
             aws.append(postBotLog(self.bot, f'Discovery join {member}'))
         elif len(potential_invites) == 1:
             # Found one
@@ -429,13 +418,11 @@ class EJLX(commands.Cog):
 
         self._newbie_queue.remove(member.id)
         if len(self._newbie_queue) == 0:
-            logging.info('0 newbie queue')
             self.invites = { invite.id: invite.uses for invite in new_invites }
             self.vanity_uses = vanity.uses
             for multi in self._multi_queue:
                 self.newbies.append({ "member": multi, "invites": potential_invites })
             if self._multi_queue:
-                logging.info(f'multi queue {", ".join([str(m) for m in self._multi_queue])}')
                 aws.append(postBotLog(self.bot, f'{", ".join([str(m) for m in self._multi_queue])} joined with {", ".join([i.id for i in potential_invites])} (multi)' ))
                 self._multi_queue = []
         if len(self.newbies) > 20:
