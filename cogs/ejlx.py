@@ -404,7 +404,7 @@ class EJLX(commands.Cog):
         if len(potential_invites) == 0:
             # Server discovery or one use invite?
             self.newbies.append({ "member": member, "discovery": True })
-            aws.append(member.add_roles(member.guild.get_role(STAGE_VISITOR_ROLE)))
+            # aws.append(member.add_roles(member.guild.get_role(STAGE_VISITOR_ROLE)))
             aws.append(postBotLog(self.bot, f'Discovery join {member}'))
         elif len(potential_invites) == 1:
             # Found one
@@ -418,7 +418,7 @@ class EJLX(commands.Cog):
         else:
             # Failed to get invites for some people OR multi-join
             self._multi_queue.append(member)
-            aws.append(postBotLog(self.bot, f'{member} found {len(potential_invites)} invites' ))
+            aws.append(postBotLog(self.bot, f'{member} found {len(potential_invites)} invites: {", ".join([i.id for i in potential_invites])}' ))
 
         self._newbie_queue.remove(member.id)
         if len(self._newbie_queue) == 0:
