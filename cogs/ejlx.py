@@ -164,6 +164,7 @@ def clean_and_truncate(content):
 async def postBotLog(bot: discord.Client, message: str):
     my_s = discord.utils.find(lambda g: g.id == 293787390710120449, bot.guilds)
     bot_log = my_s.get_channel(325532503567761408)
+    logging.info(message)
     await bot_log.send(message)
 
 class EJLX(commands.Cog):
@@ -181,7 +182,7 @@ class EJLX(commands.Cog):
         self._new_invites_cache: list[discord.Invite] = []
         self._vanity_cache: discord.Invite = None
         self._invite_lock = asyncio.Lock()
-        self._recent_invite: datetime = None
+        self._recent_invite: datetime = datetime.now()
         self._newbie_queue: list[int] = []
         self._multi_queue: list[discord.Member] = []
         
@@ -427,7 +428,7 @@ class EJLX(commands.Cog):
         if len(self.newbies) > 20:
             self.newbies.pop(0)
 
-        await asyncio.wait(*aws)
+        await asyncio.gather(*aws)
 
 
     @commands.Cog.listener()
