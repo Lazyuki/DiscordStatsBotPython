@@ -377,7 +377,9 @@ class EJLX(commands.Cog):
             if (datetime.now() - self._recent_invite).total_seconds() < 0.5:
                 new_invites = self._new_invites_cache
                 vanity = self._vanity_cache
+                logging.info('reusing new/vanity invites')
             else:
+                logging.info('fetching new/vanity invites')
                 new_invites = await member.guild.invites()
                 vanity = await member.guild.vanity_invite()
                 self._new_invites_cache = new_invites
@@ -393,8 +395,10 @@ class EJLX(commands.Cog):
                 old_usage = 0
             if new_usage != old_usage:
                 potential_invites.append(invite)
+                logging.info(f'invite found: {invite.id} {new_usage} vs {old_usage}')
         if vanity.uses != self.vanity_uses:
             potential_invites.append(vanity)
+            logging.info(f'vanity found: {vanity.uses} vs {self.vanity_uses}')
         
         aws = []
         if len(potential_invites) == 0:
@@ -418,13 +422,15 @@ class EJLX(commands.Cog):
 
         self._newbie_queue.remove(member.id)
         if len(self._newbie_queue) == 0:
+            logging.info('0 newbie queue')
             self.invites = { invite.id: invite.uses for invite in new_invites }
             self.vanity_uses = vanity.uses
             for multi in self._multi_queue:
                 self.newbies.append({ "member": multi, "invites": potential_invites })
             if self._multi_queue:
+                logging.info(f'multi queue {", ".join([str(m) for m in self._multi_queue])}')
                 aws.append(postBotLog(self.bot, f'{", ".join([str(m) for m in self._multi_queue])} joined with {", ".join([i.id for i in potential_invites])} (multi)' ))
-            self._multi_queue = []
+                self._multi_queue = []
         if len(self.newbies) > 20:
             self.newbies.pop(0)
 
