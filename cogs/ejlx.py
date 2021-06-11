@@ -81,6 +81,10 @@ BAD_WORDS_REGEX = re.compile(r'(fags?|faggots?|chinks?|ch[iao]ng|hiroshima|nagas
 BAD_JP_WORDS_REGEX = re.compile(r'(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ)')
 INVITES_REGEX = re.compile(r'(https?://)?(www.)?(discord.(gg|io|me|li)|discord(app)?.com/invite)/.+[a-z]')
 
+# stage chanel regexes
+INSTABAN_REGEXES = [re.compile(r'\b(fag(got)?s?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|n[i1](?P<nixxer>\S)(?P=nixxer)([e3]r|a|let)s?|penis|cum|hitler|pussy)\b'), re.compile(r'(o?chin ?chin)', r'(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ|死ね)')]
+WARN_REGEXES = [re.compile(r'\b(japs?|rape|discord\.gg|simps?)\b'), re.compile(r'(ゲイ|黒人)')]
+
 BAN_EMOJI = '<:ban:423687199385452545>' # EJLX BAN emoji
 NUMBER_EMOJIS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
 
@@ -736,7 +740,7 @@ class EJLX(commands.Cog):
         timestamp = discord.utils.snowflake_time(message.id)
         msg_len = len(re.sub(REGEX_DISCORD_OBJ, '', message.content))
 
-        if N_WORD_REGEX.match(message.content.lower().replace(" ", "")):
+        if N_WORD_REGEX.search(message.content.lower().replace(" ", "")):
             await author.ban(delete_message_days=1, reason="Auto-banned. New user using the N-word")
             await message.channel.send(f'{author.mention} has been banned automatically')
             return
@@ -877,26 +881,26 @@ class EJLX(commands.Cog):
 
                     clean_content = re.sub(REGEX_DISCORD_OBJ, '', m.content)
                     lower_content = clean_content.lower().replace(" ", "").replace("\n", "")
-                    if N_WORD_REGEX.match(lower_content):
+                    if N_WORD_REGEX.search(lower_content):
                         user_points[author.id]["points"] += 100
                         user_points[author.id]["reasons"].append("Hard R N-word")
-                    if ARABIC_REGEX.match(lower_content) or HEBREW_REGEX.match(lower_content) or HANGUL_REGEX.match(lower_content) or CYRILLIC_REGEX.match(lower_content):
+                    if ARABIC_REGEX.search(lower_content) or HEBREW_REGEX.search(lower_content) or HANGUL_REGEX.search(lower_content) or CYRILLIC_REGEX.search(lower_content):
                         user_points[author.id]["points"] += 10
                         user_points[author.id]["reasons"].append(clean_and_truncate(m.content))
-                    if  REGEX_URL.match(m.content) and 'discord.gg/japanese' not in m.content:
-                        if INVITES_REGEX.match(m.content):
+                    if REGEX_URL.search(m.content) and 'discord.gg/japanese' not in m.content:
+                        if INVITES_REGEX.search(m.content):
                             user_points[author.id]["points"] += 5
-                            user_points[author.id]["reasons"].append(clean_and_truncate(INVITES_REGEX.match(m.content)[1]))
+                            user_points[author.id]["reasons"].append(clean_and_truncate(INVITES_REGEX.search(m.content)[1]))
                         else:
                             user_points[author.id]["points"] += 3
-                            user_points[author.id]["reasons"].append(clean_and_truncate(REGEX_URL.match(m.content)[1]))
-                    if BAD_JP_WORDS_REGEX.match(m.content):
-                        match = BAD_JP_WORDS_REGEX.match(m.content)[1]
+                            user_points[author.id]["reasons"].append(clean_and_truncate(REGEX_URL.search(m.content)[1]))
+                    if BAD_JP_WORDS_REGEX.search(m.content):
+                        match = BAD_JP_WORDS_REGEX.search(m.content)[1]
                         user_points[author.id]["points"] += 4
                         user_points[author.id]["reasons"].append(clean_and_truncate(match))
                     words = m.content.lower().split()
                     for w in words:
-                        match = BAD_WORDS_REGEX.match(w)
+                        match = BAD_WORDS_REGEX.search(w)
                         if match:
                             user_points[author.id]["points"] += 4
                             user_points[author.id]["reasons"].append(clean_and_truncate(match[1]))
@@ -948,8 +952,14 @@ class EJLX(commands.Cog):
                     await message.reply(embed=embed, mention_author=True)
                 return
 
-    async def moderate_stage(self, message):
-        pass
+    async def moderate_stage(self, message: discord.Message):
+        if not has_any_role(message.author, LANG_ROLE_IDS):
+            for r in INSTABAN_REGEXES:
+                m = r.search(message.content)
+                if m:
+                    await message.author.ban(delete_days=1, reason=f'Stage channel visitor troll {m[1]}')
+                    return
+
 
     @commands.Cog.listener()
     async def on_safe_message(self, message, **kwargs):
