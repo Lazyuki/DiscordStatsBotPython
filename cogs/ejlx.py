@@ -428,7 +428,7 @@ class EJLX(commands.Cog):
             self.newbies.append({ "member": member, "discovery": True })
             for sc in member.guild.stage_channels:
                 if len(sc.members):
-                    # aws.append(member.add_roles(member.guild.get_role(STAGE_VISITOR_ROLE)))
+                    aws.append(member.add_roles(member.guild.get_role(STAGE_VISITOR_ROLE)))
                     aws.append(postBotLog(self.bot, f'Discovery join {member} (stage is happening)'))
                     break
             else:
