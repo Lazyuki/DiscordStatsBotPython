@@ -443,6 +443,8 @@ class EJLX(commands.Cog):
             else:
                 if invite.id in self.invites:
                     self.invites[invite.id].uses += 1
+                else:
+                    self.invites[invite.id] = invite
         else:
             # Failed to get invites for some people OR multi-join
             self._multi_queue.append(member)
