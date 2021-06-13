@@ -29,7 +29,7 @@ NF_CHANNEL = 193966083886153729
 NF_VOICE_TEXT = 390796551796293633
 NF_VOICE = 196684007402897408
 EWBF = 277384105245802497
-STAGE_QUARANTINE = 852380454546964490
+STAGE_CHATS = [852380454546964490, 852382007027957812] 
 
 # Roles
 NJ_ROLE = {
@@ -1003,7 +1003,7 @@ class EJLX(commands.Cog):
         if not message.guild or message.guild.id != EJLX_ID:
             return
         if not has_any_role(message.author, LANG_ROLE_IDS):
-            if message.channel.id != STAGE_QUARANTINE:
+            if message.channel.id in STAGE_CHATS:
                 await guess_lang(message)
                 await asking_vc(message)
             await self.new_user_troll_check(message)
@@ -1025,7 +1025,7 @@ class EJLX(commands.Cog):
             if MUSIC_BOT_REGEX.match(message.content):
                 await send_music_bot_notif(message)
         await self.check_jap(message)
-        if message.channel.id == STAGE_QUARANTINE:
+        if message.channel.id in STAGE_CHATS:
             await self.moderate_stage(message)
 
 
