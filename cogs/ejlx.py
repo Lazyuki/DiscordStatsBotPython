@@ -1003,7 +1003,7 @@ class EJLX(commands.Cog):
         if not message.guild or message.guild.id != EJLX_ID:
             return
         if not has_any_role(message.author, LANG_ROLE_IDS):
-            if message.channel.id in STAGE_CHATS:
+            if message.channel.id not in STAGE_CHATS:
                 await guess_lang(message)
                 await asking_vc(message)
             await self.new_user_troll_check(message)
