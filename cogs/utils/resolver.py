@@ -129,13 +129,14 @@ def resolve_options(content: str, accepted_options: dict):
             elif word.startswith('-'):
                 abs = word[1:]
                 for a in abs:
-                    name = abbrevs[a]
-                    opt = accepted_options[name]
-                    boolean = opt['boolean']
-                    if boolean:
-                        resolved[name] = True
-                    else:
-                        resolved[name] = next(word_iter)
+                    if a in abbrevs:
+                        name = abbrevs[a]
+                        opt = accepted_options[name]
+                        boolean = opt['boolean']
+                        if boolean:
+                            resolved[name] = True
+                        else:
+                            resolved[name] = next(word_iter)
             else:
                 rest_content.append(word)
     except StopIteration:
