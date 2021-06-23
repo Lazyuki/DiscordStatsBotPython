@@ -97,7 +97,7 @@ def resolve_role(ctx, role):
 
     
 
-def resolve_options(content: str, accepted_options: dict):
+def resolve_options(content: str, accepted_options: dict) -> tuple[str, dict[str, str]]:
     """
     accepted_options: {
         name: {

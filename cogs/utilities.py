@@ -76,6 +76,7 @@ You must enable `Allow direct messages from server members` for this server in P
         `,mv <#destination-channel> <@mensions or IDs of users to move>`
         e.g. `,mv #bot @Adiost 284840842026549259`
         The command invoker is included by default. 
+        Pass in the `-l` flag followed by a number to limit how far up in history it should search. Default/max is 20.
         Mods can pass in the `-d` flag to delete the original messages in the source channel.
         Mods can pass in the `-f` flag to temporarily mute them in the source channel.
         """
@@ -90,11 +91,28 @@ You must enable `Allow direct messages from server members` for this server in P
         src: discord.TextChannel = ctx.channel
         delete = False
         force = False
+        limit = 20
 
         if ctx.author.guild_permissions.manage_guild or has_role(ctx.author, 250907197075226625):
-            _, options = resolve_options(args, { "delete": { "abbrev": "d", "boolean": True }, "force": { "abbrev": "f", "boolean": True } })
+            _, options = resolve_options(args, { 
+                "delete": { 
+                    "abbrev": "d",
+                    "boolean": True
+                },
+                "force": {
+                    "abbrev": "f",
+                    "boolean": True
+                },
+                "limit": {
+                    "abbrev": "l",
+                    "boolean": False
+                }
+            })
             delete = options.get("delete")
             force = options.get("force")
+            limit = int(options.get("limit") or 20)
+            if limit > 20 or limit < 1:
+                limit = 20
         args = args.replace(dest.mention, '').strip()
         if len(args) == 0:
             await ctx.send('Please mention users to move',  delete_after=10)
@@ -110,7 +128,7 @@ You must enable `Allow direct messages from server members` for this server in P
         messages_to_del = []
 
         # look up past 30 messages
-        async for message in src.history(limit=20):
+        async for message in src.history(limit=limit):
             author = message.author.id
             if author in user_ids:
                 if author == curr_uid:
@@ -138,7 +156,7 @@ You must enable `Allow direct messages from server members` for this server in P
         dest_embed.description = f'Moved from {src.mention}{NL}[Jump to the original context ↦]({src_msg.jump_url})'
         for i, content in enumerate(src_messages):
             author = message_authors[i]
-            chunks = [ content[i:i+2048] for i in range(0, len(content), 2048) ]
+            chunks = [ content[i:i+1024] for i in range(0, len(content), 1024) ]
             for j, chunk in enumerate(chunks):
                 dest_embed.add_field(name=f'\N{BUST IN SILHOUETTE}__**{author.display_name}**__' if j == 0 else "\u200b", value=chunk, inline=False)
         
