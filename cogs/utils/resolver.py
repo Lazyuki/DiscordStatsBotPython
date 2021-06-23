@@ -127,9 +127,9 @@ def resolve_options(content: str, accepted_options: dict):
                     else:
                         resolved[name] = next(word_iter)
             elif word.startswith('-'):
-                abbrev = word[1:]
-                if abbrev in abbrevs:
-                    name = abbrevs[abbrev]
+                abs = word[1:]
+                for a in abs:
+                    name = abbrevs[a]
                     opt = accepted_options[name]
                     boolean = opt['boolean']
                     if boolean:
