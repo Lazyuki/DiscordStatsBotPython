@@ -229,7 +229,7 @@ You must enable `Allow direct messages from server members` for this server in P
                 "boolean": True
             },
         })
-        copy = options.get("copy")
+        code = options.get("code")
         f = options.get("f")
         d = options.get("d")
         t = options.get("t")
@@ -244,7 +244,7 @@ You must enable `Allow direct messages from server members` for this server in P
         if parsed is None:
             await ctx.send('Could not understand the format')
             return
-        codeblock = '`' if copy else '' 
+        codeblock = '`' if code else '' 
         format = 'F'
         if f:
             format = 'f'
