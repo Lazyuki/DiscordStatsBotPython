@@ -191,7 +191,6 @@ You must enable `Allow direct messages from server members` for this server in P
         "-R" 10 minutes ago
         "-T" 3:45:12 PM
         """
-        await ctx.message.delete()
         if not arg:
             await ctx.send('You must provide some date/time text')
             return
@@ -259,7 +258,7 @@ You must enable `Allow direct messages from server members` for this server in P
         elif T:
             format = 'T'
         unix = int(parsed.timestamp())
-        await ctx.send(f'{codeblock}<t:{unix}:{format}>{codeblock}')
+        await ctx.reply(f'{codeblock}<t:{unix}:{format}>{codeblock}')
 
     @commands.command()
     async def poll(self, ctx, *, arg = None):
