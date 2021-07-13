@@ -236,8 +236,9 @@ You must enable `Allow direct messages from server members` for this server in P
         R = options.get("R")
         T = options.get("T")
         rest = rest.strip()
-        if re.match(r'[0-9]{17,25}', rest):
-            parsed = discord.utils.snowflake_time(int(rest))
+        discord_id = re.search(r'([0-9]{17,25})', rest)
+        if discord_id:
+            parsed = discord.utils.snowflake_time(int(discord_id.group(1)))
         else:
             parsed = dateparser.parse(rest)
         if parsed is None:
