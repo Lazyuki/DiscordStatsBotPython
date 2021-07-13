@@ -11,6 +11,8 @@ from .utils.parser import guess_lang, JP_EMOJI, EN_EMOJI, OL_EMOJI, asking_vc, R
 from .utils.user_interaction import wait_for_reaction
 from datetime import datetime, timezone, timedelta
 
+NL = '\n'
+
 EJLX_ID = 189571157446492161
 
 CLUB_COLOR = 0xc780f2
@@ -347,8 +349,16 @@ class EJLX(commands.Cog):
             await ctx.send(f'\N{WHITE HEAVY CHECK MARK} Left the club "{role.name}"')
         except:
             await ctx.send(f'Failed to remove the role {role.name}')
+    
+    @commands.command(aliases=['p', 'ping'])
+    async def club_ping(self, ctx, *, message=''):
+        """
+        Ping club roles
+        """
 
-    async def check_role_mentions(self, message):
+        await ctx.send('')
+
+    async def check_role_mentions(self, message: discord.Message):
         clubs = self.settings[message.guild.id].clubs
         for role in message.role_mentions:
             if role.id in clubs:
@@ -706,13 +716,13 @@ class EJLX(commands.Cog):
             except:
                 pass
 
-    async def mention_spam(self, message):
+    async def mention_spam(self, message: discord.Message):
         if len(message.role_mentions) > 3:
             # role mention spam
             await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason='Role mention spam')
             embed = discord.Embed(colour=0xff0000)
             embed.title = f'FOR THOSE WHO GOT PINGED'
-            embed.description = f'{message.author} has been **muted** for pinging multiple roles: {", ".join(message.role_mentions)}\n\nWhile this message was most likely a spam, all of these roles are **self-assignable**. Head over to <#189585230972190720> and unreact to remove the pingable roles or type `,leave club_name` for roles not in that channel.'
+            embed.description = f'{message.author.mention} has been **muted** for pinging multiple roles: {", ".join(message.role_mentions)}{NL}{NL}While this message was most likely a spam, all of these roles are **self-assignable**. Head over to <#189585230972190720> and unreact to remove the pingable roles or type `,leave club_name` for roles not in that channel.'
             embed.set_footer(text=f'Minimos can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them')
             ciri_message = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}>', embed=embed, mention_author=False)
             await self.reaction_ban(ciri_message, [message.author], reason='Role mention spam', unmute_dismissed=True)
@@ -722,7 +732,7 @@ class EJLX(commands.Cog):
             await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason='User mention spam')
             embed = discord.Embed(colour=0xff0000)
             embed.title = f'Possible User Mention Spam'
-            embed.description = f'{message.author} pinged {len(message.mentions)} people and has been **automatically muted**.'
+            embed.description = f'{message.author.mention} pinged **{len(message.mentions)}** people and has been **automatically muted**.'
             embed.set_footer(text=f'Minimos can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them')
             ciri_message = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}>', embed=embed, mention_author=False)
             await self.reaction_ban(ciri_message, [message.author], reason='User mention spam', unmute_dismissed=True)
@@ -973,6 +983,7 @@ class EJLX(commands.Cog):
         if message.content and message.content[0] in [',', '.', ';']:
             return
         sanitized = re.sub(r'["`]japs?["`]', '', message.content.lower())
+        sanitized = re.sub(r'https?://\S+', '', sanitized)
         words = re.split(r'\W+', sanitized)
         bucket = self._message_cooldown.get_bucket(message)
         for word in words:

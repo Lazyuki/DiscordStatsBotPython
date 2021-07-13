@@ -4,6 +4,7 @@ import discord
 import logging
 import asyncio 
 import re
+import dateparser
 from .utils.resolver import has_role, resolve_options
 
 log = logging.getLogger(__name__)
@@ -174,6 +175,91 @@ You must enable `Allow direct messages from server members` for this server in P
                     await asyncio.sleep(180)
                     await src.set_permissions(m, overwrite=None)
                 asyncio.ensure_future(unmute())
+
+    @commands.command()
+    async def date(self, ctx: commands.Context, *, arg=None):
+        """
+        Converts human readable date-time text or Discord ID into a timezone aware Discord timestamp.
+        Flags:
+        "-c" to display it in a code block so you can copy it
+        Formats:
+        "-F" Saturday, July 31, 2021 3:45 PM (default)
+        "-d" 07/31/2021
+        "-f" July 31, 2021 3:45 PM
+        "-t" 3:45 PM
+        "-D" July 31, 2021
+        "-R" 10 minutes ago
+        "-T" 3:45:12 PM
+        """
+        await ctx.message.delete()
+        if not arg:
+            await ctx.send('You must provide some date/time text')
+            return
+        rest, options = resolve_options(arg, { 
+            "code": { 
+                "abbrev": "c",
+                "boolean": True
+            },
+            "F": {
+                "abbrev": "F",
+                "boolean": True
+            },
+            "f": {
+                "abbrev": "f",
+                "boolean": True
+            },
+            "d": {
+                "abbrev": "d",
+                "boolean": True
+            },
+            "t": {
+                "abbrev": "t",
+                "boolean": True
+            },
+            "D": {
+                "abbrev": "D",
+                "boolean": True
+            },
+            "R": {
+                "abbrev": "R",
+                "boolean": True
+            },
+            "T": {
+                "abbrev": "T",
+                "boolean": True
+            },
+        })
+        copy = options.get("copy")
+        f = options.get("f")
+        d = options.get("d")
+        t = options.get("t")
+        D = options.get("D")
+        R = options.get("R")
+        T = options.get("T")
+        rest = rest.strip()
+        if re.match(r'[0-9]{17,25}', rest):
+            parsed = discord.utils.snowflake_time(int(rest))
+        else:
+            parsed = dateparser.parse(rest)
+        if parsed is None:
+            await ctx.send('Could not understand the format')
+            return
+        codeblock = '`' if copy else '' 
+        format = 'F'
+        if f:
+            format = 'f'
+        elif d:
+            format = 'd'
+        elif t:
+            format = 't'
+        elif D:
+            format = 'D'
+        elif R:
+            format = 'R'
+        elif T:
+            format = 'T'
+        unix = parsed.timestamp()
+        await ctx.send(f'{codeblock}<t:{unix}:{format}>{codeblock}')
 
     @commands.command()
     async def poll(self, ctx, *, arg = None):
