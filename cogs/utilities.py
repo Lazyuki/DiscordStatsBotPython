@@ -258,7 +258,7 @@ You must enable `Allow direct messages from server members` for this server in P
             format = 'R'
         elif T:
             format = 'T'
-        unix = parsed.timestamp()
+        unix = int(parsed.timestamp())
         await ctx.send(f'{codeblock}<t:{unix}:{format}>{codeblock}')
 
     @commands.command()
