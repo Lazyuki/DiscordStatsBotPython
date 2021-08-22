@@ -742,7 +742,7 @@ class EJLX(commands.Cog):
         if message.channel.id in [BOT_CHANNEL, VOICE_BOT_CHANNEL]:
             return
         author = message.author
-        content = message.clean_content
+        content = message.clean_content.lower()
         timestamp = message.created_at 
         msg_len = len(re.sub(REGEX_DISCORD_OBJ, '', message.content))
 
@@ -1013,6 +1013,16 @@ class EJLX(commands.Cog):
             return
         if not message.guild or message.guild.id != EJLX_ID:
             return
+        if '@everyone' in message.content:
+            if 'nitro' in message.content.lower() and 'http' in message.content:
+                await message.author.ban(delete_message_days=1, reason="Auto-banned. Nitro Scam")
+                await message.channel.send(f'{message.author.mention} has been banned automatically for: Nitro scam')
+                return
+            if 'CS:GO' in message.content and 'http' in message.content:
+                await message.author.ban(delete_message_days=1, reason="Auto-banned. CS:GO Scam")
+                await message.channel.send(f'{message.author.mention} has been banned automatically for: Steam scam')
+                return
+
         if not has_any_role(message.author, LANG_ROLE_IDS):
             if message.channel.id not in STAGE_CHATS:
                 await guess_lang(message)
