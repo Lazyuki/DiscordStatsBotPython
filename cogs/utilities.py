@@ -293,7 +293,7 @@ You must enable `Allow direct messages from server members` for this server in P
         # Fetch audit log to get who banned them
         banner = None
         reason = None
-        await asyncio.sleep(1)
+        await asyncio.sleep(5)
         log.info(f'Member banned {user.name}')
         async for entry in guild.audit_logs(action=discord.AuditLogAction.ban):
             if entry.target.id == user.id:
