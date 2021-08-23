@@ -82,6 +82,7 @@ N_WORD_REGEX = re.compile(r'n[i1]gg[ae3]r?s?')
 BAD_WORDS_REGEX = re.compile(r'(fags?|faggots?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|japs?|niggas?)')
 BAD_JP_WORDS_REGEX = re.compile(r'(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ)')
 INVITES_REGEX = re.compile(r'(https?://)?(www.)?(discord.(gg|io|me|li)|discord(app)?.com/invite)/.+[a-z]')
+URL_REGEX = re.compile(r'(https?://\S+)')
 
 # stage chanel regexes
 INSTABAN_REGEXES = [re.compile(r'\b(fag(got)?s?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|n[i1](?P<nixxer>\S)(?P=nixxer)([e3]r|a|let)s?|penis|cum|hitler|pussy)\b'), re.compile(r'(o?chin ?chin)'), re.compile(r'(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ|死ね)')]
@@ -1005,6 +1006,31 @@ class EJLX(commands.Cog):
                 if m:
                     await message.author.ban(delete_message_days=1, reason=f'Stage channel visitor troll {m[1]}')
                     return
+    
+    async def ban_scammers(self, message: discord.Message):
+        content = message.content.lower()
+        url = URL_REGEX.search(content)[0]
+        domain = re.match(r'https?://([^/]+)', url)[0]
+        if re.match(r'((ptb|canary)\.)?discord(app)?\.com', domain):
+            return
+        if '@everyone' in content:
+            if 'nitro' in content:
+                await message.author.ban(delete_message_days=1, reason="Auto-banned. Nitro Scam")
+                await message.channel.send(f'{message.author.mention} has been banned automatically for: Nitro scam')
+                return
+            if 'cs:go' in content:
+                await message.author.ban(delete_message_days=1, reason="Auto-banned. CS:GO Scam")
+                await message.channel.send(f'{message.author.mention} has been banned automatically for: CS:GO scam')
+                return
+        if ('cs:go' in content or 'nitro' in content) and ('free' in content or 'gift' in content or 'offer' in content or 'giveaway' in content or 'giving away' in content):
+            await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible scam detected") 
+            embed = discord.Embed(colour=0xff0000)
+            sanitized_content = re.sub(URL_REGEX, f'[SUSPICIOUS LINK: {domain}]', message.content)
+            embed.description = f'{message.author.mention} has been **muted automatically** due to potential scamming.\n> {sanitized_content[:100] + "..." if len(sanitized_content) > 100 else sanitized_content}'
+            embed.set_footer(text=f'WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them.')
+            prompt = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>', embed=embed, mention_author=False)
+            await self.reaction_ban(prompt, [message.author], reason='Hacked Account Scamming', wp=True, unmute_dismissed=True) 
+
 
 
     @commands.Cog.listener()
@@ -1013,15 +1039,8 @@ class EJLX(commands.Cog):
             return
         if not message.guild or message.guild.id != EJLX_ID:
             return
-        if '@everyone' in message.content:
-            if 'nitro' in message.content.lower() and 'http' in message.content:
-                await message.author.ban(delete_message_days=1, reason="Auto-banned. Nitro Scam")
-                await message.channel.send(f'{message.author.mention} has been banned automatically for: Nitro scam')
-                return
-            if 'CS:GO' in message.content and 'http' in message.content:
-                await message.author.ban(delete_message_days=1, reason="Auto-banned. CS:GO Scam")
-                await message.channel.send(f'{message.author.mention} has been banned automatically for: Steam scam')
-                return
+        if URL_REGEX.search(message.content):
+            await self.ban_scammers(message) 
 
         if not has_any_role(message.author, LANG_ROLE_IDS):
             if message.channel.id not in STAGE_CHATS:
