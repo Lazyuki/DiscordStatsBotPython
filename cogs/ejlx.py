@@ -1022,7 +1022,7 @@ class EJLX(commands.Cog):
                 await message.author.ban(delete_message_days=1, reason="Auto-banned. CS:GO Scam")
                 await message.channel.send(f'{message.author.mention} has been banned automatically for: CS:GO scam')
                 return
-        if ('cs:go' in content or 'nitro' in content) and ('free' in content or 'gift' in content or 'offer' in content or 'giveaway' in content or 'giving away' in content):
+        if ('cs:go' in content or 'nitro' in content or 'cs-skins' in content) and ('free' in content or 'gift' in content or 'offer' in content or 'give' in content or 'giving' in content):
             await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible scam detected") 
             embed = discord.Embed(colour=0xff0000)
             sanitized_content = re.sub(URL_REGEX, f'[SUSPICIOUS LINK: {domain}]', message.content)
