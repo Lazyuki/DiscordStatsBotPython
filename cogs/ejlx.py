@@ -1010,10 +1010,10 @@ class EJLX(commands.Cog):
     async def ban_scammers(self, message: discord.Message):
         content = message.content.lower()
         url = URL_REGEX.search(content)[0]
-        domain = re.match(r'https?://([^/]+)', url)[0]
+        domain = re.match(r'https?://([^/]+)', url)[1]
         if re.match(r'((ptb|canary)\.)?discord(app)?\.com', domain):
             return
-        if '@everyone' in content:
+        if '@everyone' in content or re.match(r'^(hi|hey|hello)', content):
             if 'nitro' in content:
                 await message.author.ban(delete_message_days=1, reason="Auto-banned. Nitro Scam")
                 await message.channel.send(f'{message.author.mention} has been banned automatically for: Nitro scam')
@@ -1025,7 +1025,7 @@ class EJLX(commands.Cog):
         if ('cs:go' in content or 'nitro' in content or 'cs-skins' in content) and ('free' in content or 'gift' in content or 'offer' in content or 'give' in content or 'giving' in content):
             await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible scam detected") 
             embed = discord.Embed(colour=0xff0000)
-            sanitized_content = re.sub(URL_REGEX, f'[SUSPICIOUS LINK: {domain}]', message.content)
+            sanitized_content = re.sub(URL_REGEX, f'[SUSPICIOUS LINK: {domain.replace(".", "．")}]', message.content)
             embed.description = f'{message.author.mention} has been **muted automatically** due to potential scamming.\n> {sanitized_content[:100] + "..." if len(sanitized_content) > 100 else sanitized_content}'
             embed.set_footer(text=f'WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them.')
             prompt = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>', embed=embed, mention_author=False)
