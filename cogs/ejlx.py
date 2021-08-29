@@ -1025,7 +1025,7 @@ class EJLX(commands.Cog):
         if ('cs:go' in content or 'nitro' in content or 'cs-skins' in content) and ('free' in content or 'gift' in content or 'offer' in content or 'give' in content or 'giving' in content):
             await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible scam detected") 
             embed = discord.Embed(colour=0xff0000)
-            sanitized_content = re.sub(URL_REGEX, f'[SUSPICIOUS LINK: {domain.replace(".", "．")}]', message.content)
+            sanitized_content = re.sub(URL_REGEX, f'[SUSPICIOUS LINK: {domain}]', message.content)
             embed.description = f'{message.author.mention} has been **muted automatically** due to potential scamming.\n> {sanitized_content[:100] + "..." if len(sanitized_content) > 100 else sanitized_content}'
             embed.set_footer(text=f'WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them.')
             prompt = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>', embed=embed, mention_author=False)
