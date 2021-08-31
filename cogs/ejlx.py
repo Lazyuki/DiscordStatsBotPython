@@ -1021,9 +1021,9 @@ class EJLX(commands.Cog):
             reason = ''
             if 'nitro' in content:
                 reason = 'Nitro Scam'
-            if re.search(r'(cs:? ?go|steam)', content):
+            elif re.search(r'(cs:? ?go|steam)', content):
                 reason = 'CS:GO Scam'
-            if domain.endswith('.ru') or domain.endswith('.ru.com'):
+            elif domain.endswith('.ru') or domain.endswith('.ru.com'):
                 reason = 'Russian Link Scam'
             if reason:
                 await message.author.ban(delete_message_days=1, reason=f"Auto-banned. {reason}")
