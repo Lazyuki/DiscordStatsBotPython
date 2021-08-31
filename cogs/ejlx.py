@@ -1026,19 +1026,19 @@ class EJLX(commands.Cog):
             elif domain.endswith('.ru') or domain.endswith('.ru.com'):
                 reason = 'Russian Link Scam'
             if reason:
-                await message.author.ban(delete_message_days=1, reason=f"Auto-banned. {reason}")
+                await message.author.ban(delete_message_days=1, reason=f"Auto-banned. {reason}: {domain}")
                 await message.channel.send(f'{message.author.mention} has been banned automatically for: {reason}')
                 return
 
         if domain in KNOWN_SCAM_DOMAINS:
-            await message.author.ban(delete_message_days=1, reason="Auto-banned. Scam")
-            await message.channel.send(f'{message.author.mention} has been banned automatically for: scam link')
+            await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Scam: {domain}")
+            await message.channel.send(f'{message.author.mention} has been banned automatically for: Known Scam Link')
             return
 
         if (re.search(r'(cs:? ?go|n[i1l]tro|steam)', content)) and (re.search(r'(free|gift|offer|give|giving|hack)', content)):
             if domain.endswith('.ru') or domain.endswith('.ru.com'):
-                await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Scam")
-                await message.channel.send(f'{message.author.mention} has been banned automatically for: Scam')
+                await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Scam: {domain}")
+                await message.channel.send(f'{message.author.mention} has been banned automatically for: Russian Scam Link')
                 return
             await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible scam detected") 
             embed = discord.Embed(colour=0xff0000)
@@ -1047,7 +1047,7 @@ class EJLX(commands.Cog):
             embed.description = f'{message.author.mention} has been **muted automatically** due to potential scam.\n> {sanitized_content[:100] + "..." if len(sanitized_content) > 100 else sanitized_content}'
             embed.set_footer(text=f'WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them.')
             prompt = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>', embed=embed, mention_author=False)
-            await self.reaction_ban(prompt, [message.author], reason='Hacked Account Scamming', wp=True, unmute_dismissed=True) 
+            await self.reaction_ban(prompt, [message.author], reason=f'Hacked Account Scamming: {domain}', wp=True, unmute_dismissed=True) 
 
 
 
