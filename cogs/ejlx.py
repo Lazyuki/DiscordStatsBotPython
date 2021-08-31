@@ -83,6 +83,9 @@ BAD_WORDS_REGEX = re.compile(r'(fags?|faggots?|chinks?|ch[iao]ng|hiroshima|nagas
 BAD_JP_WORDS_REGEX = re.compile(r'(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ)')
 INVITES_REGEX = re.compile(r'(https?://)?(www.)?(discord.(gg|io|me|li)|discord(app)?.com/invite)/.+[a-z]')
 URL_REGEX = re.compile(r'(https?://\S+)')
+KNOWN_SCAM_DOMAINS = ['discordgift.ru.com', 'discord-airdrop.com', 'discord-nltro.com', 
+    'cs-skins.lin', 'discorb.ru', 'steamcomminuty.com', 'steamcomminytu.ru', 'steancomunnity.ru',
+    'steamcommunitlu.com']
 
 # stage chanel regexes
 INSTABAN_REGEXES = [re.compile(r'\b(fag(got)?s?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|n[i1](?P<nixxer>\S)(?P=nixxer)([e3]r|a|let)s?|penis|cum|hitler|pussy)\b'), re.compile(r'(o?chin ?chin)'), re.compile(r'(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ|死ね)')]
@@ -1011,22 +1014,37 @@ class EJLX(commands.Cog):
         content = message.content.lower()
         url = URL_REGEX.search(content)[0]
         domain = re.match(r'https?://([^/]+)', url)[1]
-        if re.match(r'((ptb|canary)\.)?discord(app)?\.com', domain):
+        if re.match(r'((ptb|canary|cdn)\.)?discord(app)?\.com', domain):
+            # safe URL
             return
         if '@everyone' in content or re.match(r'^(hi|hey|hello)', content):
+            reason = ''
             if 'nitro' in content:
-                await message.author.ban(delete_message_days=1, reason="Auto-banned. Nitro Scam")
-                await message.channel.send(f'{message.author.mention} has been banned automatically for: Nitro scam')
+                reason = 'Nitro Scam'
+            if re.search(r'(cs:? ?go|steam)', content):
+                reason = 'CS:GO Scam'
+            if domain.endswith('.ru') or domain.endswith('.ru.com'):
+                reason = 'Russian Link Scam'
+            if reason:
+                await message.author.ban(delete_message_days=1, reason=f"Auto-banned. {reason}")
+                await message.channel.send(f'{message.author.mention} has been banned automatically for: {reason}')
                 return
-            if 'cs:go' in content:
-                await message.author.ban(delete_message_days=1, reason="Auto-banned. CS:GO Scam")
-                await message.channel.send(f'{message.author.mention} has been banned automatically for: CS:GO scam')
+
+        if domain in KNOWN_SCAM_DOMAINS:
+            await message.author.ban(delete_message_days=1, reason="Auto-banned. Scam")
+            await message.channel.send(f'{message.author.mention} has been banned automatically for: scam link')
+            return
+
+        if (re.search(r'(cs:? ?go|n[i1l]tro|steam)', content)) and (re.search(r'(free|gift|offer|give|giving|hack)', content)):
+            if domain.endswith('.ru') or domain.endswith('.ru.com'):
+                await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Scam")
+                await message.channel.send(f'{message.author.mention} has been banned automatically for: Scam')
                 return
-        if ('cs:go' in content or 'nitro' in content or 'cs-skins' in content) and ('free' in content or 'gift' in content or 'offer' in content or 'give' in content or 'giving' in content):
             await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible scam detected") 
             embed = discord.Embed(colour=0xff0000)
-            sanitized_content = re.sub(URL_REGEX, f'[SUSPICIOUS LINK: {domain}]', message.content)
-            embed.description = f'{message.author.mention} has been **muted automatically** due to potential scamming.\n> {sanitized_content[:100] + "..." if len(sanitized_content) > 100 else sanitized_content}'
+            sanitized_content = re.sub(URL_REGEX, f'[REDACTED]', message.content)
+            embed.add_field('Suspicious Link Domain', domain)
+            embed.description = f'{message.author.mention} has been **muted automatically** due to potential scam.\n> {sanitized_content[:100] + "..." if len(sanitized_content) > 100 else sanitized_content}'
             embed.set_footer(text=f'WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them.')
             prompt = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>', embed=embed, mention_author=False)
             await self.reaction_ban(prompt, [message.author], reason='Hacked Account Scamming', wp=True, unmute_dismissed=True) 
