@@ -1014,9 +1014,8 @@ class EJLX(commands.Cog):
         content = message.content.lower()
         url = URL_REGEX.search(content)[0]
         domain = re.match(r'https?://([^/]+)', url)[1]
-        if re.match(r'((ptb|canary|cdn)\.)?discord(app)?\.com', domain):
-            # safe URL
-            return
+        if re.match(r'((ptb|canary|cdn)\.)?discord(app)?\.com', domain) or domain == 'steamcommunity.com':
+            return # safe legit URL
         if '@everyone' in content or re.match(r'^(hi|hey|hello)', content):
             reason = ''
             if 'nitro' in content:
@@ -1025,6 +1024,7 @@ class EJLX(commands.Cog):
                 reason = 'CS:GO Scam'
             elif domain.endswith('.ru') or domain.endswith('.ru.com'):
                 reason = 'Russian Link Scam'
+
             if reason:
                 await message.author.ban(delete_message_days=1, reason=f"Auto-banned. {reason}: {domain}")
                 await message.channel.send(f'{message.author.mention} has been banned automatically for: {reason}')
@@ -1035,7 +1035,7 @@ class EJLX(commands.Cog):
             await message.channel.send(f'{message.author.mention} has been banned automatically for: Known Scam Link')
             return
 
-        if (re.search(r'(cs:? ?go|n[i1l]tro|steam)', content)) and (re.search(r'(free|gift|offer|give|giving|hack)', content)):
+        if (re.search(r'(cs:? ?go|n[i1l]tro|steam|skin)', content)) and (re.search(r'(free|gift|offer|give|giving|hack)', content)):
             if domain.endswith('.ru') or domain.endswith('.ru.com'):
                 await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Scam: {domain}")
                 await message.channel.send(f'{message.author.mention} has been banned automatically for: Russian Scam Link')
