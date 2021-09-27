@@ -85,7 +85,7 @@ INVITES_REGEX = re.compile(r'(https?://)?(www.)?(discord.(gg|io|me|li)|discord(a
 URL_REGEX = re.compile(r'(https?://\S+)')
 KNOWN_SCAM_DOMAINS = ['discordgift.ru.com', 'discord-airdrop.com', 'discord-nltro.com', 
     'cs-skins.lin', 'discorb.ru', 'steamcomminuty.com', 'steamcomminytu.ru', 'steancomunnity.ru',
-    'steamcommunitlu.com']
+    'steamcommunitlu.com', 'discorclapp.com', '']
 
 # stage chanel regexes
 INSTABAN_REGEXES = [re.compile(r'\b(fag(got)?s?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|n[i1](?P<nixxer>\S)(?P=nixxer)([e3]r|a|let)s?|penis|cum|hitler|pussy)\b'), re.compile(r'(o?chin ?chin)'), re.compile(r'(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ|死ね)')]
@@ -1035,7 +1035,7 @@ class EJLX(commands.Cog):
             await message.channel.send(f'{message.author.mention} has been banned automatically for: Known Scam Link')
             return
 
-        if (re.search(r'(cs:? ?go|n[i1l]tro|steam|skin)', content)) and (re.search(r'(free|gift|offer|give|giving|hack)', content)):
+        if (re.search(r'(cs:? ?go|n[i1l]tro|steam|skin)', content)) and (re.search(r'(free|gift|offer|give|giving|hack|promotion)', content)):
             if domain.endswith('.ru') or domain.endswith('.ru.com'):
                 await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Scam: {domain}")
                 await message.channel.send(f'{message.author.mention} has been banned automatically for: Russian Scam Link')
@@ -1043,7 +1043,7 @@ class EJLX(commands.Cog):
             await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible scam detected") 
             embed = discord.Embed(colour=0xff0000)
             sanitized_content = re.sub(URL_REGEX, f'[REDACTED]', message.content)
-            embed.add_field('Suspicious Link Domain', domain)
+            embed.add_field(name='Suspicious Link Domain', value=domain)
             embed.description = f'{message.author.mention} has been **muted automatically** due to potential scam.\n> {sanitized_content[:100] + "..." if len(sanitized_content) > 100 else sanitized_content}'
             embed.set_footer(text=f'WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them.')
             prompt = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>', embed=embed, mention_author=False)
