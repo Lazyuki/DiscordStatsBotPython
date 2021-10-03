@@ -6,7 +6,7 @@ import re
 import logging
 from collections import namedtuple
 
-from .utils.resolver import has_role, has_any_role
+from .utils.resolver import has_role, has_any_role, get_text_channel_id
 from .utils.parser import guess_lang, JP_EMOJI, EN_EMOJI, OL_EMOJI, asking_vc, REGEX_DISCORD_OBJ, REGEX_URL
 from .utils.user_interaction import wait_for_reaction
 from datetime import datetime, timezone, timedelta
@@ -146,7 +146,7 @@ def is_in_ejlx():
 def joined_to_relative_time(user):
     if not user or not user.joined_at:
         return 'already left'
-    now = datetime.now()
+    now = discord.utils.utcnow()
     seconds = (now - user.joined_at).total_seconds()
     if seconds < 60 * 60:
         return f'joined **{seconds // 60} mins** ago'
@@ -159,7 +159,7 @@ def joined_to_relative_time(user):
 def time_since_join(user, unit='day'):
     if not user or not user.joined_at:
         return -1
-    now = datetime.now()
+    now = discord.utils.utcnow()
     seconds = (now - user.joined_at).total_seconds()
     
     return seconds // (60 * 60 * 24) if unit == 'day' else seconds // 60 * 60 if unit == 'hour' else seconds // 60
@@ -179,11 +179,11 @@ async def postBotLog(bot: discord.Client, message: str):
 async def init_invites(self):
     for guild in self.bot.guilds:
         if guild.id == EJLX_ID:
-            start = datetime.now()
+            start = discord.utils.utcnow()
             invites = await guild.invites()
             vanity = await guild.vanity_invite()
-            self._invite_elapsed = datetime.now() - start
-            self._recent_invite = datetime.now()
+            self._invite_elapsed = discord.utils.utcnow() - start
+            self._recent_invite = discord.utils.utcnow()
             self.invites = { invite.id: invite for invite in invites }
             self._new_invites_cache = invites
             self.vanity_uses = vanity.uses
@@ -205,7 +205,7 @@ class EJLX(commands.Cog):
         self._new_invites_cache: dict[str, discord.Invite] = []
         self._vanity_cache: discord.Invite = None
         self._invite_lock = asyncio.Lock()
-        self._recent_invite: datetime = datetime.now()
+        self._recent_invite: datetime = discord.utils.utcnow()
         self._newbie_queue: list[int] = []
         self._multi_queue: list[discord.Member] = []
         self._invite_elapsed: timedelta = None
@@ -404,20 +404,20 @@ class EJLX(commands.Cog):
             return
         self._newbie_queue.append(member.id)
         async with self._invite_lock:
-            if (datetime.now() - self._recent_invite) < self._invite_elapsed:
+            if (discord.utils.utcnow() - self._recent_invite) < self._invite_elapsed:
                 new_invites = self._new_invites_cache
                 vanity = self._vanity_cache
                 logging.info(f'{member} is using invite caches')
             else:
-                start = datetime.now()
+                start = discord.utils.utcnow()
                 new_invites = await member.guild.invites()
                 vanity = await member.guild.vanity_invite()
-                elapsed = datetime.now() - start
+                elapsed = discord.utils.utcnow() - start
                 self._invite_elapsed = elapsed
                 new_invites = { invite.id: invite for invite in new_invites }
                 self._new_invites_cache = new_invites
                 self._vanity_cache = vanity
-                self._recent_invite = datetime.now()
+                self._recent_invite = discord.utils.utcnow()
         
         potential_invites: list[discord.Invite] = []
         for id, invite in new_invites.items():
@@ -519,7 +519,7 @@ class EJLX(commands.Cog):
         #     ewbf = before.guild.get_channel(EWBF)
         #     embed = discord.Embed(colour=0x4286f4)
         #     embed.timestamp = datetime.utcnow()
-        #     embed.set_footer(text=f'{before.name} ({before.id})', icon_url=before.avatar_url)
+        #     embed.set_footer(text=f'{before.name} ({before.id})', icon_url=before.avatar.url)
         #     if before.nick is None:
         #         embed.description = f'**{before.name}**\'s nickname was set to **${after.nick}**'
         #     elif after.nick is None:
@@ -731,7 +731,7 @@ class EJLX(commands.Cog):
             ciri_message = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}>', embed=embed, mention_author=False)
             await self.reaction_ban(ciri_message, [message.author], reason='Role mention spam', unmute_dismissed=True)
         elif len(message.mentions) > 10:
-            if message.channel.id == VOICE_BOT_CHANNEL:
+            if get_text_channel_id(message.channel) == VOICE_BOT_CHANNEL:
                 return
             await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason='User mention spam')
             embed = discord.Embed(colour=0xff0000)
@@ -743,7 +743,7 @@ class EJLX(commands.Cog):
 
 
     async def troll_check(self, message):
-        if message.channel.id in [BOT_CHANNEL, VOICE_BOT_CHANNEL]:
+        if get_text_channel_id(message.channel) in [BOT_CHANNEL, VOICE_BOT_CHANNEL]:
             return
         author = message.author
         content = message.clean_content.lower()
@@ -782,7 +782,7 @@ class EJLX(commands.Cog):
             self.troll_msgs.pop(0)
 
     async def new_user_troll_check(self, message):
-        if message.channel.id in [BOT_CHANNEL, VOICE_BOT_CHANNEL]:
+        if get_text_channel_id(message.channel) in [BOT_CHANNEL, VOICE_BOT_CHANNEL]:
             return
         author = message.author
         content = message.clean_content
@@ -1065,7 +1065,7 @@ class EJLX(commands.Cog):
             await self.ban_scammers(message) 
 
         if not has_any_role(message.author, LANG_ROLE_IDS):
-            if message.channel.id not in STAGE_CHATS:
+            if get_text_channel_id(message.channel) not in STAGE_CHATS:
                 await guess_lang(message)
                 await asking_vc(message)
             await self.new_user_troll_check(message)
@@ -1075,19 +1075,19 @@ class EJLX(commands.Cog):
             else:
                 await self.troll_check(message)
         await self.mention_spam(message)
-        if message.channel.id == JP_CHAT:
+        if get_text_channel_id(message.channel) == JP_CHAT:
             await jp_only(message)
-        elif message.channel.id == JP_BEGINNER:
+        elif get_text_channel_id(message.channel) == JP_BEGINNER:
             await check_kanji(message)
-        elif message.channel.id == LANG_SWITCH:
+        elif get_text_channel_id(message.channel) == LANG_SWITCH:
             await check_lang_switch(message)
         if len(message.role_mentions) > 0:
             await self.check_role_mentions(message)
-        if message.channel.id == BOT_CHANNEL:
+        if get_text_channel_id(message.channel) == BOT_CHANNEL:
             if MUSIC_BOT_REGEX.match(message.content):
                 await send_music_bot_notif(message)
         await self.check_jap(message)
-        if message.channel.id in STAGE_CHATS:
+        if get_text_channel_id(message.channel) in STAGE_CHATS:
             await self.moderate_stage(message)
 
 

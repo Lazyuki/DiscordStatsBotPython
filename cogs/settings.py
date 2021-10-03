@@ -7,6 +7,7 @@ import json
 import subprocess
 from dataclasses import dataclass, field, asdict
 from datetime import datetime
+from .utils.resolver import get_text_channel_id
 
 
 @dataclass
@@ -94,7 +95,7 @@ class Settings(commands.Cog):
     async def config(self, ctx):
         """Show server settings."""
         shown_settings = asdict(self.settings[ctx.guild.id])
-        if ctx.channel.id not in shown_settings['_mod_channel_ids']:
+        if get_text_channel_id(ctx.channel) not in shown_settings['_mod_channel_ids']:
             for key in [k for k in shown_settings.keys() if k.startswith('_') ]:
                 del shown_settings[key]
     
@@ -122,7 +123,7 @@ class Settings(commands.Cog):
     @commands.command(aliases=['setlog'])
     @commands.check(has_manage_server)
     async def set_log_channel(self, ctx, *, channel: discord.TextChannel):
-        self.update_settings(ctx.guild, log_channel_id=channel.id)
+        self.update_settings(ctx.guild, log_channel_id=get_text_channel_id(channel))
         await ctx.send(f"\N{WHITE HEAVY CHECK MARK} Log channel has been set to {channel}")
 
     @commands.Cog.listener()

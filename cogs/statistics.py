@@ -7,7 +7,7 @@ import asyncpg
 import re
 from datetime import datetime, date, timedelta
 from .utils.parser import REGEX_CUSTOM_EMOJIS, REGEX_BOT_COMMANDS, format_timedelta
-from .utils.resolver import resolve_minimum_channel, resolve_user_id, has_role, resolve_role, resolve_options
+from .utils.resolver import resolve_minimum_channel, resolve_user_id, has_role, resolve_role, resolve_options, get_text_channel_id
 from .utils.leaderboard import PaginatedLeaderboard
 from .ejlx import JP_EMOJI, EN_EMOJI, OL_EMOJI, NJ_ROLE
 
@@ -61,7 +61,7 @@ class Stats(commands.Cog):
         member = ctx.guild.get_member(user_id)
 
         mod_channels = self.settings[ctx.guild.id]._mod_channel_ids
-        if ctx.channel.id in mod_channels:
+        if get_text_channel_id(ctx.channel) in mod_channels:
              mod_channels = []
         
         emoji_data, voice, message_data = await asyncio.gather(
@@ -114,7 +114,7 @@ class Stats(commands.Cog):
                 nick = f' aka {member.nick}'
             embed.set_footer(text='Joined this server')
             embed.timestamp = member.joined_at
-            embed.set_author(name=f'Stats for {member.name}#{member.discriminator}{nick}', icon_url=member.avatar_url)
+            embed.set_author(name=f'Stats for {member.name}#{member.discriminator}{nick}', icon_url=member.avatar.replace(static_format='png').url)
         else:
             embed.set_author(name=f'Stats for {user_id}')
             embed.set_footer(text='Already left the server')
@@ -197,7 +197,7 @@ class Stats(commands.Cog):
         embed.set_footer(text='Joined')
         embed.timestamp = member.joined_at
         members_by_joined_date = sorted(ctx.guild.members, key=lambda m: m.joined_at)
-        duration = datetime.now() - member.joined_at
+        duration = discord.utils.utcnow() - member.joined_at
         rank = next((i for i, e in enumerate(members_by_joined_date) if e.id == member.id), -1) + 1
         suffix = { 1: "st", 2: "nd", 3: "rd" }.get(rank if rank < 20 else rank % 10, 'th')
         embed.description = f'Member for {format_timedelta(duration)}\n({duration.days} days)\n\n**{rank}** {suffix} member'
@@ -208,7 +208,7 @@ class Stats(commands.Cog):
         members_by_joined_date = sorted(ctx.guild.members, key=lambda m: m.joined_at)
         def name_resolver(rank, r2, member):
             return f'{rank}) {member.name}'
-        now = datetime.now()
+        now = discord.utils.utcnow()
         def count_resolver(record):
             return (now - record.joined_at).days
         def count_to_str(count):
@@ -283,7 +283,7 @@ class Stats(commands.Cog):
                 return
 
         if not channel_ids:
-            channel_ids = [ ctx.channel.id ]
+            channel_ids = [ get_text_channel_id(ctx.channel) ]
         chlb = await self.pool.fetch('''
             WITH ranked AS (
                 SELECT *, RANK() OVER (ORDER BY count DESC)
@@ -654,7 +654,7 @@ class Stats(commands.Cog):
             ''', ctx.guild.id, user.id)
         s = f'Server activity for **{user}**\n```\n'
         if use_numbers:
-            prev_date = datetime.now().date() - timedelta(days=29)
+            prev_date = discord.utils.utcnow().date() - timedelta(days=29)
             for record in ac:
                 date = record['utc_date']
                 if date < prev_date:
@@ -668,7 +668,7 @@ class Stats(commands.Cog):
         else:
             max_num = max(ac, key=lambda r: r['count'])['count']
             s += f'Unit: {max_num // 15} messages\n'
-            prev_date = datetime.now().date() - timedelta(days=29)
+            prev_date = discord.utils.utcnow().date() - timedelta(days=29)
             for record in ac:
                 date = record['utc_date']
                 if date < prev_date:
@@ -691,7 +691,7 @@ class Stats(commands.Cog):
         channel_ids = [ c.id for c in ctx.message.channel_mentions ] 
         use_numbers = '-n' in arg
         if not channel_ids:
-            channel_ids = [ ctx.channel.id ]
+            channel_ids = [ get_text_channel_id(ctx.channel) ]
         ac = await self.pool.fetch('''
             SELECT SUM(message_count) as count, utc_date
             FROM messages
@@ -702,7 +702,7 @@ class Stats(commands.Cog):
         channels = [ctx.guild.get_channel(cid).name for cid in channel_ids]
         s = f'Server activity for {", ".join(channels)}\n```\n'
         if use_numbers:
-            prev_date = datetime.now().date() - timedelta(days=29)
+            prev_date = discord.utils.utcnow().date() - timedelta(days=29)
             for record in ac:
                 date = record['utc_date']
                 if date < prev_date:
@@ -716,7 +716,7 @@ class Stats(commands.Cog):
         else:
             max_num = max(ac, key=lambda r: r['count'])['count']
             s += f'Unit: {max_num // 15} messages\n'
-            prev_date = datetime.now().date() - timedelta(days=29)
+            prev_date = discord.utils.utcnow().date() - timedelta(days=29)
             for record in ac:
                 date = record['utc_date']
                 if date < prev_date:
@@ -746,7 +746,7 @@ class Stats(commands.Cog):
             ''', ctx.guild.id)
         s = f'Server activity\n```\n'
         if use_numbers:
-            prev_date = datetime.now().date() - timedelta(days=29)
+            prev_date = discord.utils.utcnow().date() - timedelta(days=29)
             for record in ac:
                 date = record['utc_date']
                 if date < prev_date:
@@ -760,7 +760,7 @@ class Stats(commands.Cog):
         else:
             max_num = max(ac, key=lambda r: r['count'])['count']
             s += f'Unit: {max_num // 15} messages\n'
-            prev_date = datetime.now().date() - timedelta(days=29)
+            prev_date = discord.utils.utcnow().date() - timedelta(days=29)
             for record in ac:
                 date = record['utc_date']
                 if date < prev_date:
@@ -786,7 +786,7 @@ class Stats(commands.Cog):
         emojis = custom_emoji_matches + kwargs['emojis']
 
         async with self._batch_lock:
-            self._temp_messages[(m.guild.id, m.channel.id, m.author.id, lang, m.created_at.date())] += 1
+            self._temp_messages[(m.guild.id, get_text_channel_id(m.channel), m.author.id, lang, m.created_at.date())] += 1
             if emojis:
                 self._temp_emojis[(m.guild.id, m.author.id, m.created_at.date())] += Counter(emojis)
 

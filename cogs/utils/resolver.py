@@ -144,3 +144,7 @@ def resolve_options(content: str, accepted_options: dict):
 
     return (' '.join(rest_content), resolved)
     
+def get_text_channel_id(channel: discord.TextChannel):
+    if hasattr(channel, 'parent_id'):
+        return channel.parent_id
+    return channel.id

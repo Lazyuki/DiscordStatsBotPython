@@ -304,7 +304,7 @@ You must enable `Allow direct messages from server members` for this server in P
         embed = discord.Embed(colour=0x000000)
         embed.description = f'\N{CROSS MARK} **{user.name}#{user.discriminator}** was `banned`. ({user.id})\n\n*by* {banner.mention if banner else "Unknown"}\n**Reason:** {reason if reason else "Unknown"}'
         embed.timestamp = datetime.utcnow()
-        embed.set_footer(text=f'User Banned', icon_url=user.avatar_url_as(static_format='png'))
+        embed.set_footer(text=f'User Banned', icon_url=user.avatar.replace(static_format='png').url)
         chan = guild.get_channel(self.settings[guild.id].log_channel_id)
         if chan:
             await chan.send(embed=embed)
@@ -323,7 +323,7 @@ You must enable `Allow direct messages from server members` for this server in P
         embed = discord.Embed(colour=0xeeeeee)
         embed.description = f'\N{WHITE EXCLAMATION MARK ORNAMENT} **{user.name}#{user.discriminator}** was `unbanned`. ({user.id})\n\n*by* {banner.mention if banner else "Unknown"}'
         embed.timestamp = datetime.utcnow()
-        embed.set_footer(text=f'User Unbanned by {unbanner}', icon_url=user.avatar_url_as(static_format='png'))
+        embed.set_footer(text=f'User Unbanned by {unbanner}', icon_url=user.avatar.replace(static_format='png').url)
         chan = guild.get_channel(self.settings[guild.id].log_channel_id)
         if chan:
             await chan.send(embed=embed)
@@ -336,7 +336,7 @@ You must enable `Allow direct messages from server members` for this server in P
         reason = None
         guild = member.guild
         await asyncio.sleep(1)
-        now = datetime.now()
+        now = discord.utils.utcnow()
         async for entry in guild.audit_logs(action=discord.AuditLogAction.kick):
             if entry.target.id == member.id and (now - entry.created_at).total_seconds() < 10:
                 kicker = entry.user
@@ -348,7 +348,7 @@ You must enable `Allow direct messages from server members` for this server in P
         embed = discord.Embed(colour=0x000000)
         embed.description = f'\N{CROSS MARK} **{member.name}#{member.discriminator}** was `kicked`. ({member.id})\n\n*by* {kicker.mention if kicker else "Unknown"}\n**Reason:** {reason if reason else "Unknown"}'
         embed.timestamp = datetime.utcnow()
-        embed.set_footer(text=f'User Kicked', icon_url=member.avatar_url_as(static_format='png'))
+        embed.set_footer(text=f'User Kicked', icon_url=member.avatar.replace(static_format='png').url)
         chan = guild.get_channel(self.settings[guild.id].log_channel_id)
         if chan:
             await chan.send(embed=embed)
@@ -370,7 +370,7 @@ You must enable `Allow direct messages from server members` for this server in P
                         embed.add_field(name='(continued)', value=message.content[4096:])
 
                 embed.add_field(name=f'\u200b', value=f'[\N{LINK SYMBOL} Go to message ↦]({message.jump_url})', inline=True)
-                embed.set_author(name=message.author.name, icon_url=message.author.avatar_url_as(static_format='png'))
+                embed.set_author(name=message.author.name, icon_url=message.author.avatar.replace(static_format='png').url)
                 embed.set_footer(text=f'#{message.channel.name}\nReact with \N{CROSS MARK} to delete this bookmark')
                 try:
                     await user.send(embed=embed)
