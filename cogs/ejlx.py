@@ -149,12 +149,12 @@ def joined_to_relative_time(user):
     now = datetime.now()
     seconds = (now - user.joined_at).total_seconds()
     if seconds < 60 * 60:
-        return f'joined {seconds // 60} mins ago'
+        return f'joined **{seconds // 60} mins** ago'
     if seconds < 60 * 60 * 72:
-        return f'joined {seconds // 3600} hours ago'
+        return f'joined **{seconds // 3600} hours** ago'
     if seconds < 60 * 60 * 24 * 30:
-        return f'joined {seconds // 86400} days ago'
-    return f'joined {seconds // 2592000} months ago'
+        return f'joined **{seconds // 86400} days** ago'
+    return f'joined **{seconds // 2592000} months** ago'
 
 def time_since_join(user, unit='day'):
     if not user or not user.joined_at:
@@ -168,7 +168,7 @@ def clean_and_truncate(content):
     clean_content = content.replace('\n', ' ')
     if not clean_content:
         return ''
-    clean_content = f"`{clean_content[:10] + ('...' if len(clean_content) > 10 else '')}`"
+    clean_content = f"`{clean_content[:25] + ('...' if len(clean_content) > 25 else '')}`"
     return clean_content
 
 async def postBotLog(bot: discord.Client, message: str):
@@ -889,20 +889,20 @@ class EJLX(commands.Cog):
                 members_by_joined_date = sorted(message.guild.members, key=lambda m: m.joined_at)
                 last_4_in = (members_by_joined_date[-1].joined_at - members_by_joined_date[-4].joined_at).total_seconds()
                 if last_4_in < 120:
-                    # possible raid so just add new users who's said anything
+                    # possible raid so just add new users who have said anything
                     new_users = dict()
                     for m in messages:
                         joined_minutes_ago = time_since_join(m.author, unit='minute')
                         if joined_minutes_ago < 15:
                             clean_content = clean_and_truncate(m.clean_content)
                             if m.author.id in new_users:
-                                clean_content = new_users[m.author.id]["contents"] + ', ' + (clean_content or '*file*')
+                                clean_content = new_users[m.author.id]["contents"] + NL + (clean_content or '*file*')
                             new_users[m.author.id] = { "contents": clean_content, "user": m.author }
 
                     bannees = [n["user"] for n in new_users.values()]
                     if not bannees:
                         return
-                    embed.description = '\n'.join(f'{NUMBER_EMOJIS[i]}: {b} {joined_to_relative_time(b)}. Messages: {new_users[b.id]["contents"]}' for i, b in enumerate(bannees[:10])) 
+                    embed.description = '\n'.join(f'{NUMBER_EMOJIS[i]}: {b} {joined_to_relative_time(b)}.{NL}Messages: {new_users[b.id]["contents"]}' for i, b in enumerate(bannees[:10])) 
                     embed.set_footer(text=f'Minimos can click each number 3 times to ban them individually, BAN emoji 3 times to ban all of them, or ✅ to dismiss this message')
                     ciri_message = await message.channel.send(embed=embed)
                     await self.reaction_ban_multiple(ciri_message, bannees, reason='Active Staff ping auto detection', delete_dismissed=delete_dismissed)
@@ -1014,7 +1014,7 @@ class EJLX(commands.Cog):
         content = message.content.lower()
         url = URL_REGEX.search(content)[0]
         domain = re.match(r'https?://([^/]+)', url)[1]
-        if re.match(r'((ptb|canary|cdn)\.)?discord(app)?\.com', domain) or domain == 'steamcommunity.com':
+        if re.match(r'(.*\.)?discord(app)?\.(com|gg)$', domain) or domain == 'steamcommunity.com':
             return # safe legit URL
         if '@everyone' in content or re.match(r'^(hi|hey|hello)', content):
             reason = ''
@@ -1034,8 +1034,12 @@ class EJLX(commands.Cog):
             await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Scam: {domain}")
             await message.channel.send(f'{message.author.mention} has been banned automatically for: Known Scam Link')
             return
+        if re.search(r'd[l1i]scor(d|cl)', domain):
+            await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Fake Discord Link Scam: {domain}")
+            await message.channel.send(f'{message.author.mention} has been banned automatically for: Fake Discord Link Scam')
+            return
 
-        if (re.search(r'(cs:? ?go|n[i1l]tro|steam|skin)', content)) and (re.search(r'(free|gift|offer|give|giving|hack|promotion)', content)):
+        if (re.search(r'(cs:? ?go|n[i1l]tro|steam|skin|d[il1]scord)', content)) and (re.search(r'(free|gift|offer|give|giving|hack|promotion)', content)):
             if domain.endswith('.ru') or domain.endswith('.ru.com'):
                 await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Scam: {domain}")
                 await message.channel.send(f'{message.author.mention} has been banned automatically for: Russian Scam Link')
@@ -1044,7 +1048,7 @@ class EJLX(commands.Cog):
             embed = discord.Embed(colour=0xff0000)
             sanitized_content = re.sub(URL_REGEX, f'[REDACTED]', message.content)
             embed.add_field(name='Suspicious Link Domain', value=domain)
-            embed.description = f'{message.author.mention} has been **muted automatically** due to potential scam.\n> {sanitized_content[:100] + "..." if len(sanitized_content) > 100 else sanitized_content}'
+            embed.description = f'{message.author.mention} has been **muted automatically** due to potential scam.\n> {sanitized_content[:150] + "..." if len(sanitized_content) > 150 else sanitized_content}'
             embed.set_footer(text=f'WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them.')
             prompt = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>', embed=embed, mention_author=False)
             await self.reaction_ban(prompt, [message.author], reason=f'Hacked Account Scamming: {domain}', wp=True, unmute_dismissed=True) 
