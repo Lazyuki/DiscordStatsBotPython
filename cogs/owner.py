@@ -60,7 +60,7 @@ class Owner(commands.Cog):
     async def _restart(self, ctx):
         await ctx.send('Restarting...')
         self.bot.config.debugging = True
-        await asyncio.create_subprocess_shell('(sleep 3 && . ~/.venv/ciri/bin/activate && python3 launcher.py) &', close_fds=True)
+        await asyncio.create_subprocess_shell('(sleep 3 && . ~/.venv/cirilla/bin/activate && nohup python3.9 launcher.py) &', close_fds=True)
         await self.bot.close()
 
     @commands.command()
