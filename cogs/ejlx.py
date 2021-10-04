@@ -86,6 +86,7 @@ URL_REGEX = re.compile(r'(https?://\S+)')
 KNOWN_SCAM_DOMAINS = ['discordgift.ru.com', 'discord-airdrop.com', 'discord-nltro.com', 
     'cs-skins.lin', 'discorb.ru', 'steamcomminuty.com', 'steamcomminytu.ru', 'steancomunnity.ru',
     'steamcommunitlu.com', 'discorclapp.com', '']
+WHITE_LIST_DOMAINS = ['discord.me', 'steamcommunity.com']
 
 # stage chanel regexes
 INSTABAN_REGEXES = [re.compile(r'\b(fag(got)?s?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|n[i1](?P<nixxer>\S)(?P=nixxer)([e3]r|a|let)s?|penis|cum|hitler|pussy)\b'), re.compile(r'(o?chin ?chin)'), re.compile(r'(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ|死ね)')]
@@ -1014,7 +1015,7 @@ class EJLX(commands.Cog):
         content = message.content.lower()
         url = URL_REGEX.search(content)[0]
         domain = re.match(r'https?://([^/]+)', url)[1]
-        if re.match(r'(.*\.)?discord(app)?\.(com|gg)$', domain) or domain == 'steamcommunity.com':
+        if re.match(r'(.*\.)?discord(app)?\.(com|gg)$', domain) or domain in WHITE_LIST_DOMAINS:
             return # safe legit URL
         if '@everyone' in content or re.match(r'^(hi|hey|hello)', content):
             reason = ''
@@ -1034,15 +1035,15 @@ class EJLX(commands.Cog):
             await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Scam: {domain}")
             await message.channel.send(f'{message.author.mention} has been banned automatically for: Known Scam Link')
             return
-        if re.search(r'd[l1i]scor(d|cl)', domain):
-            await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Fake Discord Link Scam: {domain}")
-            await message.channel.send(f'{message.author.mention} has been banned automatically for: Fake Discord Link Scam')
-            return
 
         if (re.search(r'(cs:? ?go|n[i1l]tro|steam|skin|d[il1]scord)', content)) and (re.search(r'(free|gift|offer|give|giving|hack|promotion)', content)):
             if domain.endswith('.ru') or domain.endswith('.ru.com'):
                 await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Scam: {domain}")
                 await message.channel.send(f'{message.author.mention} has been banned automatically for: Russian Scam Link')
+                return
+            if re.search(r'd[l1i]scor(d|cl)', domain):
+                await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Fake Discord Link Scam: {domain}")
+                await message.channel.send(f'{message.author.mention} has been banned automatically for: Fake Discord Link Scam')
                 return
             await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible scam detected") 
             embed = discord.Embed(colour=0xff0000)
