@@ -1017,7 +1017,7 @@ class EJLX(commands.Cog):
         domain = re.match(r'https?://([^/]+)', url)[1]
         if re.match(r'(.*\.)?discord(app)?\.(com|gg)$', domain) or domain in WHITE_LIST_DOMAINS:
             return # safe legit URL
-        if '@everyone' in content or re.match(r'^(hi|hey|hello)', content):
+        if '@everyone' in content or re.match(r'^(hi|hey|hello|bro)', content):
             reason = ''
             if 'nitro' in content:
                 reason = 'Nitro Scam'
@@ -1036,7 +1036,7 @@ class EJLX(commands.Cog):
             await message.channel.send(f'{message.author.mention} has been banned automatically for: Known Scam Link')
             return
 
-        if (re.search(r'(cs:? ?go|n[i1l]tro|steam|skin|d[il1]scord)', content)) and (re.search(r'(free|gift|offer|give|giving|hack|promotion)', content)):
+        if (re.search(r'(cs:? ?go|n[i1l]tro|steam|skin|d[il1]scord|bro)', content)) and (re.search(r'(free|gift|offer|give|giving|hack|promotion)', content)):
             if domain.endswith('.ru') or domain.endswith('.ru.com'):
                 await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Scam: {domain}")
                 await message.channel.send(f'{message.author.mention} has been banned automatically for: Russian Scam Link')
