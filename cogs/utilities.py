@@ -293,18 +293,25 @@ You must enable `Allow direct messages from server members` for this server in P
         # Fetch audit log to get who banned them
         banner = None
         reason = None
-        await asyncio.sleep(5)
         log.info(f'Member banned {user.name}')
-        async for entry in guild.audit_logs(action=discord.AuditLogAction.ban):
-            if entry.target.id == user.id:
-                banner = entry.user
-                reason = entry.reason
-                break
+
+        await asyncio.sleep(5)
+        for _ in range(3):
+            async for entry in guild.audit_logs(action=discord.AuditLogAction.ban):
+                if entry.target.id == user.id:
+                    banner = entry.user
+                    reason = entry.reason
+                    break
+            else:
+                await asyncio.sleep(5)
+                continue
+            break
+        
         log.info(f'Banned by {banner.name if banner else "Unknown"}')
         embed = discord.Embed(colour=0x000000)
         embed.description = f'\N{CROSS MARK} **{user.name}#{user.discriminator}** was `banned`. ({user.id})\n\n*by* {banner.mention if banner else "Unknown"}\n**Reason:** {reason if reason else "Unknown"}'
         embed.timestamp = datetime.utcnow()
-        embed.set_footer(text=f'User Banned', icon_url=user.avatar.replace(static_format='png').url)
+        embed.set_footer(text=f'User Banned', icon_url=user.display_avatar.replace(static_format='png').url)
         chan = guild.get_channel(self.settings[guild.id].log_channel_id)
         if chan:
             await chan.send(embed=embed)
@@ -314,16 +321,23 @@ You must enable `Allow direct messages from server members` for this server in P
         """Notify unban"""
         # Fetch audit log to get who banned them
         banner = None
-        await asyncio.sleep(1)
-        async for entry in guild.audit_logs(action=discord.AuditLogAction.unban):
-            if entry.target.id == user.id:
-                banner = entry.user
-                break
+        reason = None
+        await asyncio.sleep(5)
+        for _ in range(3):
+            async for entry in guild.audit_logs(action=discord.AuditLogAction.unban):
+                if entry.target.id == user.id:
+                    banner = entry.user
+                    reason = entry.reason
+                    break
+            else:
+                await asyncio.sleep(5)
+                continue
+            break
         unbanner = banner.name if banner else "Unknown"
         embed = discord.Embed(colour=0xeeeeee)
-        embed.description = f'\N{WHITE EXCLAMATION MARK ORNAMENT} **{user.name}#{user.discriminator}** was `unbanned`. ({user.id})\n\n*by* {banner.mention if banner else "Unknown"}'
+        embed.description = f'\N{WHITE EXCLAMATION MARK ORNAMENT} **{user.name}#{user.discriminator}** was `unbanned`. ({user.id})\n\n*by* {banner.mention if banner else "Unknown"}\n**Reason:**{reason if reason else "Unknown"}'
         embed.timestamp = datetime.utcnow()
-        embed.set_footer(text=f'User Unbanned by {unbanner}', icon_url=user.avatar.replace(static_format='png').url)
+        embed.set_footer(text=f'User Unbanned by {unbanner}', icon_url=user.display_avatar.replace(static_format='png').url)
         chan = guild.get_channel(self.settings[guild.id].log_channel_id)
         if chan:
             await chan.send(embed=embed)
@@ -335,14 +349,19 @@ You must enable `Allow direct messages from server members` for this server in P
         kicker = None
         reason = None
         guild = member.guild
-        await asyncio.sleep(1)
+        await asyncio.sleep(5)
         now = discord.utils.utcnow()
-        async for entry in guild.audit_logs(action=discord.AuditLogAction.kick):
-            if entry.target.id == member.id and (now - entry.created_at).total_seconds() < 10:
-                kicker = entry.user
-                reason = entry.reason
-                break
-        else:
+        for _ in range(3):
+            async for entry in guild.audit_logs(action=discord.AuditLogAction.kick):
+                if entry.target.id == member.id and (now - entry.created_at).total_seconds() < 20:
+                    kicker = entry.user
+                    reason = entry.reason
+                    break
+            else:
+                await asyncio.sleep(5)
+                continue
+            break
+        if kicker is None:
             return
         log.info(f'Kicked by {kicker.name if kicker else "Unknown"}')
         embed = discord.Embed(colour=0x000000)
@@ -410,6 +429,9 @@ You must enable `Allow direct messages from server members` for this server in P
         guild = self.bot.get_guild(guild_id)
         channel = guild.get_channel(channel_id)
         member = guild.get_member(user_id)
+        if not channel:
+            # thread?
+            return
         message = await channel.fetch_message(message_id)
 
         if is_add:
