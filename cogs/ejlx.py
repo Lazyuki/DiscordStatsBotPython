@@ -1012,7 +1012,8 @@ class EJLX(commands.Cog):
                     return
     
     async def ban_scammers(self, message: discord.Message):
-        content = message.content.lower().replace(r'[\u200B-\u200F\uFEFF]', '')
+        content = message.content.lower()
+        content = re.sub(r'[\u200B-\u200F\uFEFF]', '', content)
         url = URL_REGEX.search(content)[0]
         domain = re.match(r'https?://([^/]+)', url)[1]
         tld = domain.split('.')[-1]
