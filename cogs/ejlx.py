@@ -1014,7 +1014,7 @@ class EJLX(commands.Cog):
         content = message.content.lower()
         url = URL_REGEX.search(content)[0]
         domain = re.match(r'https?://([^/]+)', url)[1]
-        if re.match(r'(.*\.)?discord(app)?\.(com|gg)$', domain) or domain == 'steamcommunity.com':
+        if re.match(r'(.*\.)?discord(app|status)?\.(com|gg|gifts?)$', domain) or domain == 'steamcommunity.com':
             return # safe legit URL
         if '@everyone' in content or re.match(r'^(hi|hey|hello)', content):
             reason = ''
