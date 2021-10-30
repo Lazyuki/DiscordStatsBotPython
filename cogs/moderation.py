@@ -66,7 +66,7 @@ class Moderation(commands.Cog):
             return
 
         excluded_channel_ids = [ch.id for ch in excluded_channels]
-        all_channels = [ch for ch in ctx.guild.text_channels if ch.category_id != 360570306131132417 and ch.id not in excluded_channel_ids]
+        all_channels = [ch for ch in ctx.guild.text_channels if ch.category_id not in [360570306131132417, 704886695446839346] and ch.id not in excluded_channel_ids]
         
         if not permissions:
             # delete permission overwrites
