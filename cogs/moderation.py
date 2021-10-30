@@ -47,13 +47,13 @@ class Moderation(commands.Cog):
     
     @commands.command(aliases=['chrp'])
     @commands.check(has_admin)
-    async def channel_role_permissions(self, ctx: Context, role: discord.Role, *, permissions = ""):
+    async def channel_role_permissions(self, ctx: Context, role: discord.Role, *, permissions: str = ""):
         """
         Applies permission overwrites in every channel for a role (except in mod channels).
         See https://discordpy.readthedocs.io/en/master/api.html#discord.Permissions for permission names.
         None is the default, False explicitly disables it, True explicitly allows it.
 
-        Usage: ,,chrp role permission1=True, permission2=None, permission3=False... 
+        Usage: ,,chrp role permission1=True, permission2=None, permission3=False... [-f to force, otherwise merge]
         Do not specify permissions if you want to remove permission overwrites from all channels.
         """
         if not role:
@@ -72,7 +72,11 @@ class Moderation(commands.Cog):
 
         permission_list = permissions.split(',')
         overwrite_dict = dict()
+        force = False
         for permission in permission_list:
+            if '-f' in permission:
+                force = True
+                permission.replace('-f', '')
             permission_key, permission_val = permission.split('=')
             permission_key = permission_key.strip()
             permission_val = permission_val.strip().title()
@@ -89,11 +93,14 @@ class Moderation(commands.Cog):
             overwrite = PermissionOverwrite(**overwrite_dict)
             for ch in all_channels:
                 if role in ch.overwrites:
-                    if ch.overwrites_for(role) == overwrite:
+                    existing_ow = ch.overwrites_for(role)
+                    if existing_ow == overwrite:
+                        continue
+                    if not force:
+                        existing_ow.update(**overwrite_dict)
+                        await ch.set_permissions(existing_ow)
                         continue
                 await ch.set_permissions(role, overwrite=overwrite)
-
-
         
         await ctx.send("Finished applying role permissions")
 
