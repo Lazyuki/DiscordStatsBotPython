@@ -45,7 +45,7 @@ class Moderation(commands.Cog):
         if isinstance(error, commands.BadArgument):
             await ctx.send('Failed to get a member')
     
-    @commands.command(alias=['chrp'])
+    @commands.command(aliases=['chrp'])
     @commands.check(has_admin)
     async def channel_role_permissions(self, ctx: Context, role: commands.RoleConverter, permissions: str):
         """
