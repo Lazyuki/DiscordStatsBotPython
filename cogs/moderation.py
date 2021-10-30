@@ -79,7 +79,7 @@ class Moderation(commands.Cog):
             if permission_val not in ['None', 'True', 'False']:
                 await ctx.send(f'{permission_val} is not a valid permission value. Use True, False, or None')
                 continue
-            if permission_key in Permissions:
+            if hasattr(Permissions(), permission_key):
                 overwrite[permission_key] = eval(permission_val)
             else:
                 await ctx.send(f'{permission_key} is not a valid permission')
