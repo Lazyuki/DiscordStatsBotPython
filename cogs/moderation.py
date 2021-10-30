@@ -54,6 +54,7 @@ class Moderation(commands.Cog):
         None is the default, False explicitly disables it, True explicitly allows it.
 
         Usage: ,,chrp role permission1=True, permission2=None, permission3=False... [-f to force, otherwise merge]
+        If forced, previous overwrites will be ignored.
         Do not specify permissions if you want to remove permission overwrites from all channels.
         """
         if not role:
