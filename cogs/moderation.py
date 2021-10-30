@@ -71,7 +71,7 @@ class Moderation(commands.Cog):
             return 
 
         permission_list = permissions.split(',')
-        overwrite = PermissionOverwrite()
+        overwrite_dict = dict()
         for permission in permission_list:
             permission_key, permission_val = permission.split('=')
             permission_key = permission_key.strip()
@@ -80,16 +80,20 @@ class Moderation(commands.Cog):
                 await ctx.send(f'{permission_val} is not a valid permission value. Use True, False, or None')
                 continue
             if hasattr(Permissions(), permission_key):
-                overwrite[permission_key] = eval(permission_val)
+                overwrite_dict[permission_key] = eval(permission_val)
             else:
                 await ctx.send(f'{permission_key} is not a valid permission')
                 continue
 
-        for ch in all_channels:
-            if role in ch.overwrites:
-                if ch.overwrites_for(role) == overwrite:
-                    continue
-            await ch.set_permissions(role, overwrite=overwrite)
+        if overwrite_dict:
+            overwrite = PermissionOverwrite(**overwrite_dict)
+            for ch in all_channels:
+                if role in ch.overwrites:
+                    if ch.overwrites_for(role) == overwrite:
+                        continue
+                await ch.set_permissions(role, overwrite=overwrite)
+
+
         
         await ctx.send("Finished applying role permissions")
 
