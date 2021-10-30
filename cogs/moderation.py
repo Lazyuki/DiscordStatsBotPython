@@ -1,5 +1,6 @@
 from discord.ext import commands
 import discord
+import typing
 import logging
 import asyncio
 import asyncpg
@@ -47,21 +48,25 @@ class Moderation(commands.Cog):
     
     @commands.command(aliases=['chrp'])
     @commands.check(has_admin)
-    async def channel_role_permissions(self, ctx: Context, role: discord.Role, *, permissions: str = ""):
+    async def channel_role_permissions(self, ctx: Context, role: discord.Role, excluded_channels: commands.Greedy[discord.TextChannel] = [], *, permissions: str = ""):
         """
         Applies permission overwrites in every channel for a role (except in mod channels).
         See https://discordpy.readthedocs.io/en/master/api.html#discord.Permissions for permission names.
         None is the default, False explicitly disables it, True explicitly allows it.
 
-        Usage: ,,chrp role permission1=True, permission2=None, permission3=False... [-f to force, otherwise merge]
+        Usage: ,,chrp <role> [excluded channels] permission1=True, permission2=None, permission3=False... [-f to force, otherwise merge]
         If forced, previous overwrites will be ignored.
         Do not specify permissions if you want to remove permission overwrites from all channels.
+        Examples:
+        ,,chrp @Focused #japanese_questions #correct_me view_channel=False
+        ,,chrp @Blind view_channel=False read_messages=None -f
         """
         if not role:
-            await ctx.send(f'Usage: `,,chrp role permission1=True, permission2=None, permission3=False...`')
+            await ctx.send(f'Usage: `,,chrp <role> [excluded channels] permission1=True, permission2=None, permission3=False...`')
             return
 
-        all_channels = [ch for ch in ctx.guild.text_channels if ch.category_id != 360570306131132417]
+        excluded_channel_ids = [ch.id for ch in excluded_channels]
+        all_channels = [ch for ch in ctx.guild.text_channels if ch.category_id != 360570306131132417 and ch.id not in excluded_channel_ids]
         
         if not permissions:
             # delete permission overwrites
