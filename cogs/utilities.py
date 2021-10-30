@@ -311,7 +311,8 @@ You must enable `Allow direct messages from server members` for this server in P
         embed = discord.Embed(colour=0x000000)
         embed.description = f'\N{CROSS MARK} **{user.name}#{user.discriminator}** was `banned`. ({user.id})\n\n*by* {banner.mention if banner else "Unknown"}\n**Reason:** {reason if reason else "Unknown"}'
         embed.timestamp = datetime.utcnow()
-        embed.set_footer(text=f'User Banned', icon_url=user.display_avatar.replace(static_format='png').url)
+        avatar = user.display_avatar.replace(static_format='png').url if user.display_avatar else user.default_avatar.replace(static_format='png').url
+        embed.set_footer(text=f'User Banned', icon_url=avatar)
         chan = guild.get_channel(self.settings[guild.id].log_channel_id)
         if chan:
             await chan.send(embed=embed)
@@ -337,7 +338,8 @@ You must enable `Allow direct messages from server members` for this server in P
         embed = discord.Embed(colour=0xeeeeee)
         embed.description = f'\N{WHITE EXCLAMATION MARK ORNAMENT} **{user.name}#{user.discriminator}** was `unbanned`. ({user.id})\n\n*by* {banner.mention if banner else "Unknown"}\n**Reason:**{reason if reason else "Unknown"}'
         embed.timestamp = datetime.utcnow()
-        embed.set_footer(text=f'User Unbanned by {unbanner}', icon_url=user.display_avatar.replace(static_format='png').url)
+        avatar = user.display_avatar.replace(static_format='png').url if user.display_avatar else user.default_avatar.replace(static_format='png').url
+        embed.set_footer(text=f'User Unbanned by {unbanner}', icon_url=avatar)
         chan = guild.get_channel(self.settings[guild.id].log_channel_id)
         if chan:
             await chan.send(embed=embed)
@@ -367,7 +369,8 @@ You must enable `Allow direct messages from server members` for this server in P
         embed = discord.Embed(colour=0x000000)
         embed.description = f'\N{CROSS MARK} **{member.name}#{member.discriminator}** was `kicked`. ({member.id})\n\n*by* {kicker.mention if kicker else "Unknown"}\n**Reason:** {reason if reason else "Unknown"}'
         embed.timestamp = datetime.utcnow()
-        embed.set_footer(text=f'User Kicked', icon_url=member.avatar.replace(static_format='png').url)
+        avatar = member.display_avatar.replace(static_format='png').url if member.display_avatar else member.default_avatar.replace(static_format='png').url
+        embed.set_footer(text=f'User Kicked', icon_url=avatar)
         chan = guild.get_channel(self.settings[guild.id].log_channel_id)
         if chan:
             await chan.send(embed=embed)

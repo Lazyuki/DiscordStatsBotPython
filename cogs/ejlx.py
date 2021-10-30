@@ -6,6 +6,7 @@ import re
 import logging
 from collections import namedtuple
 
+
 from .utils.resolver import has_role, has_any_role, get_text_channel_id
 from .utils.parser import guess_lang, JP_EMOJI, EN_EMOJI, OL_EMOJI, asking_vc, REGEX_DISCORD_OBJ, REGEX_URL
 from .utils.user_interaction import wait_for_reaction
@@ -477,7 +478,7 @@ class EJLX(commands.Cog):
                 aws.append(postBotLog(self.bot, f'{", ".join([str(m) for m in self._multi_queue])} joined with {", ".join([i.id for i in potential_invites])} (multi)' ))
                 self._multi_queue = []
         else:
-            logging.info(f'newbie_queue: {", ".join(self._newbie_queue)}')
+            logging.info(f'newbie_queue: {", ".join(str(self._newbie_queue))}')
 
         if len(self.newbies) > 20:
             self.newbies.pop(0)
@@ -572,7 +573,7 @@ class EJLX(commands.Cog):
             return
         if user.bot:
             return
-        if user.guild is None:
+        if 'guild' not in user or user.guild is None:
             return
         if user.guild.id != EJLX_ID:
             return
@@ -782,7 +783,7 @@ class EJLX(commands.Cog):
         if len(self.troll_msgs) > 30:
             self.troll_msgs.pop(0)
 
-    async def new_user_troll_check(self, message):
+    async def new_user_troll_check(self, message: discord.Message):
         if get_text_channel_id(message.channel) in [BOT_CHANNEL, VOICE_BOT_CHANNEL]:
             return
         author = message.author
@@ -1033,22 +1034,22 @@ class EJLX(commands.Cog):
             if reason:
                 await message.author.ban(delete_message_days=1, reason=f"Auto-banned. {reason}: {domain}")
                 await message.channel.send(f'{message.author.mention} has been banned automatically for: {reason}')
-                return
+                return True
 
         if domain in KNOWN_SCAM_DOMAINS:
             await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Scam: {domain}")
             await message.channel.send(f'{message.author.mention} has been banned automatically for: Known Scam Link')
-            return
+            return True
 
         if (re.search(r'(cs:? ?go|n[i1l]tro|steam|skin|d[il1]scord|bro)', content)) and (re.search(r'(free|gift|offer|give|giving|hack|promotion)', content)):
             if domain.endswith('.ru') or domain.endswith('.ru.com'):
                 await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Scam: {domain}")
                 await message.channel.send(f'{message.author.mention} has been banned automatically for: Russian Scam Link')
-                return
+                return True
             if re.search(r'd[l1i]scor(d|cl)', domain):
                 await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Fake Discord Link Scam: {domain}")
                 await message.channel.send(f'{message.author.mention} has been banned automatically for: Fake Discord Link Scam')
-                return
+                return True
             await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible scam detected") 
             embed = discord.Embed(colour=0xff0000)
             sanitized_content = re.sub(URL_REGEX, f'[REDACTED]', message.content)
@@ -1067,7 +1068,10 @@ class EJLX(commands.Cog):
         if not message.guild or message.guild.id != EJLX_ID:
             return
         if URL_REGEX.search(message.content):
-            await self.ban_scammers(message) 
+            banned = await self.ban_scammers(message) 
+            if banned:
+                # nothing more to do
+                return
 
         if not has_any_role(message.author, LANG_ROLE_IDS):
             if get_text_channel_id(message.channel) not in STAGE_CHATS:
