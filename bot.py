@@ -73,11 +73,15 @@ class Cirilla(commands.Bot):
             log.error(f'{error.original.__class__.__name__}: {error.original}')
         else:
             await ctx.send(f'Unexpected Error: {error.original}')
-            print(datetime.datetime.now(tz=timezone).strftime("%Y-%m-%d %H:%M:%S"), file=sys.stderr)
+            print(datetime.datetime.now(tz=timezone).strftime("%Y-%m-%d %H:%M:%S Command Error"), file=sys.stderr)
             traceback.print_tb(error.original.__traceback__)
             print('', file=sys.stderr)
 
-
+    async def on_error(self, event_method: str, *args, **kwargs):
+        print(datetime.datetime.now(tz=timezone).strftime(f"%Y-%m-%d %H:%M:%S Event Error"), file=sys.stderr)
+        await super().on_error(event_method, *args, **kwargs)
+        print('', file=sys.stderr)
+        return
 
     async def on_ready(self):
         if not hasattr(self, 'uptime'):
