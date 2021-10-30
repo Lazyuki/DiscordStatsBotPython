@@ -47,7 +47,7 @@ class Moderation(commands.Cog):
     
     @commands.command(alias=['chrp'])
     @commands.check(has_admin)
-    async def channel_role_permissions(self, ctx: Context, *, role: commands.RoleConverter, permissions: str =""):
+    async def channel_role_permissions(self, ctx: Context, *, role: commands.RoleConverter, args: str =""):
         """
         See https://discordpy.readthedocs.io/en/master/api.html#discord.Permissions for permission names.
         None is the default, False explicitly disables it, True explicitly allows it.
@@ -60,14 +60,15 @@ class Moderation(commands.Cog):
 
         all_channels = [ch for ch in ctx.guild.text_channels if ch.category_id != 360570306131132417]
         
-        if not permissions:
+        if not args:
             # delete permission overwrites
             for ch in all_channels:
                 if role in ch.overwrites:
                     await ch.set_permissions(role, overwrite=None)
+            await ctx.send(f'Deleted permission overwrites for {str(role)}')
             return 
 
-        permission_list = permissions.split(',')
+        permission_list = args.split(',')
         overwrite = PermissionOverwrite()
         for permission in permission_list:
             permission_key, permission_val = permission.split('=')
