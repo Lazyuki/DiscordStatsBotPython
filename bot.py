@@ -1,6 +1,8 @@
 from discord.ext import commands
 import discord
 import datetime, re
+import time
+import pytz
 import json, asyncio
 import logging
 import traceback
@@ -9,6 +11,8 @@ import sys
 import config
 import asyncpg
 from cogs.utils.parser import parse_language
+
+timezone = pytz.timezone("Europe/London")
 
 intents = discord.Intents.default()
 intents.members = True
@@ -67,6 +71,12 @@ class Cirilla(commands.Bot):
             log.error(f'In {ctx.command.qualified_name}:')
             traceback.print_tb(error.original.__traceback__)
             log.error(f'{error.original.__class__.__name__}: {error.original}')
+        else:
+            await ctx.send(f'Unexpected Error: {error.original}')
+            print(datetime.datetime.now(tz=timezone).strftime("%Y-%m-%d %H:%M:%S"), file=sys.stderr)
+            traceback.print_tb(error.original.__traceback__)
+            print('', file=sys.stderr)
+
 
 
     async def on_ready(self):

@@ -85,6 +85,9 @@ class Moderation(commands.Cog):
                 permission.replace('-f', '')
             permission_key, permission_val = permission.split('=')
             permission_key = permission_key.strip()
+            if not permission_val:
+                await ctx.send(f'Permission must be specified in the format: permission_name=Value')
+                continue
             permission_val = permission_val.strip().title()
             if permission_val not in ['None', 'True', 'False']:
                 await ctx.send(f'{permission_val} is not a valid permission value. Use True, False, or None')
