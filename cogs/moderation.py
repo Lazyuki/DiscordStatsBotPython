@@ -47,10 +47,12 @@ class Moderation(commands.Cog):
     
     @commands.command(aliases=['chrp'])
     @commands.check(has_admin)
-    async def channel_role_permissions(self, ctx: Context, role: discord.Role, *, permissions: str = ""):
+    async def channel_role_permissions(self, ctx: Context, role: discord.Role, *, permissions = ""):
         """
+        Applies permission overwrites in every channel for a role (except in mod channels).
         See https://discordpy.readthedocs.io/en/master/api.html#discord.Permissions for permission names.
         None is the default, False explicitly disables it, True explicitly allows it.
+
         Usage: ,,chrp role permission1=True, permission2=None, permission3=False... 
         Do not specify permissions if you want to remove permission overwrites from all channels.
         """
