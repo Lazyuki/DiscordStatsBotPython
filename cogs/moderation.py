@@ -47,7 +47,7 @@ class Moderation(commands.Cog):
     
     @commands.command(aliases=['chrp'])
     @commands.check(has_admin)
-    async def channel_role_permissions(self, ctx: Context, role: commands.RoleConverter, *, permissions: str):
+    async def channel_role_permissions(self, ctx: Context, role: discord.Role, *, permissions: str = ""):
         """
         See https://discordpy.readthedocs.io/en/master/api.html#discord.Permissions for permission names.
         None is the default, False explicitly disables it, True explicitly allows it.
