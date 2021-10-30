@@ -573,7 +573,7 @@ class EJLX(commands.Cog):
             return
         if user.bot:
             return
-        if 'guild' not in user or user.guild is None:
+        if not hasattr(user, 'guild') or user.guild is None:
             return
         if user.guild.id != EJLX_ID:
             return
