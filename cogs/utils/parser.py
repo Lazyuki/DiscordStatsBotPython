@@ -25,7 +25,7 @@ COUNTRIES = ['germany', 'italy', 'france', 'spain', 'portugal', 'brazil', 'korea
              'vietnam', 'philippines', 'indonesia', 'saudi', 'netherlands']
 
 NATIVE = re.compile(r'native(?: language)?(?: is)? (\w+)')
-NATIVE2 = re.compile(r'(\w+) is my native')
+NATIVE2 = re.compile(r'(\w+) (is my )?native')
 NATIVEJP = re.compile(r'母国?語.(.+?)語')
 FROM = re.compile(r"i(?:'?m| am) from (?:the )?(?:united )?(\w+)")
 IM = re.compile(r"i(?:'?m| am)(?: a)? (\w+)")
