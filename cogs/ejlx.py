@@ -87,7 +87,7 @@ URL_REGEX = re.compile(r'(https?://\S+)')
 KNOWN_SCAM_DOMAINS = ['discordgift.ru.com', 'discord-airdrop.com', 'discord-nltro.com', 
     'cs-skins.lin', 'discorb.ru', 'steamcomminuty.com', 'steamcomminytu.ru', 'steancomunnity.ru',
     'steamcommunitlu.com', 'discorclapp.com', '']
-WHITE_LIST_DOMAINS = ['discord.me', 'steamcommunity.com', 'dis.gd']
+WHITE_LIST_DOMAINS = ['discord.me', 'steamcommunity.com', 'dis.gd', 'www.youtube.com']
 
 # stage chanel regexes
 INSTABAN_REGEXES = [re.compile(r'\b(fag(got)?s?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|n[i1](?P<nixxer>\S)(?P=nixxer)([e3]r|a|let)s?|penis|cum|hitler|pussy)\b'), re.compile(r'(o?chin ?chin)'), re.compile(r'(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ|死ね)')]
@@ -1018,7 +1018,7 @@ class EJLX(commands.Cog):
         url = URL_REGEX.search(content)[0]
         domain = re.match(r'https?://([^/]+)', url)[1]
         tld = domain.split('.')[-1]
-        if re.match(r'(.*\.)?discord(app|status)?\.(com|gg|gifts?|media)$', domain) or domain in WHITE_LIST_DOMAINS:
+        if re.match(r'(.*\.)?discord(app|status)?\.(com|gg|gifts?|media|net)$', domain) or domain in WHITE_LIST_DOMAINS:
             return # safe legit URL
         if '@everyone' in content or re.match(r'^(hi|hey|hello|bro)', content) or re.match(r'gifts?', tld):
             reason = ''
