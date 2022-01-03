@@ -2,6 +2,9 @@
 __pycache__/
 *.py[cod]
 *$py.class
+.venv
+.python*
+
 
 config.py
 nohup.out
