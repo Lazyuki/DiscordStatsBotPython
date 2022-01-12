@@ -1022,7 +1022,7 @@ class EJLX(commands.Cog):
             return # safe legit URL
         if '@everyone' in content or re.match(r'^(hi|hey|hello|bro)', content) or re.match(r'gifts?', tld):
             reason = ''
-            if 'nitro' in content or 'gift' in content:
+            if 'nitro' in content or 'gift' in content or 'airdrop' in content:
                 reason = 'Nitro Scam'
             elif re.search(r'(cs:? ?go|steam)', content):
                 reason = 'CS:GO Scam'
@@ -1041,7 +1041,7 @@ class EJLX(commands.Cog):
             await message.channel.send(f'{message.author.mention} has been banned automatically for: Known Scam Link')
             return True
 
-        if (re.search(r'(cs:? ?go|n[i1l]tro|steam|skin|d[il1]scord|bro)', content)) and (re.search(r'(free|gift|offer|give|giving|hack|promotion)', content)):
+        if (re.search(r'(cs:? ?go|n[i1l]tro|steam|skin|d[il1]scord|bro|airdrop)', content)) and (re.search(r'(free|gift|offer|give|giving|hack|promotion|take it)', content)):
             if domain.endswith('.ru') or domain.endswith('.ru.com'):
                 await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Scam: {domain}")
                 await message.channel.send(f'{message.author.mention} has been banned automatically for: Russian Scam Link')
