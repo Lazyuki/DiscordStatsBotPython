@@ -1043,6 +1043,17 @@ class EJLX(commands.Cog):
             await message.channel.send(f'{message.author.mention} has been banned automatically for: Known Scam Link')
             return True
 
+        async def mute_potential_scammer():
+            await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible scam detected") 
+            embed = discord.Embed(colour=0xff0000)
+            sanitized_content = re.sub(URL_REGEX, f'[REDACTED]', message.content)
+            embed.add_field(name='Suspicious Link Domain', value=domain)
+            embed.description = f'{message.author.mention} has been **muted automatically** due to potential scam.\n> {sanitized_content[:150] + "..." if len(sanitized_content) > 150 else sanitized_content}'
+            embed.set_footer(text=f'WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them.')
+            prompt = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>', embed=embed, mention_author=False)
+            await self.reaction_ban(prompt, [message.author], reason=f'Hacked Account Scamming: {domain}', wp=True, unmute_dismissed=True) 
+
+
         if (re.search(r'(cs:? ?go|n[i1l]tro|steam|skin|d[il1]sc[qo0O]rc?[ld]|bro|airdrop)', content)) and (re.search(r'(free|gift|offer|give|giving|hack|promotion|take it|is first)', content)):
             if domain.endswith('.ru') or domain.endswith('.ru.com'):
                 await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Scam: {domain}")
@@ -1052,14 +1063,10 @@ class EJLX(commands.Cog):
                 await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Fake Discord Link Scam: {domain}")
                 await message.channel.send(f'{message.author.mention} has been banned automatically for: Fake Discord Link Scam')
                 return True
-            await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible scam detected") 
-            embed = discord.Embed(colour=0xff0000)
-            sanitized_content = re.sub(URL_REGEX, f'[REDACTED]', message.content)
-            embed.add_field(name='Suspicious Link Domain', value=domain)
-            embed.description = f'{message.author.mention} has been **muted automatically** due to potential scam.\n> {sanitized_content[:150] + "..." if len(sanitized_content) > 150 else sanitized_content}'
-            embed.set_footer(text=f'WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them.')
-            prompt = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>', embed=embed, mention_author=False)
-            await self.reaction_ban(prompt, [message.author], reason=f'Hacked Account Scamming: {domain}', wp=True, unmute_dismissed=True) 
+            await mute_potential_scammer()
+    
+        if '@everyone' in content:
+            await mute_potential_scammer()
 
 
 
