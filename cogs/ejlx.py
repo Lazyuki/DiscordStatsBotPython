@@ -86,7 +86,7 @@ INVITES_REGEX = re.compile(r'(https?://)?(www.)?(discord.(gg|io|me|li)|discord(a
 URL_REGEX = re.compile(r'(https?://\S+)')
 KNOWN_SCAM_DOMAINS = ['discordgift.ru.com', 'discord-airdrop.com', 'discord-nltro.com', 
     'cs-skins.lin', 'discorb.ru', 'steamcomminuty.com', 'steamcomminytu.ru', 'steancomunnity.ru',
-    'steamcommunitlu.com', 'discorclapp.com', '']
+    'steamcommunitlu.com', 'discorclapp.com', 'discord-me.com', 'discqrde.com', 'disczrd.com']
 WHITE_LIST_DOMAINS = ['discord.me', 'steamcommunity.com', 'dis.gd', 'www.youtube.com']
 
 # stage chanel regexes
@@ -1020,6 +1020,7 @@ class EJLX(commands.Cog):
         tld = domain.split('.')[-1]
         if re.match(r'(.*\.)?discord(app|status)?\.(com|gg|gifts?|media|net)$', domain) or domain in WHITE_LIST_DOMAINS:
             return # safe legit URL
+        scam_words = r'(cs:? ?go|n[i1l]tro|steam|skin|d[il1]sc[qo0O]rc?[ld]|bro|airdrop)'
         if '@everyone' in content or re.match(r'^(hi|hey|hello|bro)', content) or re.match(r'gifts?', tld):
             reason = ''
             if 'nitro' in content or 'gift' in content or 'airdrop' in content:
@@ -1028,8 +1029,10 @@ class EJLX(commands.Cog):
                 reason = 'CS:GO Scam'
             elif domain.endswith('.ru') or domain.endswith('.ru.com'):
                 reason = 'Russian Link Scam'
-            elif re.match(r'gifts?', tld):
-                reason - 'Gift Link Scam'
+            elif re.search(r'gifts?', tld):
+                reason = 'Gift Link Scam'
+            elif re.search(scam_words):
+                reason = 'Scam'
 
             if reason:
                 await message.author.ban(delete_message_days=1, reason=f"Auto-banned. {reason}: {domain}")
@@ -1041,7 +1044,7 @@ class EJLX(commands.Cog):
             await message.channel.send(f'{message.author.mention} has been banned automatically for: Known Scam Link')
             return True
 
-        if (re.search(r'(cs:? ?go|n[i1l]tro|steam|skin|d[il1]scord|bro|airdrop)', content)) and (re.search(r'(free|gift|offer|give|giving|hack|promotion|take it)', content)):
+        if (re.search(scam_words, content)) and (re.search(r'(free|gift|offer|give|giving|hack|promotion|take it|is first)', content)):
             if domain.endswith('.ru') or domain.endswith('.ru.com'):
                 await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Scam: {domain}")
                 await message.channel.send(f'{message.author.mention} has been banned automatically for: Russian Scam Link')
