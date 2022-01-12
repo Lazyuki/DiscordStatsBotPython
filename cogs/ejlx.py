@@ -1020,7 +1020,6 @@ class EJLX(commands.Cog):
         tld = domain.split('.')[-1]
         if re.match(r'(.*\.)?discord(app|status)?\.(com|gg|gifts?|media|net)$', domain) or domain in WHITE_LIST_DOMAINS:
             return # safe legit URL
-        scam_words = r'(cs:? ?go|n[i1l]tro|steam|skin|d[il1]sc[qo0O]rc?[ld]|bro|airdrop)'
         if '@everyone' in content or re.match(r'^(hi|hey|hello|bro)', content) or re.match(r'gifts?', tld):
             reason = ''
             if 'nitro' in content or 'gift' in content or 'airdrop' in content:
@@ -1031,8 +1030,8 @@ class EJLX(commands.Cog):
                 reason = 'Russian Link Scam'
             elif re.search(r'gifts?', tld):
                 reason = 'Gift Link Scam'
-            elif re.search(scam_words):
-                reason = 'Scam'
+            elif re.search(r'(n[i1l]tro|d[il1]sc[qo0]rc?[ld])', url):
+                reason = 'Fake Discord Link Scam'
 
             if reason:
                 await message.author.ban(delete_message_days=1, reason=f"Auto-banned. {reason}: {domain}")
@@ -1044,12 +1043,12 @@ class EJLX(commands.Cog):
             await message.channel.send(f'{message.author.mention} has been banned automatically for: Known Scam Link')
             return True
 
-        if (re.search(scam_words, content)) and (re.search(r'(free|gift|offer|give|giving|hack|promotion|take it|is first)', content)):
+        if (re.search(r'(cs:? ?go|n[i1l]tro|steam|skin|d[il1]sc[qo0O]rc?[ld]|bro|airdrop)', content)) and (re.search(r'(free|gift|offer|give|giving|hack|promotion|take it|is first)', content)):
             if domain.endswith('.ru') or domain.endswith('.ru.com'):
                 await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Scam: {domain}")
                 await message.channel.send(f'{message.author.mention} has been banned automatically for: Russian Scam Link')
                 return True
-            if re.search(r'd[l1i]scor(d|cl)', domain):
+            if re.search(r'd[l1i]sc[qo0]r(d|cl|l)', domain):
                 await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Fake Discord Link Scam: {domain}")
                 await message.channel.send(f'{message.author.mention} has been banned automatically for: Fake Discord Link Scam')
                 return True
