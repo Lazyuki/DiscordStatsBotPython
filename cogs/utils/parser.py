@@ -22,16 +22,17 @@ LANGS = ['german', 'italian', 'french', 'spanish',
 
 COUNTRIES = ['germany', 'italy', 'france', 'spain', 'portugal', 'brazil', 'korea', 'china',
              'taiwan', 'india', 'malaysia', 'netherland', 'russia', 'poland', 'sweden', 'turkey', 'norway',
-             'vietnam', 'philippines', 'indonesia', 'saudi', 'netherlands']
+             'vietnam', 'philippines', 'indonesia', 'saudi', 'netherlands', 'thailand']
 
 NATIVE = re.compile(r'native(?: language)?(?: is)? (\w+)')
 NATIVE2 = re.compile(r'(\w+) (is my )?native')
 NATIVEJP = re.compile(r'母国?語.(.+?)語')
+FLUENT_EN = re.compile(r'fluet (in )? english')
 FROM = re.compile(r"i(?:'?m| am) from (?:the )?(?:united )?(\w+)")
 IM = re.compile(r"i(?:'?m| am)(?: a)? (\w+)")
 STUDY = re.compile(
-    r'(?:learn|study|studied|in|at|to|beginner|taking|took|speak)(?:ing| some| the| more)? (japanese|english)')
-JP_STUDY = re.compile(r'(日本語|英語).?(?:勉強|学練習)')
+    r'(?:learn|study|studied|in|at|to|beginner|taking|took|speak|my)(?:ing| some| the| more)? (japanese|english)(?: and (english|japanese))?')
+JP_STUDY = re.compile(r'(日本語|英語).?(?:勉強|学練習|話した)')
 
 # Emojis
 JP_EMOJI = '<:japanese:439733745390583819>'

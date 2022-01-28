@@ -80,6 +80,7 @@ HEBREW_REGEX = re.compile(r'^[\u0590-\u05FF\u200f\u200e]+$')
 HANGUL_REGEX = re.compile(r'^[\u3131-\uD79D]+$')
 CYRILLIC_REGEX = re.compile(r'^[\u0400-\u04FF]+$')
 N_WORD_REGEX = re.compile(r'n[i1]gg[ae3]r?s?')
+RACIST_REGEX = re.compile(r'ching ch[oa]ng')
 BAD_WORDS_REGEX = re.compile(r'(fags?|faggots?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|japs?|niggas?)')
 BAD_JP_WORDS_REGEX = re.compile(r'(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ)')
 INVITES_REGEX = re.compile(r'(https?://)?(www.)?(discord.(gg|io|me|li)|discord(app)?.com/invite)/.+[a-z]')
@@ -87,7 +88,7 @@ URL_REGEX = re.compile(r'(https?://\S+)')
 KNOWN_SCAM_DOMAINS = ['discordgift.ru.com', 'discord-airdrop.com', 'discord-nltro.com', 
     'cs-skins.lin', 'discorb.ru', 'steamcomminuty.com', 'steamcomminytu.ru', 'steancomunnity.ru',
     'steamcommunitlu.com', 'discorclapp.com', 'discord-me.com', 'discqrde.com', 'disczrd.com']
-WHITE_LIST_DOMAINS = ['discord.me', 'steamcommunity.com', 'dis.gd', 'www.youtube.com']
+WHITE_LIST_DOMAINS = ['discord.me', 'steamcommunity.com', 'dis.gd', 'www.youtube.com', 'discordmerch.com']
 
 # stage chanel regexes
 INSTABAN_REGEXES = [re.compile(r'\b(fag(got)?s?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|n[i1](?P<nixxer>\S)(?P=nixxer)([e3]r|a|let)s?|penis|cum|hitler|pussy)\b'), re.compile(r'(o?chin ?chin)'), re.compile(r'(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ|死ね)')]
@@ -795,6 +796,12 @@ class EJLX(commands.Cog):
             await author.ban(delete_message_days=1, reason="Auto-banned. New user using the N-word")
             await message.channel.send(f'{author.mention} has been banned automatically')
             return
+        if RACIST_REGEX.search(message.content.lower()):
+            match = RACIST_REGEX.search(message.content.lower())
+            await author.ban(delete_message_days=1, reason=f'Auto-banned. New user saying "{match.group(0)}"')
+            await message.channel.send(f'{author.mention} has been banned automatically')
+            return
+
         if '@everyone' in message.content:
             if len(message.content.split('@everyone')) > 3:
                 await author.ban(delete_message_days=1, reason="Auto-banned. New user @everyone spam")
