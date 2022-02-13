@@ -1039,6 +1039,8 @@ class EJLX(commands.Cog):
                 reason = 'Gift Link Scam'
             elif re.search(r'(n[i1l]tro|d[il1]sc[qo0]rc?[ld])', url):
                 reason = 'Fake Discord Link Scam'
+            elif url.endswith('.rar'):
+                reason = 'Suspicious rar file'
 
             if reason:
                 await message.author.ban(delete_message_days=1, reason=f"Auto-banned. {reason}: {domain}")
