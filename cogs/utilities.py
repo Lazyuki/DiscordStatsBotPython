@@ -289,6 +289,8 @@ You must enable `Allow direct messages from server members` for this server in P
 
     @commands.Cog.listener()
     async def on_member_ban(self, guild, user):
+        if self.bot.config.debugging:
+            return
         """Notify ban"""
         # Fetch audit log to get who banned them
         banner = None
@@ -319,6 +321,8 @@ You must enable `Allow direct messages from server members` for this server in P
 
     @commands.Cog.listener()
     async def on_member_unban(self, guild, user):
+        if self.bot.config.debugging:
+            return
         """Notify unban"""
         # Fetch audit log to get who banned them
         banner = None
@@ -346,6 +350,8 @@ You must enable `Allow direct messages from server members` for this server in P
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
+        if self.bot.config.debugging:
+            return
         """Notify kick"""
         # Fetch audit log to get who banned them
         kicker = None
@@ -447,10 +453,14 @@ You must enable `Allow direct messages from server members` for this server in P
 
     @commands.Cog.listener()
     async def on_raw_reaction_add(self, payload):
+        if self.bot.config.debugging:
+            return
         await self.handle_raw_reaction(payload, True)
 
     @commands.Cog.listener()
     async def on_reaction_add(self, reaction, user):
+        if self.bot.config.debugging:
+            return
         await self.handle_reaction(reaction, user)
 
 def setup(bot):

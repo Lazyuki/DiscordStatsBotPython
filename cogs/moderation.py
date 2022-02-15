@@ -113,14 +113,5 @@ class Moderation(commands.Cog):
         
         await ctx.send("Finished applying role permissions")
 
-
-            
-
-
-
-        
-
-
-            
 def setup(bot):
     bot.add_cog(Moderation(bot))

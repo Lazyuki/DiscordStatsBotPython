@@ -389,6 +389,8 @@ class EJLX(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
+        if self.bot.config.debugging:
+            return
         if member.guild.id != EJLX_ID:
             return
         if member.bot:
@@ -489,6 +491,8 @@ class EJLX(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_remove(self, member):
+        if self.bot.config.debugging:
+            return
         if member.guild.id != EJLX_ID:
             return
         if member.premium_since is not None:
@@ -501,6 +505,8 @@ class EJLX(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
+        if self.bot.config.debugging:
+            return
         if after.guild.id != EJLX_ID:
             return
         # Boost change
@@ -1120,6 +1126,8 @@ class EJLX(commands.Cog):
 
     @commands.Cog.listener()
     async def on_message_delete(self, message):
+        if self.bot.config.debugging:
+            return
         if not message.guild or message.guild.id != EJLX_ID:
             return
         if message.author.bot:

@@ -1,7 +1,8 @@
+DROP TYPE IF EXISTS langtype;
 CREATE TYPE langtype AS ENUM ('OL', 'JP', 'EN');
 
 CREATE TABLE IF NOT EXISTS guilds(
-  guild_id BIGINT UNIQUE PRIMARY KEY,
+  guild_id BIGINT UNIQUE PRIMARY KEY
 );
 
 CREATE TABLE IF NOT EXISTS messages(
@@ -10,7 +11,7 @@ CREATE TABLE IF NOT EXISTS messages(
   user_id BIGINT NOT NULL,
   lang LANGTYPE NOT NULL, -- 0 = ol, 1 = jp, 2 = en
   utc_date DATE NOT NULL,
-  message_count INT NOT NULL,
+  message_count INT NOT NULL
 );
 ALTER TABLE messages ADD CONSTRAINT messages_pk PRIMARY KEY (guild_id, channel_id, user_id, lang, utc_date);
 
