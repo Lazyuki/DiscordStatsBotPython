@@ -1046,10 +1046,11 @@ class EJLX(commands.Cog):
             elif re.search(r'(n[i1l]tro|d[il1]sc[qo0]rc?[ld])', url):
                 reason = 'Fake Discord Link Scam'
             elif url.endswith(('.rar', '.exe') ):
-                reason = 'Suspicious file'
+                file = url.split('/')[-1]
+                reason = f'Suspicious file: {file}'
 
             if reason:
-                await message.author.ban(delete_message_days=1, reason=f"Auto-banned. {reason}: {domain}")
+                await message.author.ban(delete_message_days=1, reason=f"Auto-banned: {reason}.{NL}Domain: {domain}")
                 await message.channel.send(f'{message.author.mention} has been banned automatically for: {reason}')
                 return True
 
