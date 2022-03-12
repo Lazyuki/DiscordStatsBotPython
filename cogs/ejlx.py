@@ -793,21 +793,22 @@ class EJLX(commands.Cog):
     async def new_user_troll_check(self, message: discord.Message):
         if get_text_channel_id(message.channel) in [BOT_CHANNEL, VOICE_BOT_CHANNEL]:
             return
+        safe_content = re.sub(r'"[^"]+"', "", message.content.lower()) # Ignore quoted messages 
         author = message.author
         content = message.clean_content
         timestamp = discord.utils.snowflake_time(message.id)
         msg_len = len(re.sub(REGEX_DISCORD_OBJ, '', message.content))
 
-        if N_WORD_REGEX.search(message.content.lower().replace(" ", "")):
+        if N_WORD_REGEX.search(safe_content.replace(" ", "")):
             await author.ban(delete_message_days=1, reason="Auto-banned. New user using the N-word")
             await message.channel.send(f'{author.mention} has been banned automatically')
             return
-        if "ニガー" in message.content:
+        if "ニガー" in safe_content:
             await author.ban(delete_message_days=1, reason="Auto-banned. New user using the N-word in Japanese")
             await message.channel.send(f'{author.mention} has been banned automatically')
             return
-        if RACIST_REGEX.search(message.content.lower()):
-            match = RACIST_REGEX.search(message.content.lower())
+        if RACIST_REGEX.search(safe_content):
+            match = RACIST_REGEX.search(safe_content)
             await author.ban(delete_message_days=1, reason=f'Auto-banned. New user saying "{match.group(0)}"')
             await message.channel.send(f'{author.mention} has been banned automatically')
             return
@@ -826,11 +827,11 @@ class EJLX(commands.Cog):
             return
 
         new_user_bad_word = None
-        if BAD_JP_WORDS_REGEX.search(message.content):
-            new_user_bad_word = BAD_JP_WORDS_REGEX.search(message.content).group(0)
+        if BAD_JP_WORDS_REGEX.search(safe_content):
+            new_user_bad_word = BAD_JP_WORDS_REGEX.search(safe_content).group(0)
 
-        if BAD_WORDS_REGEX.search(message.content.lower()):
-            new_user_bad_word = BAD_WORDS_REGEX.search(message.content.lower()).group(0)
+        if BAD_WORDS_REGEX.search(safe_content):
+            new_user_bad_word = BAD_WORDS_REGEX.search(safe_content).group(0)
 
         if new_user_bad_word:
             await author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason=f"Possible troll detected. New user saying {new_user_bad_word}") 
