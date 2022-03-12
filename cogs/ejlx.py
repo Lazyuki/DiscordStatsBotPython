@@ -801,16 +801,16 @@ class EJLX(commands.Cog):
 
         if N_WORD_REGEX.search(safe_content.replace(" ", "")):
             await author.ban(delete_message_days=1, reason="Auto-banned. New user using the N-word")
-            await message.channel.send(f'{author.mention} has been banned automatically')
+            await message.channel.send(f'{author.mention} has been banned automatically for using the N-word')
             return
         if "ニガー" in safe_content:
             await author.ban(delete_message_days=1, reason="Auto-banned. New user using the N-word in Japanese")
-            await message.channel.send(f'{author.mention} has been banned automatically')
+            await message.channel.send(f'{author.mention} has been banned automatically for using the N-word in Japanese')
             return
         if RACIST_REGEX.search(safe_content):
             match = RACIST_REGEX.search(safe_content)
             await author.ban(delete_message_days=1, reason=f'Auto-banned. New user saying "{match.group(0)}"')
-            await message.channel.send(f'{author.mention} has been banned automatically')
+            await message.channel.send(f'{author.mention} has been banned automatically for saying "{match.group(0)}"')
             return
 
         if '@everyone' in message.content:
