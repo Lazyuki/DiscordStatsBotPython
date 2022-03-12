@@ -81,7 +81,7 @@ HANGUL_REGEX = re.compile(r'^[\u3131-\uD79D]+$')
 CYRILLIC_REGEX = re.compile(r'^[\u0400-\u04FF]+$')
 N_WORD_REGEX = re.compile(r'n[i1]gg[ae3]r?s?')
 RACIST_REGEX = re.compile(r'ching ch[oa]ng')
-BAD_WORDS_REGEX = re.compile(r'(fags?|faggots?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|japs?|niggas?)')
+BAD_WORDS_REGEX = re.compile(r'(fags?|faggots?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|niggas?)')
 BAD_JP_WORDS_REGEX = re.compile(r'(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ)')
 INVITES_REGEX = re.compile(r'(https?://)?(www.)?(discord.(gg|io|me|li)|discord(app)?.com/invite)/.+[a-z]')
 URL_REGEX = re.compile(r'(https?://\S+)')
@@ -641,14 +641,14 @@ class EJLX(commands.Cog):
         await message.add_reaction(BAN_EMOJI)
         await message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
         ban = wait_for_reaction(self.bot, message=message, reaction=BAN_EMOJI, minimo=minimo, wp=wp,  triple_click=True)
-        dismiss = wait_for_reaction(self.bot, message, '\N{WHITE HEAVY CHECK MARK}', minimo=minimo, wp=wp, return_false=True)
+        dismiss = wait_for_reaction(self.bot, message, '\N{WHITE HEAVY CHECK MARK}', minimo=minimo, wp=wp)
         done, pending = await asyncio.wait([ban, dismiss], return_when=asyncio.FIRST_COMPLETED)
         for p in pending:
             p.cancel()
         await message.clear_reactions()
-        banner = done.pop().result()
-        if banner is not None:
-            if banner is False:
+        (user, reaction) = done.pop().result()
+        if user is not None:
+            if reaction == '\N{WHITE HEAVY CHECK MARK}':
                 if unmute_dismissed:
                     for bannee in bannees:
                         try:
@@ -660,19 +660,19 @@ class EJLX(commands.Cog):
                     await message.delete()
                 elif len(message.embeds) > 0:
                     embed = message.embeds[0].copy()
-                    embed.set_footer(text=f'False alarm. They have been unmuted')
+                    embed.set_footer(text=f'False alarm. They have been unmuted. Dimissed by {user.name}')
                     await message.edit(content=message.content, embed=embed)
 
             else:
                 for bannee in bannees:
                     try:
-                        await bannee.ban(delete_message_days=1, reason=f'Issued by: {banner}. Reason: {reason}')
-                        await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} {bannee} has been banned by {banner}')
+                        await bannee.ban(delete_message_days=1, reason=f'Issued by: {user}. Reason: {reason}')
+                        await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} {bannee} has been banned by {user}')
                     except:
                         await message.channel.send(f'\N{CROSS MARK} {bannee} could not be banned.')
                 if len(message.embeds) > 0:
                     embed = message.embeds[0]
-                    embed.set_footer(text=f'Banned by {banner.name}')
+                    embed.set_footer(text=f'Banned by {user.name}')
                     await message.edit(content=message.content, embed=embed)
         elif len(message.embeds) > 0:
             embed = message.embeds[0]
@@ -802,6 +802,10 @@ class EJLX(commands.Cog):
             await author.ban(delete_message_days=1, reason="Auto-banned. New user using the N-word")
             await message.channel.send(f'{author.mention} has been banned automatically')
             return
+        if "ニガー" in message.content:
+            await author.ban(delete_message_days=1, reason="Auto-banned. New user using the N-word in Japanese")
+            await message.channel.send(f'{author.mention} has been banned automatically')
+            return
         if RACIST_REGEX.search(message.content.lower()):
             match = RACIST_REGEX.search(message.content.lower())
             await author.ban(delete_message_days=1, reason=f'Auto-banned. New user saying "{match.group(0)}"')
@@ -821,6 +825,21 @@ class EJLX(commands.Cog):
             await self.reaction_ban(prompt, [author], reason='New user trying to ping everyone', wp=True, unmute_dismissed=True) 
             return
 
+        new_user_bad_word = None
+        if BAD_JP_WORDS_REGEX.search(message.content):
+            new_user_bad_word = BAD_JP_WORDS_REGEX.search(message.content).group(0)
+
+        if BAD_WORDS_REGEX.search(message.content.lower()):
+            new_user_bad_word = BAD_WORDS_REGEX.search(message.content.lower()).group(0)
+
+        if new_user_bad_word:
+            await author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason=f"Possible troll detected. New user saying {new_user_bad_word}") 
+            embed = discord.Embed(colour=0xff0000)
+            embed.description = f'**New User** {author.mention} has been **muted automatically** for saying {new_user_bad_word}.\n>'
+            embed.set_footer(text=f'WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them.')
+            prompt = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}>', embed=embed, mention_author=False)
+            await self.reaction_ban(prompt, [author], reason='New user saying {new_user_bad_word}', wp=True, unmute_dismissed=True) 
+            return
 
         for nu in self.nu_troll_msgs:
             if nu['id'] == author.id:
