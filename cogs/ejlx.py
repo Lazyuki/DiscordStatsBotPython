@@ -836,7 +836,7 @@ class EJLX(commands.Cog):
         if new_user_bad_word:
             await author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason=f"Possible troll detected. New user saying {new_user_bad_word}") 
             embed = discord.Embed(colour=0xff0000)
-            embed.description = f'**New User** {author.mention} has been **muted automatically** for saying {new_user_bad_word}.\n>'
+            embed.description = f'**New User** {author.mention} has been **muted automatically** for saying {new_user_bad_word}.\n'
             embed.set_footer(text=f'WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them.')
             prompt = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}>', embed=embed, mention_author=False)
             await self.reaction_ban(prompt, [author], reason='New user saying {new_user_bad_word}', wp=True, unmute_dismissed=True) 
