@@ -123,6 +123,7 @@ async def guess_lang(message):
     if not not_en and ('english' in msg or '英語' in msg):
         await message.add_reaction(EN_EMOJI)
         return
+    msg = re.sub(r'(母国?|言)語', '', msg)
     if '語' in msg:
         await message.add_reaction(OL_EMOJI)
         return
