@@ -120,6 +120,13 @@ class Settings(commands.Cog):
         self.update_settings(ctx.guild, _mod_channel_ids=channel_ids)
         await ctx.send(f"\N{WHITE HEAVY CHECK MARK} Mod channels have been set to {', '.join([c.mention for c in channels])}")
 
+    @commands.command(aliases=['ignore'])
+    @commands.check(has_manage_server)
+    async def set_ignore_channels(self, ctx, channels: commands.Greedy[discord.TextChannel]):
+        channel_ids = [c.id for c in channels]
+        self.update_settings(ctx.guild, ignored_channel_ids=channel_ids)
+        await ctx.send(f"\N{WHITE HEAVY CHECK MARK} Ignored channels have been set to {', '.join([c.mention for c in channels])}")
+
     @commands.command(aliases=['setlog'])
     @commands.check(has_manage_server)
     async def set_log_channel(self, ctx, *, channel: discord.TextChannel):
