@@ -434,7 +434,12 @@ class EJLX(commands.Cog):
             if new_usage != old_usage:
                 potential_invites.append(invite)
         for id, invite in self.invites.items():
-            if invite.max_uses - invite.uses > 0:
+            if invite.max_uses - invite.uses == 1:
+                if invite.max_age > 0:
+                    exp = invite.created_at.timestamp() + invite.max_age
+                    diff = discord.utils.utcnow().timestamp() - exp
+                    if diff > 0:
+                        continue
                 if id not in new_invites:
                     potential_invites.append(invite)
 

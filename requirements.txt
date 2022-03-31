@@ -1,28 +1,14 @@
 aiohttp==3.7.4.post0
 async-timeout==3.0.1
-asyncpg==0.22.0
-attrs==20.3.0
-certifi==2020.12.5
+attrs==21.4.0
 chardet==4.0.0
-dateparser==1.0.0
-discord.py==2.0.0a3575+g45d498c1
+# use `python -m pip install -U git+https://github.com/Rapptz/discord.py` to install the d.py master branch which supports threads
+discord.py @ git+https://github.com/Rapptz/discord.py@414759f3723a3fe632ecfc1343a4164a51cd2940
 discord.py-stubs==1.7.3
-docopt==0.6.2
-emoji==1.2.0
-idna==2.10
-multidict==5.1.0
-mypy==0.901
+idna==3.3
+multidict==6.0.2
+mypy==0.941
 mypy-extensions==0.4.3
-pipreqs==0.4.10
-python-dateutil==2.8.2
-pytz==2021.3
-regex==2021.4.4
-requests==2.25.1
-six==1.16.0
-toml==0.10.2
-typing-extensions==3.7.4.3
-tzlocal==3.0
-urllib3==1.26.4
-uvloop==0.15.2
-yarg==0.1.9
-yarl==1.6.3
+tomli==2.0.1
+typing-extensions==3.10.0.2
+yarl==1.7.2
