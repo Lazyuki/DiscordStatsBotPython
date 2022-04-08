@@ -1,8 +1,9 @@
 import discord
 import re
 import shlex
+from dataclasses import dataclass
 
-ID_REGEX = re.compile(r'([0-9]{15,21})>?\b')
+ID_REGEX = re.compile(r"([0-9]{15,21})>?\b")
 
 # Can access members with dots
 def Map(dict):
@@ -10,10 +11,12 @@ def Map(dict):
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
 
+
 def has_role(member, role_id):
     if not member or not member.roles:
         return False
     return discord.utils.find(lambda r: r.id == role_id, member.roles) is not None
+
 
 def has_any_role(member, role_ids):
     if not member or not member.roles:
@@ -21,14 +24,18 @@ def has_any_role(member, role_ids):
     return discord.utils.find(lambda r: r.id in role_ids, member.roles) is not None
 
 
+@dataclass
+class MinimumChannel:
+    name: str
+    id: int
+
+
 def resolve_minimum_channel(ctx, channel_id):
     channel = ctx.guild.get_channel(channel_id)
     if channel is None:
-        channel = Map.__init__({ 
-            'name': f'#deleted-channel({channel_id})',
-            'id': channel_id
-        })
+        channel = MinimumChannel(f"#deleted-channel({channel_id})", channel_id)
     return channel
+
 
 def resolve_user_id(ctx, arg):
     id_match = ID_REGEX.match(arg)
@@ -43,8 +50,8 @@ def resolve_user_id(ctx, arg):
         members = guild.members
         for member in members:
             username = member.name.lower()
-            usertag = f'{username}#{member.discriminator}'.lower()
-            nick = member.nick.lower() if member.nick else ''
+            usertag = f"{username}#{member.discriminator}".lower()
+            nick = member.nick.lower() if member.nick else ""
             member_id = member.id
             # In order of priority
             if usertag == arg:
@@ -75,7 +82,8 @@ def resolve_user_id(ctx, arg):
     else:
         user_id = int(id_match.group(1))
     return user_id
-        
+
+
 def resolve_role(ctx, role):
     roles = ctx.guild.roles
     role = role.lower()
@@ -95,7 +103,6 @@ def resolve_role(ctx, role):
         return contains[0]
     return None
 
-    
 
 def resolve_options(content: str, accepted_options: dict):
     """
@@ -111,28 +118,28 @@ def resolve_options(content: str, accepted_options: dict):
     resolved = {}
     rest_content = []
     names = accepted_options.keys()
-    abbrevs = { opt['abbrev']: key for key, opt in accepted_options.items() }
+    abbrevs = {opt["abbrev"]: key for key, opt in accepted_options.items()}
     words = shlex.split(content)
     word_iter = iter(words)
     try:
         while True:
             word = next(word_iter)
-            if word.startswith('--'):
+            if word.startswith("--"):
                 name = word[2:]
                 if name in names:
                     opt = accepted_options[name]
-                    boolean = opt['boolean']
+                    boolean = opt["boolean"]
                     if boolean:
                         resolved[name] = True
                     else:
                         resolved[name] = next(word_iter)
-            elif word.startswith('-'):
+            elif word.startswith("-"):
                 abs = word[1:]
                 for a in abs:
                     if a in abbrevs:
                         name = abbrevs[a]
                         opt = accepted_options[name]
-                        boolean = opt['boolean']
+                        boolean = opt["boolean"]
                         if boolean:
                             resolved[name] = True
                         else:
@@ -142,9 +149,10 @@ def resolve_options(content: str, accepted_options: dict):
     except StopIteration:
         pass
 
-    return (' '.join(rest_content), resolved)
-    
-def get_text_channel_id(channel: discord.TextChannel):
-    if hasattr(channel, 'parent_id'):
+    return (" ".join(rest_content), resolved)
+
+
+def get_text_channel_id(channel: discord.TextChannel | discord.Thread):
+    if isinstance(channel, discord.Thread):
         return channel.parent_id
     return channel.id

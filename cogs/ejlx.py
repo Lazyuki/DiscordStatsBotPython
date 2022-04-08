@@ -1,23 +1,33 @@
+from dataclasses import dataclass
 from discord.ext import commands
-from typing import List
+from typing import List, Optional, NewType
 import discord
 import asyncio
 import re
 import logging
+
 from collections import namedtuple
 
 
 from .utils.resolver import has_role, has_any_role, get_text_channel_id
-from .utils.parser import guess_lang, JP_EMOJI, EN_EMOJI, OL_EMOJI, asking_vc, REGEX_DISCORD_OBJ, REGEX_URL
+from .utils.parser import (
+    guess_lang,
+    JP_EMOJI,
+    EN_EMOJI,
+    OL_EMOJI,
+    asking_vc,
+    REGEX_DISCORD_OBJ,
+    REGEX_URL,
+)
 from .utils.user_interaction import wait_for_reaction
 from datetime import datetime, timezone, timedelta
 
-NL = '\n'
+NL = "\n"
 
 EJLX_ID = 189571157446492161
 
-CLUB_COLOR = 0xc780f2
-BOOSTER_COLOR = 0xf47fff
+CLUB_COLOR = 0xC780F2
+BOOSTER_COLOR = 0xF47FFF
 BOOSTER_PINK_ROLE = 590163584856752143
 
 # Channels
@@ -32,32 +42,32 @@ NF_CHANNEL = 193966083886153729
 NF_VOICE_TEXT = 390796551796293633
 NF_VOICE = 196684007402897408
 EWBF = 277384105245802497
-STAGE_CHATS = [852380454546964490, 852382007027957812] 
+STAGE_CHATS = [852380454546964490, 852382007027957812]
 
 # Roles
 NJ_ROLE = {
-    'id': 196765998706196480,
-    'short': ['nj', 'jp'],
+    "id": 196765998706196480,
+    "short": ["nj", "jp"],
 }
 FJ_ROLE = {
-    'id': 270391106955509770,
-    'short': ['fj'],
+    "id": 270391106955509770,
+    "short": ["fj"],
 }
 NE_ROLE = {
-    'id': 197100137665921024,
-    'short': ['ne', 'en'],
+    "id": 197100137665921024,
+    "short": ["ne", "en"],
 }
 FE_ROLE = {
-    'id': 241997079168155649,
-    'short': ['fe'],
+    "id": 241997079168155649,
+    "short": ["fe"],
 }
 OL_ROLE = {
-    'id': 248982130246418433,
-    'short': ['ol'],
+    "id": 248982130246418433,
+    "short": ["ol"],
 }
 NU_ROLE = {
-    'id': 249695630606336000,
-    'short': ['nu'],
+    "id": 249695630606336000,
+    "short": ["nu"],
 }
 NF_ROLE = 196106229813215234
 NF_ONLY_ROLE = 378668720417013760
@@ -71,113 +81,186 @@ ACTIVE_STAFF_ROLE = 240647591770062848
 STAGE_VISITOR_ROLE = 645021058184773643
 
 ROLES = [NJ_ROLE, FJ_ROLE, NE_ROLE, FE_ROLE, OL_ROLE, NU_ROLE]
-ROLE_IDS = [r['id'] for r in ROLES]
-LANG_ROLE_IDS = [r for r in ROLE_IDS if r != NU_ROLE['id']]
+ROLE_IDS = [r["id"] for r in ROLES]
+LANG_ROLE_IDS = [r for r in ROLE_IDS if r != NU_ROLE["id"]]
 
-MUSIC_BOT_REGEX = re.compile(r'^[%=>][a-zA-Z]+')
-ARABIC_REGEX = re.compile(r'^[\u0600-\u06FF\u200f\u200e0-9]+$')
-HEBREW_REGEX = re.compile(r'^[\u0590-\u05FF\u200f\u200e]+$')
-HANGUL_REGEX = re.compile(r'^[\u3131-\uD79D]+$')
-CYRILLIC_REGEX = re.compile(r'^[\u0400-\u04FF]+$')
-N_WORD_REGEX = re.compile(r'n[i1]gg[ae3]r?s?')
-RACIST_REGEX = re.compile(r'ching ch[oa]ng')
-BAD_WORDS_REGEX = re.compile(r'(fags?|faggots?|chinks?|(ch[iao]ng ch[iao]ng)|hiroshima|nagasaki|nanking|niggas?)')
-BAD_JP_WORDS_REGEX = re.compile(r'(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ)')
-INVITES_REGEX = re.compile(r'(https?://)?(www.)?(discord.(gg|io|me|li)|discord(app)?.com/invite)/.+[a-z]')
-URL_REGEX = re.compile(r'(https?://\S+)')
-KNOWN_SCAM_DOMAINS = ['discordgift.ru.com', 'discord-airdrop.com', 'discord-nltro.com', 
-    'cs-skins.lin', 'discorb.ru', 'steamcomminuty.com', 'steamcomminytu.ru', 'steancomunnity.ru',
-    'steamcommunitlu.com', 'discorclapp.com', 'discord-me.com', 'discqrde.com', 'disczrd.com']
-WHITE_LIST_DOMAINS = ['discord.me', 'steamcommunity.com', 'dis.gd', 'www.youtube.com', 'discordmerch.com']
+MUSIC_BOT_REGEX = re.compile(r"^[%=>][a-zA-Z]+")
+ARABIC_REGEX = re.compile(r"^[\u0600-\u06FF\u200f\u200e0-9]+$")
+HEBREW_REGEX = re.compile(r"^[\u0590-\u05FF\u200f\u200e]+$")
+HANGUL_REGEX = re.compile(r"^[\u3131-\uD79D]+$")
+CYRILLIC_REGEX = re.compile(r"^[\u0400-\u04FF]+$")
+N_WORD_REGEX = re.compile(r"n[i1]gg[ae3]r?s?")
+RACIST_REGEX = re.compile(r"ching ch[oa]ng")
+BAD_WORDS_REGEX = re.compile(
+    r"(fags?|faggots?|chinks?|(ch[iao]ng ch[iao]ng)|hiroshima|nagasaki|nanking|niggas?)"
+)
+BAD_JP_WORDS_REGEX = re.compile(r"(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ)")
+INVITES_REGEX = re.compile(
+    r"(https?://)?(www.)?(discord.(gg|io|me|li)|discord(app)?.com/invite)/.+[a-z]"
+)
+URL_REGEX = re.compile(r"(https?://\S+)")
+KNOWN_SCAM_DOMAINS = [
+    "discordgift.ru.com",
+    "discord-airdrop.com",
+    "discord-nltro.com",
+    "cs-skins.lin",
+    "discorb.ru",
+    "steamcomminuty.com",
+    "steamcomminytu.ru",
+    "steancomunnity.ru",
+    "steamcommunitlu.com",
+    "discorclapp.com",
+    "discord-me.com",
+    "discqrde.com",
+    "disczrd.com",
+]
+WHITE_LIST_DOMAINS = [
+    "discord.me",
+    "steamcommunity.com",
+    "dis.gd",
+    "www.youtube.com",
+    "discordmerch.com",
+]
 
 # stage chanel regexes
-INSTABAN_REGEXES = [re.compile(r'\b(fag(got)?s?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|n[i1](?P<nixxer>\S)(?P=nixxer)([e3]r|a|let)s?|penis|cum|hitler|pussy)\b'), re.compile(r'(o?chin ?chin)'), re.compile(r'(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ|死ね)')]
-WARN_REGEXES = [re.compile(r'\b(japs?|rape|discord\.gg|simps?)\b'), re.compile(r'(ゲイ|黒人)')]
+INSTABAN_REGEXES = [
+    re.compile(
+        r"\b(fag(got)?s?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|n[i1](?P<nixxer>\S)(?P=nixxer)([e3]r|a|let)s?|penis|cum|hitler|pussy)\b"
+    ),
+    re.compile(r"(o?chin ?chin)"),
+    re.compile(r"(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ|死ね)"),
+]
+WARN_REGEXES = [
+    re.compile(r"\b(japs?|rape|discord\.gg|simps?)\b"),
+    re.compile(r"(ゲイ|黒人)"),
+]
 
-BAN_EMOJI = '<:ban:423687199385452545>' # EJLX BAN emoji
+BAN_EMOJI = "<:ban:423687199385452545>"  # EJLX BAN emoji
 NUMBER_EMOJIS = ["1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
+
 
 def get_role_by_short(short):
     for role in ROLES:
-        if short in role['short']:
+        if short in role["short"]:
             return role
     return None
+
+
+@dataclass
+class GuildMessage(discord.Message):
+    author: discord.Member
+    guild: discord.Guild
+    channel: discord.TextChannel | discord.Thread
+
 
 # Helpers
 async def has_manage_roles(ctx):
     return ctx.author.guild_permissions.manage_roles
 
+
 async def has_manage_guild(ctx):
     return ctx.author.guild_permissions.manage_guild
+
 
 async def has_ban(ctx):
     return ctx.author.guild_permissions.ban_members
 
+
 class ClubRole:
     def __init__(self, role):
-        self.role = role # discord.Role or str
+        self.role = role  # discord.Role or str
 
     @classmethod
     async def convert(cls, ctx, argument):
-        argument = re.sub(r'[<>]', '', argument, 2)
+        argument = re.sub(r"[<>]", "", argument, 2)
         try:
             role = await commands.RoleConverter().convert(ctx, argument)
         except:
-            role = next(filter(lambda r: argument.lower() == r.name.lower(), ctx.guild.roles), None)
+            role = next(
+                filter(lambda r: argument.lower() == r.name.lower(), ctx.guild.roles),
+                None,
+            )
             if not role:
-                role = next(filter(lambda r: argument.lower() in r.name.lower(), ctx.guild.roles), argument)
+                role = next(
+                    filter(
+                        lambda r: argument.lower() in r.name.lower(), ctx.guild.roles
+                    ),
+                    argument,
+                )
 
         return cls(role)
 
+
 async def send_music_bot_notif(message):
-    await message.channel.send(f'{message.author.mention} All music bot commands should be in <#{VOICE_BOT_CHANNEL}> now.')
+    await message.channel.send(
+        f"{message.author.mention} All music bot commands should be in <#{VOICE_BOT_CHANNEL}> now."
+    )
+
 
 async def jp_only(message):
     pass
 
+
 async def check_kanji(message):
     pass
 
+
 async def check_lang_switch(message):
     pass
-        
+
+
 def is_in_ejlx():
     async def predicate(ctx):
         return ctx.guild and ctx.guild.id == EJLX_ID
+
     return commands.check(predicate)
+
 
 def joined_to_relative_time(user):
     if not user or not user.joined_at:
-        return 'already left'
+        return "already left"
     now = discord.utils.utcnow()
     seconds = (now - user.joined_at).total_seconds()
     if seconds < 60 * 60:
-        return f'joined **{seconds // 60} mins** ago'
+        return f"joined **{seconds // 60} mins** ago"
     if seconds < 60 * 60 * 72:
-        return f'joined **{seconds // 3600} hours** ago'
+        return f"joined **{seconds // 3600} hours** ago"
     if seconds < 60 * 60 * 24 * 30:
-        return f'joined **{seconds // 86400} days** ago'
-    return f'joined **{seconds // 2592000} months** ago'
+        return f"joined **{seconds // 86400} days** ago"
+    return f"joined **{seconds // 2592000} months** ago"
 
-def time_since_join(user, unit='day'):
+
+def time_since_join(user, unit="day"):
     if not user or not user.joined_at:
         return -1
     now = discord.utils.utcnow()
     seconds = (now - user.joined_at).total_seconds()
-    
-    return seconds // (60 * 60 * 24) if unit == 'day' else seconds // 60 * 60 if unit == 'hour' else seconds // 60
+
+    return (
+        seconds // (60 * 60 * 24)
+        if unit == "day"
+        else seconds // 60 * 60
+        if unit == "hour"
+        else seconds // 60
+    )
+
 
 def clean_and_truncate(content):
-    clean_content = content.replace('\n', ' ')
+    clean_content = content.replace("\n", " ")
     if not clean_content:
-        return ''
-    clean_content = f"`{clean_content[:25] + ('...' if len(clean_content) > 25 else '')}`"
+        return ""
+    clean_content = (
+        f"`{clean_content[:25] + ('...' if len(clean_content) > 25 else '')}`"
+    )
     return clean_content
+
 
 async def postBotLog(bot: discord.Client, message: str):
     my_s = discord.utils.find(lambda g: g.id == 293787390710120449, bot.guilds)
-    bot_log = my_s.get_channel(325532503567761408)
-    await bot_log.send(message)
+    if my_s:
+        bot_log = my_s.get_channel(325532503567761408)
+        await bot_log.send(message)  # type: ignore
+
 
 async def init_invites(self):
     for guild in self.bot.guilds:
@@ -187,7 +270,7 @@ async def init_invites(self):
             vanity = await guild.vanity_invite()
             self._invite_elapsed = discord.utils.utcnow() - start
             self._recent_invite = discord.utils.utcnow()
-            self.invites = { invite.id: invite for invite in invites }
+            self.invites = {invite.id: invite for invite in invites}
             self._new_invites_cache = invites
             self.vanity_uses = vanity.uses
             self._vanity_cache = vanity
@@ -202,28 +285,29 @@ class EJLX(commands.Cog):
         self._recently_tagged = None
         self.troll_msgs = []
         self.nu_troll_msgs = []
-        self._message_cooldown = commands.CooldownMapping.from_cooldown(1, 120, commands.BucketType.channel)
+        self._message_cooldown = commands.CooldownMapping.from_cooldown(
+            1, 120, commands.BucketType.channel
+        )
         self.invites: dict[str, discord.Invite] = dict()
-        self.vanity_uses: int = 0 
-        self._new_invites_cache: dict[str, discord.Invite] = []
-        self._vanity_cache: discord.Invite = None
+        self.vanity_uses: int = 0
+        self._new_invites_cache: dict[str, discord.Invite] = {}
+        self._vanity_cache: Optional[discord.Invite] = None
         self._invite_lock = asyncio.Lock()
         self._recent_invite: datetime = discord.utils.utcnow()
         self._newbie_queue: list[int] = []
         self._multi_queue: list[discord.Member] = []
-        self._invite_elapsed: timedelta = None
+        self._invite_elapsed: timedelta = timedelta(10)
         if bot.is_ready():
             asyncio.ensure_future(init_invites(self))
 
     async def cog_check(self, ctx):
         return ctx.guild.id == EJLX_ID
 
-
     @commands.Cog.listener()
     async def on_ready(self):
         await init_invites(self)
 
-    @commands.group(name='clubs', aliases=['club'], invoke_without_command=True)
+    @commands.group(name="clubs", aliases=["club"], invoke_without_command=True)
     async def clubs(self, ctx):
         """
         List clubs
@@ -231,10 +315,12 @@ class EJLX(commands.Cog):
         clubs: List[int] = self.settings[ctx.guild.id].clubs
 
         if not clubs:
-            await ctx.send(f'There are no clubs set in this server. Set up clubs by using `{ctx.prefix}clubs add <Role> <Name>`')
+            await ctx.send(
+                f"There are no clubs set in this server. Set up clubs by using `{ctx.prefix}clubs add <Role> <Name>`"
+            )
             return
-        
-        Club = namedtuple('Club', 'name members mentionable joined')
+
+        Club = namedtuple("Club", "name members mentionable joined")
 
         club_list = []
         invalid_roles = []
@@ -244,19 +330,31 @@ class EJLX(commands.Cog):
             if not role:
                 invalid_roles.append(role_id)
                 continue
-            club_list.append(Club(role.name, len(role.members), role.mentionable, role in ctx.author.roles))
+            club_list.append(
+                Club(
+                    role.name,
+                    len(role.members),
+                    role.mentionable,
+                    role in ctx.author.roles,
+                )
+            )
 
         if len(invalid_roles):
             self.settings[guild.id].clubs = [c for c in clubs if c not in invalid_roles]
             self.settings.save(ctx.guild)
-        club_list_str = '\n'.join([f'**{club.name}**{" (P)" if club.mentionable else ""}: {club.members} members{" (joined)" if club.joined else ""}' for club in sorted(club_list, key=lambda c: c.name)])
+        club_list_str = "\n".join(
+            [
+                f'**{club.name}**{" (P)" if club.mentionable else ""}: {club.members} members{" (joined)" if club.joined else ""}'
+                for club in sorted(club_list, key=lambda c: c.name)
+            ]
+        )
 
         embed = discord.Embed(colour=CLUB_COLOR)
-        embed.title = f'List of Clubs'
-        embed.description = f'To join a club, simply type `{ctx.prefix}join <club name>`\n(P) indicates roles that **can be pinged** by anyone\n\n{club_list_str}'
+        embed.title = f"List of Clubs"
+        embed.description = f"To join a club, simply type `{ctx.prefix}join <club name>`\n(P) indicates roles that **can be pinged** by anyone\n\n{club_list_str}"
         await ctx.send(embed=embed)
-        
-    @clubs.command(name='add', aliases=['create'])
+
+    @clubs.command(name="add", aliases=["create"])
     @commands.check(has_manage_guild)
     async def club_add(self, ctx, *, clubRole: ClubRole):
         """
@@ -267,11 +365,17 @@ class EJLX(commands.Cog):
         created_role = False
         role = clubRole.role
         if isinstance(role, str):
-            role = await ctx.guild.create_role(reason=f'Create Club Role issued by {ctx.author} ({ctx.author.id})', name=role, mentionable=True)
+            role = await ctx.guild.create_role(
+                reason=f"Create Club Role issued by {ctx.author} ({ctx.author.id})",
+                name=role,
+                mentionable=True,
+            )
             created_role = True
-        
+
         if role >= ctx.author.top_role:
-            await ctx.send(f'"{role.name}" is higher in hierarchy than your highest role')
+            await ctx.send(
+                f'"{role.name}" is higher in hierarchy than your highest role'
+            )
             return
 
         role_id = role.id
@@ -281,10 +385,11 @@ class EJLX(commands.Cog):
             return
         self.settings[ctx.guild.id].clubs.append(role_id)
         self.settings.save(ctx.guild)
-        await ctx.send(f'\N{WHITE HEAVY CHECK MARK} Club "{role.name}" {"created with a new role" if created_role else "added"}')
-        
+        await ctx.send(
+            f'\N{WHITE HEAVY CHECK MARK} Club "{role.name}" {"created with a new role" if created_role else "added"}'
+        )
 
-    @clubs.command(name='delete', aliases=['remove', 'del', 'rem'])
+    @clubs.command(name="delete", aliases=["remove", "del", "rem"])
     @commands.check(has_manage_guild)
     async def club_delete(self, ctx, *, clubRole: ClubRole):
         """
@@ -296,7 +401,7 @@ class EJLX(commands.Cog):
         if isinstance(role, str):
             await ctx.send(f'Club "{role}" does not exist')
             return
-        
+
         role_id = role.id
         clubs = self.settings[ctx.guild.id].clubs
         if not role_id in clubs:
@@ -304,7 +409,9 @@ class EJLX(commands.Cog):
             return
         self.settings[ctx.guild.id].clubs.remove(role_id)
         self.settings.save(ctx.guild)
-        await ctx.send(f'\N{WHITE HEAVY CHECK MARK} Club "{role.name}" deleted. The role itself was not deleted, so if you need to, delete it yourself.') 
+        await ctx.send(
+            f'\N{WHITE HEAVY CHECK MARK} Club "{role.name}" deleted. The role itself was not deleted, so if you need to, delete it yourself.'
+        )
 
     @commands.command()
     async def join(self, ctx, *, clubRole: ClubRole):
@@ -318,7 +425,7 @@ class EJLX(commands.Cog):
             await ctx.send(f'Club "{role}" does not exist', delete_after=10)
             return
 
-        clubs = self.settings[ctx.guild.id].clubs 
+        clubs = self.settings[ctx.guild.id].clubs
         if not role.id in clubs:
             await ctx.send(f'"{role.name}" is not a club')
             return
@@ -326,10 +433,21 @@ class EJLX(commands.Cog):
             await ctx.send(f'You are already in the club "{role.name}"')
             return
         try:
-            await ctx.author.add_roles(role, reason=f'Self Assigning the Club Role')
-            await ctx.send('\n'.join(filter(None, [f'\N{WHITE HEAVY CHECK MARK} Joined the club "{role.name}"', role.mentionable and 'Note that this role **can be pinged** by anyone in the server'])))
+            await ctx.author.add_roles(role, reason=f"Self Assigning the Club Role")
+            await ctx.send(
+                "\n".join(
+                    filter(
+                        None,
+                        [
+                            f'\N{WHITE HEAVY CHECK MARK} Joined the club "{role.name}"',
+                            role.mentionable
+                            and "Note that this role **can be pinged** by anyone in the server",
+                        ],
+                    )
+                )
+            )
         except:
-            await ctx.send(f'Failed to add the role {role.name}')
+            await ctx.send(f"Failed to add the role {role.name}")
 
     @commands.command()
     async def leave(self, ctx, *, clubRole: ClubRole):
@@ -343,8 +461,8 @@ class EJLX(commands.Cog):
         if isinstance(role, str):
             await ctx.send(f'Club "{role}" does not exist', delete_after=10)
             return
-        
-        clubs = self.settings[ctx.guild.id].clubs 
+
+        clubs = self.settings[ctx.guild.id].clubs
         if not role.id in clubs:
             await ctx.send(f'"{role.name}" is not a club')
             return
@@ -352,35 +470,44 @@ class EJLX(commands.Cog):
             await ctx.send(f'You are not in the club "{role.name}"', delete_after=10)
             return
         try:
-            await ctx.author.remove_roles(role, reason=f'Self Assigning the Club Role')
+            await ctx.author.remove_roles(role, reason=f"Self Assigning the Club Role")
             await ctx.send(f'\N{WHITE HEAVY CHECK MARK} Left the club "{role.name}"')
         except:
-            await ctx.send(f'Failed to remove the role {role.name}')
-    
-    @commands.command(aliases=['p', 'ping'])
-    async def club_ping(self, ctx, *, message=''):
+            await ctx.send(f"Failed to remove the role {role.name}")
+
+    @commands.command(aliases=["p", "ping"])
+    async def club_ping(self, ctx, *, message=""):
         """
         Ping club roles
         """
 
-        await ctx.send('')
+        await ctx.send("")
 
-    async def check_role_mentions(self, message: discord.Message):
+    async def check_role_mentions(self, message: GuildMessage):
         clubs = self.settings[message.guild.id].clubs
         for role in message.role_mentions:
             if role.id in clubs:
                 embed = discord.Embed(colour=CLUB_COLOR)
                 embed.title = f'Club "{role.name}" Pinged'
-                embed.description = f'If you want to leave this club, type `,leave {role.name}`'
-                embed.set_footer(text=f'pinged by {message.author}')
+                embed.description = (
+                    f"If you want to leave this club, type `,leave {role.name}`"
+                )
+                embed.set_footer(text=f"pinged by {message.author}")
                 await message.channel.send(embed=embed)
             elif role.id == ACTIVE_STAFF_ROLE:
-                if 'role' in message.content or 'fluent' in message.content or 'native' in message.content or 'language' in message.content:
+                if (
+                    "role" in message.content
+                    or "fluent" in message.content
+                    or "native" in message.content
+                    or "language" in message.content
+                ):
                     # probably asking for a role
-                    await message.reply('If you need help with roles, ping `@Welcoming Party` instead or message <@713245294657273856>. Active Staff is only for emergencies such as trolls.', mention_author=True)
+                    await message.reply(
+                        "If you need help with roles, ping `@Welcoming Party` instead or message <@713245294657273856>. Active Staff is only for emergencies such as trolls.",
+                        mention_author=True,
+                    )
                     continue
                 await self.staff_ping(message)
-
 
     @commands.Cog.listener()
     async def on_invite_create(self, invite: discord.Invite):
@@ -389,41 +516,43 @@ class EJLX(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member: discord.Member):
-        if self.bot.config.debugging:
+        if self.bot.config.debugging:  # type: ignore
             return
         if member.guild.id != EJLX_ID:
             return
         if member.bot:
             return
-        logging.info(f'{member} join event')
+        logging.info(f"{member} join event")
         if member.voice:
             # stage channel
-            self.newbies.append({ "member": member, "discovery": True })
-            await member.add_roles(member.guild.get_role(STAGE_VISITOR_ROLE)) 
-            await postBotLog(self.bot, f'Detected voice state upon joining {member}' )
+            self.newbies.append({"member": member, "discovery": True})
+            visitor = member.guild.get_role(STAGE_VISITOR_ROLE)
+            if visitor:
+                await member.add_roles(visitor)
+            await postBotLog(self.bot, f"Detected voice state upon joining {member}")
             if len(self.newbies) > 20:
                 self.newbies.pop(0)
             return
         if member.id in self._newbie_queue:
-            logging.info(f'{member} multi join event bug')
+            logging.info(f"{member} multi join event bug")
             return
         self._newbie_queue.append(member.id)
         async with self._invite_lock:
             if (discord.utils.utcnow() - self._recent_invite) < self._invite_elapsed:
                 new_invites = self._new_invites_cache
                 vanity = self._vanity_cache
-                logging.info(f'{member} is using invite caches')
+                logging.info(f"{member} is using invite caches")
             else:
                 start = discord.utils.utcnow()
                 new_invites = await member.guild.invites()
                 vanity = await member.guild.vanity_invite()
                 elapsed = discord.utils.utcnow() - start
                 self._invite_elapsed = elapsed
-                new_invites = { invite.id: invite for invite in new_invites }
+                new_invites = {invite.id: invite for invite in new_invites}
                 self._new_invites_cache = new_invites
                 self._vanity_cache = vanity
                 self._recent_invite = discord.utils.utcnow()
-        
+
         potential_invites: list[discord.Invite] = []
         for id, invite in new_invites.items():
             new_usage = invite.uses
@@ -433,57 +562,84 @@ class EJLX(commands.Cog):
                 old_usage = 0
             if new_usage != old_usage:
                 potential_invites.append(invite)
+
+        def i(o: Optional[int]):
+            return o if o else 0
+
         for id, invite in self.invites.items():
-            if invite.max_uses - invite.uses == 1:
-                if invite.max_age > 0:
-                    exp = invite.created_at.timestamp() + invite.max_age
+            if i(invite.max_uses) - i(invite.uses) == 1:
+                if i(invite.max_age) > 0:
+                    if invite.created_at is None:
+                        continue
+                    exp = invite.created_at.timestamp() + i(invite.max_age)
                     diff = discord.utils.utcnow().timestamp() - exp
                     if diff > 0:
                         continue
                 if id not in new_invites:
                     potential_invites.append(invite)
 
-        if vanity.uses != self.vanity_uses:
+        if vanity and vanity.uses != self.vanity_uses:
             potential_invites.append(vanity)
-        
+
         aws = []
+        stage = member.guild.get_role(STAGE_VISITOR_ROLE)
         if len(potential_invites) == 0:
             # Server discovery or one use invite?
-            self.newbies.append({ "member": member, "discovery": True })
+            self.newbies.append({"member": member, "discovery": True})
             for sc in member.guild.stage_channels:
                 if len(sc.members):
-                    aws.append(member.add_roles(member.guild.get_role(STAGE_VISITOR_ROLE)))
-                    aws.append(postBotLog(self.bot, f'Discovery join {member} (stage is happening)'))
+                    if stage:
+                        aws.append(member.add_roles(stage))
+                    aws.append(
+                        postBotLog(
+                            self.bot, f"Discovery join {member} (stage is happening)"
+                        )
+                    )
                     break
             else:
-                aws.append(postBotLog(self.bot, f'Discovery join {member}'))
+                aws.append(postBotLog(self.bot, f"Discovery join {member}"))
         elif len(potential_invites) == 1:
             # Found one
             invite = potential_invites[0]
-            self.newbies.append({ "member": member, "invite": invite })
-            aws.append(postBotLog(self.bot, f'{member} joined with {invite.id} from {invite.inviter if invite.id != "japanese" else "vanity"}' ))
-            if invite.id == 'japanese':
+            self.newbies.append({"member": member, "invite": invite})
+            aws.append(
+                postBotLog(
+                    self.bot,
+                    f'{member} joined with {invite.id} from {invite.inviter if invite.id != "japanese" else "vanity"}',
+                )
+            )
+            if invite.id == "japanese":
                 self.vanity_uses += 1
             else:
                 if invite.id in self.invites:
-                    self.invites[invite.id].uses += 1
+                    self.invites[invite.id].uses += 1  # type: ignore
                 else:
                     self.invites[invite.id] = invite
         else:
             # Failed to get invites for some people OR multi-join
             self._multi_queue.append(member)
-            aws.append(postBotLog(self.bot, f'{member} found {len(potential_invites)} invites: {", ".join([i.id for i in potential_invites])}' ))
+            aws.append(
+                postBotLog(
+                    self.bot,
+                    f'{member} found {len(potential_invites)} invites: {", ".join([i.id for i in potential_invites])}',
+                )
+            )
 
         self._newbie_queue.remove(member.id)
         if len(self._newbie_queue) == 0:
             if len(potential_invites) != 1:
                 # I haven't manually updated uses
                 self.invites = new_invites
-                self.vanity_uses = vanity.uses
+                self.vanity_uses = i(vanity.uses) if vanity else 0
             for multi in self._multi_queue:
-                self.newbies.append({ "member": multi, "invites": potential_invites })
+                self.newbies.append({"member": multi, "invites": potential_invites})
             if self._multi_queue:
-                aws.append(postBotLog(self.bot, f'{", ".join([str(m) for m in self._multi_queue])} joined with {", ".join([i.id for i in potential_invites])} (multi)' ))
+                aws.append(
+                    postBotLog(
+                        self.bot,
+                        f'{", ".join([str(m) for m in self._multi_queue])} joined with {", ".join([i.id for i in potential_invites])} (multi)',
+                    )
+                )
                 self._multi_queue = []
         else:
             logging.info(f'newbie_queue: {", ".join(str(self._newbie_queue))}')
@@ -493,10 +649,9 @@ class EJLX(commands.Cog):
 
         await asyncio.gather(*aws)
 
-
     @commands.Cog.listener()
     async def on_member_remove(self, member):
-        if self.bot.config.debugging:
+        if self.bot.config.debugging:  # type: ignore
             return
         if member.guild.id != EJLX_ID:
             return
@@ -505,12 +660,14 @@ class EJLX(commands.Cog):
             embed = discord.Embed(colour=BOOSTER_COLOR)
             embed.title = f"{member}'s boost is now gone..."
             embed.timestamp = datetime.utcnow()
-            embed.set_footer(text=f'Nitro Boosts: {member.guild.premium_subscription_count} (Tier {member.guild.premium_tier})')
+            embed.set_footer(
+                text=f"Nitro Boosts: {member.guild.premium_subscription_count} (Tier {member.guild.premium_tier})"
+            )
             await ewbf.send(embed=embed)
 
     @commands.Cog.listener()
     async def on_member_update(self, before, after):
-        if self.bot.config.debugging:
+        if self.bot.config.debugging:  # type: ignore
             return
         if after.guild.id != EJLX_ID:
             return
@@ -519,15 +676,17 @@ class EJLX(commands.Cog):
             ewbf = before.guild.get_channel(EWBF)
             embed = discord.Embed(colour=BOOSTER_COLOR)
             if before.premium_since is None:
-                embed.title = f'{before} just boosted the server!'
-                await before.add_roles(before.guild.get_role(BOOSTER_PINK_ROLE)) 
+                embed.title = f"{before} just boosted the server!"
+                await before.add_roles(before.guild.get_role(BOOSTER_PINK_ROLE))
             else:
-                embed.title = f'{before}\'s boost was removed/expired...'
+                embed.title = f"{before}'s boost was removed/expired..."
                 await before.remove_roles(before.guild.get_role(BOOSTER_PINK_ROLE))
             embed.timestamp = datetime.utcnow()
-            embed.set_footer(text=f'Nitro Boosts: {before.guild.premium_subscription_count} (Tier {before.guild.premium_tier})')
+            embed.set_footer(
+                text=f"Nitro Boosts: {before.guild.premium_subscription_count} (Tier {before.guild.premium_tier})"
+            )
             await ewbf.send(embed=embed)
-            
+
         # Nickname change
         # if before.nick != after.nick:
         #     ewbf = before.guild.get_channel(EWBF)
@@ -549,19 +708,28 @@ class EJLX(commands.Cog):
         guild_id = payload.guild_id
         emoji = payload.emoji
 
-        cached = discord.utils.find(lambda m: m.id == message_id, self.bot.cached_messages)
+        cached = discord.utils.find(
+            lambda m: m.id == message_id, self.bot.cached_messages
+        )
         if cached:
             return
 
         guild = self.bot.get_guild(guild_id)
+        if not guild:
+            return
         channel = guild.get_channel(channel_id)
+        if not channel:
+            return
         member = guild.get_member(user_id)
-        message = await channel.fetch_message(message_id)
+        message = await channel.fetch_message(message_id)  # type: ignore
+
         def emoji_name(e):
             return e if type(e) is str else e.name
 
         if is_add:
-            reaction = discord.utils.find(lambda r: emoji_name(r.emoji) == emoji_name(emoji), message.reactions)
+            reaction = discord.utils.find(
+                lambda r: emoji_name(r.emoji) == emoji_name(emoji), message.reactions
+            )
             if not reaction:
                 return
             await self.reaction_language(reaction, member)
@@ -581,11 +749,11 @@ class EJLX(commands.Cog):
         await self.reaction_language(reaction, user)
 
     async def reaction_language(self, reaction, user):
-        if self.bot.config.debugging:
+        if self.bot.config.debugging:  # type: ignore
             return
         if user.bot:
             return
-        if not hasattr(user, 'guild') or user.guild is None:
+        if not hasattr(user, "guild") or user.guild is None:
             return
         if user.guild.id != EJLX_ID:
             return
@@ -594,14 +762,14 @@ class EJLX(commands.Cog):
         emoji = str(reaction.emoji)
         tagged = None
         if emoji == JP_EMOJI:
-            tagged = NJ_ROLE['id']
+            tagged = NJ_ROLE["id"]
         elif emoji == EN_EMOJI:
-            tagged = NE_ROLE['id']
+            tagged = NE_ROLE["id"]
         elif emoji == OL_EMOJI:
-            tagged = OL_ROLE['id']
+            tagged = OL_ROLE["id"]
         else:
             return
-    
+
         msg = reaction.message
         if has_any_role(msg.author, LANG_ROLE_IDS):
             if msg.channel.id == INTRO:
@@ -618,10 +786,16 @@ class EJLX(commands.Cog):
                 await reaction.remove(user)
                 return
             self._recently_tagged = msg.author.id
-            
-        await msg.author.add_roles(msg.guild.get_role(tagged), reason=f'Reaction tagged by {user.name} ({user.id})')
+
+        await msg.author.add_roles(
+            msg.guild.get_role(tagged),
+            reason=f"Reaction tagged by {user.name} ({user.id})",
+        )
         try:
-            await msg.author.remove_roles(msg.guild.get_role(NU_ROLE['id']), reason=f'Reaction tagged by {user.name} ({user.id})')
+            await msg.author.remove_roles(
+                msg.guild.get_role(NU_ROLE["id"]),
+                reason=f"Reaction tagged by {user.name} ({user.id})",
+            )
         except:
             pass
 
@@ -629,90 +803,150 @@ class EJLX(commands.Cog):
             self._recently_tagged = None
 
         if msg.channel.id == INTRO:
-            await asyncio.gather(
-                reaction.remove(user),
-                reaction.remove(self.bot.user)
-            )
+            await asyncio.gather(reaction.remove(user), reaction.remove(self.bot.user))
         else:
             await asyncio.gather(
                 msg.clear_reactions(),
-                msg.channel.send(f"**{msg.author.name}**, you've been tagged as <@&{tagged}> by {user.name}!")
+                msg.channel.send(
+                    f"**{msg.author.name}**, you've been tagged as <@&{tagged}> by {user.name}!"
+                ),
             )
 
-    async def reaction_ban(self, message, bannees, reason='Unspecified', minimo=True, wp=False, delete_dismissed=False, unmute_dismissed=False):
+    async def reaction_ban(
+        self,
+        message,
+        bannees,
+        reason="Unspecified",
+        minimo=True,
+        wp=False,
+        delete_dismissed=False,
+        unmute_dismissed=False,
+    ):
         """
         React with ban emoji to ban
         """
         await message.add_reaction(BAN_EMOJI)
-        await message.add_reaction('\N{WHITE HEAVY CHECK MARK}')
-        ban = wait_for_reaction(self.bot, message=message, reaction=BAN_EMOJI, minimo=minimo, wp=wp,  triple_click=True)
-        dismiss = wait_for_reaction(self.bot, message, '\N{WHITE HEAVY CHECK MARK}', minimo=minimo, wp=wp)
-        done, pending = await asyncio.wait([ban, dismiss], return_when=asyncio.FIRST_COMPLETED)
+        await message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
+        ban = wait_for_reaction(
+            self.bot,
+            message=message,
+            reaction=BAN_EMOJI,
+            minimo=minimo,
+            wp=wp,
+            triple_click=True,
+        )
+        dismiss = wait_for_reaction(
+            self.bot, message, "\N{WHITE HEAVY CHECK MARK}", minimo=minimo, wp=wp
+        )
+        done, pending = await asyncio.wait(
+            [ban, dismiss], return_when=asyncio.FIRST_COMPLETED
+        )
         for p in pending:
             p.cancel()
         await message.clear_reactions()
-        (user, reaction) = done.pop().result()
+        (user, reaction) = done.pop().result()  # type: ignore
         if user is not None:
-            if reaction == '\N{WHITE HEAVY CHECK MARK}':
+            if reaction == "\N{WHITE HEAVY CHECK MARK}":
                 if unmute_dismissed:
                     for bannee in bannees:
                         try:
-                            await bannee.remove_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason=f'Auto mute dismissed')
-                            await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} Unmuted {bannee.name}')
+                            await bannee.remove_roles(
+                                message.guild.get_role(CHAT_MUTE_ROLE),
+                                reason=f"Auto mute dismissed",
+                            )
+                            await message.channel.send(
+                                f"\N{WHITE HEAVY CHECK MARK} Unmuted {bannee.name}"
+                            )
                         except:
                             pass
                 if delete_dismissed:
                     await message.delete()
                 elif len(message.embeds) > 0:
                     embed = message.embeds[0].copy()
-                    embed.set_footer(text=f'False alarm. They have been unmuted. Dimissed by {user.name}')
+                    embed.set_footer(
+                        text=f"False alarm. They have been unmuted. Dimissed by {user.name}"
+                    )
                     await message.edit(content=message.content, embed=embed)
 
             else:
                 for bannee in bannees:
                     try:
-                        await bannee.ban(delete_message_days=1, reason=f'Issued by: {user}. Reason: {reason}')
-                        await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} {bannee} has been banned by {user}')
+                        await bannee.ban(
+                            delete_message_days=1,
+                            reason=f"Issued by: {user}. Reason: {reason}",
+                        )
+                        await message.channel.send(
+                            f"\N{WHITE HEAVY CHECK MARK} {bannee} has been banned by {user}"
+                        )
                     except:
-                        await message.channel.send(f'\N{CROSS MARK} {bannee} could not be banned.')
+                        await message.channel.send(
+                            f"\N{CROSS MARK} {bannee} could not be banned."
+                        )
                 if len(message.embeds) > 0:
                     embed = message.embeds[0]
-                    embed.set_footer(text=f'Banned by {user.name}')
+                    embed.set_footer(text=f"Banned by {user.name}")
                     await message.edit(content=message.content, embed=embed)
         elif len(message.embeds) > 0:
             embed = message.embeds[0]
-            embed.set_footer(text=f'Timed out after 5 minutes')
+            embed.set_footer(text=f"Timed out after 5 minutes")
             await message.edit(content=message.content, embed=embed)
 
         return True
 
-
-    async def reaction_ban_multiple(self, message, bannees, reason='Unspecified', minimo=True, wp=False, delete_dismissed=False, unmute_dismissed=False):
+    async def reaction_ban_multiple(
+        self,
+        message,
+        bannees,
+        reason="Unspecified",
+        minimo=True,
+        wp=False,
+        delete_dismissed=False,
+        unmute_dismissed=False,
+    ):
         """
         Ban multiple members
         """
         individual_bans = []
+
         async def _individual_ban(bannee, emoji):
-            banner = await wait_for_reaction(self.bot, message=message, reaction=emoji, minimo=minimo, wp=wp, triple_click=True)
+            banner = await wait_for_reaction(
+                self.bot,
+                message=message,
+                reaction=emoji,
+                minimo=minimo,
+                wp=wp,
+                triple_click=True,
+            )
             if banner is not None:
                 try:
-                    await bannee.ban(delete_message_days=1, reason=f'Issued by: {banner}. Reason: {reason}')
-                    await message.channel.send(f'\N{WHITE HEAVY CHECK MARK} {bannee} has been banned by {banner}.')
+                    await bannee.ban(
+                        delete_message_days=1,
+                        reason=f"Issued by: {banner}. Reason: {reason}",
+                    )
+                    await message.channel.send(
+                        f"\N{WHITE HEAVY CHECK MARK} {bannee} has been banned by {banner}."
+                    )
                 except:
-                    await message.channel.send(f'\N{CROSS MARK} {bannee} could not be banned.')
+                    await message.channel.send(
+                        f"\N{CROSS MARK} {bannee} could not be banned."
+                    )
             return False
 
         for i, bannee in enumerate(bannees):
             if i == 10:
                 break
-            emoji = NUMBER_EMOJIS[i] 
+            emoji = NUMBER_EMOJIS[i]
             await message.add_reaction(emoji)
             individual_bans.append(asyncio.create_task(_individual_ban(bannee, emoji)))
-        
+
         finished = False
         banned_count = 0
-        ban_all_or_dismiss = asyncio.create_task(self.reaction_ban(message, bannees, reason, minimo, wp, delete_dismissed, unmute_dismissed))
-        
+        ban_all_or_dismiss = asyncio.create_task(
+            self.reaction_ban(
+                message, bannees, reason, minimo, wp, delete_dismissed, unmute_dismissed
+            )
+        )
+
         for coro in asyncio.as_completed(individual_bans + [ban_all_or_dismiss]):
             try:
                 next_result = await coro
@@ -728,238 +962,417 @@ class EJLX(commands.Cog):
                         ban_all_or_dismiss.cancel()
                         if len(message.embeds) > 0:
                             embed = message.embeds[0]
-                            embed.set_footer(text=f'Done')
+                            embed.set_footer(text=f"Done")
                             await message.edit(content=message.content, embed=embed)
-                    
+
             except:
                 pass
 
-    async def mention_spam(self, message: discord.Message):
+    async def mention_spam(self, message: GuildMessage):
+        mute_role = message.guild.get_role(CHAT_MUTE_ROLE)
+        if not mute_role:
+            return
         if len(message.role_mentions) > 3:
             # role mention spam
-            await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason='Role mention spam')
-            embed = discord.Embed(colour=0xff0000)
-            embed.title = f'FOR THOSE WHO GOT PINGED'
-            embed.description = f'{message.author.mention} has been **muted** for pinging multiple roles: {", ".join(message.role_mentions)}{NL}{NL}While this message was most likely a spam, all of these roles are **self-assignable**. Head over to <#189585230972190720> and unreact to remove the pingable roles or type `,leave club_name` for roles not in that channel.'
-            embed.set_footer(text=f'Minimos can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them')
-            ciri_message = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}>', embed=embed, mention_author=False)
-            await self.reaction_ban(ciri_message, [message.author], reason='Role mention spam', unmute_dismissed=True)
+            await message.author.add_roles(mute_role, reason="Role mention spam")
+            embed = discord.Embed(colour=0xFF0000)
+            embed.title = f"FOR THOSE WHO GOT PINGED"
+            embed.description = f'{message.author.mention} has been **muted** for pinging multiple roles: {", ".join(message.role_mentions)}{NL}{NL}While this message was most likely a spam, all of these roles are **self-assignable**. Head over to <#189585230972190720> and unreact to remove the pingable roles or type `,leave club_name` for roles not in that channel.'  # type: ignore
+            embed.set_footer(
+                text=f"Minimos can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them"
+            )
+            ciri_message = await message.reply(
+                f"<@&{ACTIVE_STAFF_ROLE}>", embed=embed, mention_author=False
+            )
+            await self.reaction_ban(
+                ciri_message,
+                [message.author],
+                reason="Role mention spam",
+                unmute_dismissed=True,
+            )
         elif len(message.mentions) > 10:
             if get_text_channel_id(message.channel) == VOICE_BOT_CHANNEL:
                 return
-            await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason='User mention spam')
-            embed = discord.Embed(colour=0xff0000)
-            embed.title = f'Possible User Mention Spam'
-            embed.description = f'{message.author.mention} pinged **{len(message.mentions)}** people and has been **automatically muted**.'
-            embed.set_footer(text=f'Minimos can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them')
-            ciri_message = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}>', embed=embed, mention_author=False)
-            await self.reaction_ban(ciri_message, [message.author], reason='User mention spam', unmute_dismissed=True)
-
+            await message.author.add_roles(mute_role, reason="User mention spam")
+            embed = discord.Embed(colour=0xFF0000)
+            embed.title = f"Possible User Mention Spam"
+            embed.description = f"{message.author.mention} pinged **{len(message.mentions)}** people and has been **automatically muted**."
+            embed.set_footer(
+                text=f"Minimos can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them"
+            )
+            ciri_message = await message.reply(
+                f"<@&{ACTIVE_STAFF_ROLE}>", embed=embed, mention_author=False
+            )
+            await self.reaction_ban(
+                ciri_message,
+                [message.author],
+                reason="User mention spam",
+                unmute_dismissed=True,
+            )
 
     async def troll_check(self, message):
         if get_text_channel_id(message.channel) in [BOT_CHANNEL, VOICE_BOT_CHANNEL]:
             return
         author = message.author
         content = message.clean_content.lower()
-        timestamp = message.created_at 
-        msg_len = len(re.sub(REGEX_DISCORD_OBJ, '', message.content))
+        timestamp = message.created_at
+        msg_len = len(re.sub(REGEX_DISCORD_OBJ, "", message.content))
 
         for nu in self.troll_msgs:
-            if nu['id'] == author.id:
-                if nu['content'] == content or nu['content'] + nu['content'] == content:
-                    nu['count'] += 1
-                    if nu['count'] >= 5:
-                        if (timestamp - nu['timestamp']).total_seconds() <= 30:
-                            await author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible spam detected. The user has sent the same message 5 times in a row")
-                            embed = discord.Embed(colour=0xff0000)
+            if nu["id"] == author.id:
+                if nu["content"] == content or nu["content"] + nu["content"] == content:
+                    nu["count"] += 1
+                    if nu["count"] >= 5:
+                        if (timestamp - nu["timestamp"]).total_seconds() <= 30:
+                            await author.add_roles(
+                                message.guild.get_role(CHAT_MUTE_ROLE),
+                                reason="Possible spam detected. The user has sent the same message 5 times in a row",
+                            )
+                            embed = discord.Embed(colour=0xFF0000)
                             embed.description = f'{author.mention} has been **muted automatically** due to spamming the same message 5 times in a row.\n> {content[:100] + "..." if len(content) > 100 else content}'
-                            embed.set_footer(text=f'Minimos can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them.')
-                            prompt = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}>', embed=embed, mention_author=False)
-                            await self.reaction_ban(prompt, [author], reason='Spamming the same message 5 times in a row', unmute_dismissed=True) 
-                        nu['count'] = 1
-                        nu['timestamp'] = timestamp
+                            embed.set_footer(
+                                text=f"Minimos can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them."
+                            )
+                            prompt = await message.reply(
+                                f"<@&{ACTIVE_STAFF_ROLE}>",
+                                embed=embed,
+                                mention_author=False,
+                            )
+                            await self.reaction_ban(
+                                prompt,
+                                [author],
+                                reason="Spamming the same message 5 times in a row",
+                                unmute_dismissed=True,
+                            )
+                        nu["count"] = 1
+                        nu["timestamp"] = timestamp
 
                 elif msg_len >= 12:
-                    nu['content'] = content
-                    nu['count'] = 1
-                    nu['timestamp'] = timestamp
+                    nu["content"] = content
+                    nu["count"] = 1
+                    nu["timestamp"] = timestamp
                 break
         else:
             if msg_len >= 12:
-                self.troll_msgs.append({
-                    "id": author.id,
-                    "content": content,
-                    "count": 1,
-                    "timestamp": timestamp
-                })
+                self.troll_msgs.append(
+                    {
+                        "id": author.id,
+                        "content": content,
+                        "count": 1,
+                        "timestamp": timestamp,
+                    }
+                )
         if len(self.troll_msgs) > 30:
             self.troll_msgs.pop(0)
 
-    async def new_user_troll_check(self, message: discord.Message):
+    async def new_user_troll_check(self, message: GuildMessage):
         if get_text_channel_id(message.channel) in [BOT_CHANNEL, VOICE_BOT_CHANNEL]:
             return
-        safe_content = re.sub(r'"[^"]+"', "", message.content.lower()) # Ignore quoted messages 
+        mute_role = message.guild.get_role(CHAT_MUTE_ROLE)
+        if not mute_role:
+            return
+        safe_content = re.sub(
+            r'"[^"]+"', "", message.content.lower()
+        )  # Ignore quoted messages
         author = message.author
         content = message.clean_content
         timestamp = discord.utils.snowflake_time(message.id)
-        msg_len = len(re.sub(REGEX_DISCORD_OBJ, '', message.content))
+        msg_len = len(re.sub(REGEX_DISCORD_OBJ, "", message.content))
 
         if N_WORD_REGEX.search(safe_content.replace(" ", "")):
-            await author.ban(delete_message_days=1, reason="Auto-banned. New user using the N-word")
-            await message.channel.send(f'{author.mention} has been banned automatically for using the N-word')
+            await author.ban(
+                delete_message_days=1, reason="Auto-banned. New user using the N-word"
+            )
+            await message.channel.send(
+                f"{author.mention} has been banned automatically for using the N-word"
+            )
             return
         if "ニガー" in safe_content:
-            await author.ban(delete_message_days=1, reason="Auto-banned. New user using the N-word in Japanese")
-            await message.channel.send(f'{author.mention} has been banned automatically for using the N-word in Japanese')
-            return
-        if RACIST_REGEX.search(safe_content):
-            match = RACIST_REGEX.search(safe_content)
-            await author.ban(delete_message_days=1, reason=f'Auto-banned. New user saying "{match.group(0)}"')
-            await message.channel.send(f'{author.mention} has been banned automatically for saying "{match.group(0)}"')
+            await author.ban(
+                delete_message_days=1,
+                reason="Auto-banned. New user using the N-word in Japanese",
+            )
+            await message.channel.send(
+                f"{author.mention} has been banned automatically for using the N-word in Japanese"
+            )
             return
 
-        if '@everyone' in message.content:
-            if len(message.content.split('@everyone')) > 3:
-                await author.ban(delete_message_days=1, reason="Auto-banned. New user @everyone spam")
-                await message.channel.send(f'{author.mention} has been banned automatically')
+        match = RACIST_REGEX.search(safe_content)
+        if match:
+            await author.ban(
+                delete_message_days=1,
+                reason=f'Auto-banned. New user saying "{match.group(0)}"',
+            )
+            await message.channel.send(
+                f'{author.mention} has been banned automatically for saying "{match.group(0)}"'
+            )
+            return
+
+        if "@everyone" in message.content:
+            if len(message.content.split("@everyone")) > 3:
+                await author.ban(
+                    delete_message_days=1, reason="Auto-banned. New user @everyone spam"
+                )
+                await message.channel.send(
+                    f"{author.mention} has been banned automatically"
+                )
                 return
-            await author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible spam detected. This new user tried to ping everyone") 
-            embed = discord.Embed(colour=0xff0000)
+            await author.add_roles(
+                mute_role,
+                reason="Possible spam detected. This new user tried to ping everyone",
+            )
+            embed = discord.Embed(colour=0xFF0000)
             embed.description = f'**New User** {author.mention} has been **muted automatically** for trying to ping everyone.\n> {content[:100] + "..." if len(content) > 100 else content}'
-            embed.set_footer(text=f'WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them.')
-            prompt = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>', embed=embed, mention_author=False)
-            await self.reaction_ban(prompt, [author], reason='New user trying to ping everyone', wp=True, unmute_dismissed=True) 
+            embed.set_footer(
+                text=f"WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them."
+            )
+            prompt = await message.reply(
+                f"<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>",
+                embed=embed,
+                mention_author=False,
+            )
+            await self.reaction_ban(
+                prompt,
+                [author],
+                reason="New user trying to ping everyone",
+                wp=True,
+                unmute_dismissed=True,
+            )
             return
 
         new_user_bad_word = None
-        if BAD_JP_WORDS_REGEX.search(safe_content):
-            new_user_bad_word = BAD_JP_WORDS_REGEX.search(safe_content).group(0)
+        bad_jp_match = BAD_JP_WORDS_REGEX.search(safe_content)
+        if bad_jp_match:
+            new_user_bad_word = bad_jp_match.group(0)
 
-        if BAD_WORDS_REGEX.search(safe_content):
-            new_user_bad_word = BAD_WORDS_REGEX.search(safe_content).group(0)
+        bad_en_match = BAD_WORDS_REGEX.search(safe_content)
+        if bad_en_match:
+            new_user_bad_word = bad_en_match.group(0)
 
         if new_user_bad_word:
-            await author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason=f"Possible troll detected. New user saying {new_user_bad_word}") 
-            embed = discord.Embed(colour=0xff0000)
-            embed.description = f'**New User** {author.mention} has been **muted automatically** for saying {new_user_bad_word}.\n'
-            embed.set_footer(text=f'WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them.')
-            prompt = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}>', embed=embed, mention_author=False)
-            await self.reaction_ban(prompt, [author], reason='New user saying {new_user_bad_word}', wp=True, unmute_dismissed=True) 
+            await author.add_roles(
+                mute_role,
+                reason=f"Possible troll detected. New user saying {new_user_bad_word}",
+            )
+            embed = discord.Embed(colour=0xFF0000)
+            embed.description = f"**New User** {author.mention} has been **muted automatically** for saying {new_user_bad_word}.\n"
+            embed.set_footer(
+                text=f"WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them."
+            )
+            prompt = await message.reply(
+                f"<@&{ACTIVE_STAFF_ROLE}>", embed=embed, mention_author=False
+            )
+            await self.reaction_ban(
+                prompt,
+                [author],
+                reason=f"New user saying {new_user_bad_word}",
+                wp=True,
+                unmute_dismissed=True,
+            )
             return
 
         for nu in self.nu_troll_msgs:
-            if nu['id'] == author.id:
-                if nu['content'] == content or nu['content'] + nu['content'] == content:
-                    nu['count'] += 1
-                    if nu['count'] >= 3:
-                        if (timestamp - nu['timestamp']).total_seconds() <= 30:
-                            await author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible spam detected. This new user has sent the same message 3 times in a row") 
-                            embed = discord.Embed(colour=0xff0000)
+            if nu["id"] == author.id:
+                if nu["content"] == content or nu["content"] + nu["content"] == content:
+                    nu["count"] += 1
+                    if nu["count"] >= 3:
+                        if (timestamp - nu["timestamp"]).total_seconds() <= 30:
+                            await author.add_roles(
+                                mute_role,
+                                reason="Possible spam detected. This new user has sent the same message 3 times in a row",
+                            )
+                            embed = discord.Embed(colour=0xFF0000)
                             embed.description = f'**New User** {author.mention} has been **muted automatically** due to spamming the same message 3 times in a row.\n> {content[:100] + "..." if len(content) > 100 else content}'
-                            embed.set_footer(text=f'WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them.')
-                            prompt = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>', embed=embed, mention_author=False)
-                            await self.reaction_ban(prompt, [author], reason='New user spamming the same message 3 times in a row', wp=True, unmute_dismissed=True) 
-                        nu['count'] = 1
-                        nu['timestamp'] = timestamp
+                            embed.set_footer(
+                                text=f"WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them."
+                            )
+                            prompt = await message.reply(
+                                f"<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>",
+                                embed=embed,
+                                mention_author=False,
+                            )
+                            await self.reaction_ban(
+                                prompt,
+                                [author],
+                                reason="New user spamming the same message 3 times in a row",
+                                wp=True,
+                                unmute_dismissed=True,
+                            )
+                        nu["count"] = 1
+                        nu["timestamp"] = timestamp
 
                 elif msg_len >= 7:
-                    nu['content'] = content
-                    nu['count'] = 1
-                    nu['timestamp'] = timestamp
+                    nu["content"] = content
+                    nu["count"] = 1
+                    nu["timestamp"] = timestamp
                 break
         else:
             if msg_len >= 7:
-                self.nu_troll_msgs.append({
-                    "id": author.id,
-                    "content": content,
-                    "count": 1,
-                    "timestamp": timestamp
-                })
-        
+                self.nu_troll_msgs.append(
+                    {
+                        "id": author.id,
+                        "content": content,
+                        "count": 1,
+                        "timestamp": timestamp,
+                    }
+                )
+
         if len(self.nu_troll_msgs) > 20:
             self.nu_troll_msgs.pop(0)
 
-    @commands.command(aliases=['autobahn', 'ab'])
+    @commands.command(aliases=["autobahn", "ab"])
     @commands.check(has_ban)
     async def autoban(self, ctx):
         """
         Open up the ban wizard to easily ban trolls
         """
-        detected = await self.staff_ping(ctx.message, title="Auto Ban Menu", delete_dismissed=False)
+        detected = await self.staff_ping(
+            ctx.message, title="Auto Ban Menu", delete_dismissed=False
+        )
         if detected == 0:
             await ctx.send(f"\N{CROSS MARK} Could not find potential trolls")
 
-    async def staff_ping(self, message, title="Active Staff Ping Ban Menu", delete_dismissed=True):
-        msg_content = re.sub(REGEX_DISCORD_OBJ, '', message.content)
+    async def staff_ping(
+        self, message, title="Active Staff Ping Ban Menu", delete_dismissed=True
+    ):
+        msg_content = re.sub(REGEX_DISCORD_OBJ, "", message.content)
 
         # new users shouldn't trigger ban detections
-        if has_any_role(message.author, LANG_ROLE_IDS) and time_since_join(message.author) >= 3:
-            embed = discord.Embed(colour=0xfc3838)
+        if (
+            has_any_role(message.author, LANG_ROLE_IDS)
+            and time_since_join(message.author) >= 3
+        ):
+            embed = discord.Embed(colour=0xFC3838)
             embed.title = title
 
             # if staff ping is replying to a message
             if message.reference:
                 if message.reference.cached_message:
                     bannee = message.reference.cached_message.author
-                    embed.description = f'{bannee} {joined_to_relative_time(bannee)}'
-                    embed.set_footer(text=f'Minimos can click the BAN emoji 3 times to ban them or ✅ to dismiss this message')
+                    embed.description = f"{bannee} {joined_to_relative_time(bannee)}"
+                    embed.set_footer(
+                        text=f"Minimos can click the BAN emoji 3 times to ban them or ✅ to dismiss this message"
+                    )
                     ciri_message = await message.channel.send(embed=embed)
-                    await self.reaction_ban(ciri_message, [bannee], reason='Active Staff ping auto detection', delete_dismissed=delete_dismissed)
+                    await self.reaction_ban(
+                        ciri_message,
+                        [bannee],
+                        reason="Active Staff ping auto detection",
+                        delete_dismissed=delete_dismissed,
+                    )
                 return
 
             messages = await message.channel.history(limit=50).flatten()
             user_set = set([m.author for m in messages if not m.author.bot])
-            user_dict = { u.id: { 'user': u, 'count': 0 } for u in user_set }
-            stats = self.bot.get_cog('Stats')
-            user_records = await stats.get_messages_for_users(message.guild.id, user_dict.keys())
+            user_dict = {u.id: {"user": u, "count": 0} for u in user_set}
+            stats = self.bot.get_cog("Stats")  # type: ignore
+            if stats:
+                user_records = await stats.get_messages_for_users(
+                    message.guild.id, user_dict.keys()
+                )
+            else:
+                return
             for record in user_records:
-                user_dict[record['user_id']]['count'] = record['count']
+                user_dict[record["user_id"]]["count"] = record["count"]
 
-            # if staff ping is from an active user 
-            if has_any_role(message.author, [BOOSTER_ROLE, WP_ROLE, MINIMO_ROLE, STAFF_ROLE, ADMIN_ROLE]) or user_dict[message.author.id]['count'] > 100:
+            # if staff ping is from an active user
+            if (
+                has_any_role(
+                    message.author,
+                    [BOOSTER_ROLE, WP_ROLE, MINIMO_ROLE, STAFF_ROLE, ADMIN_ROLE],
+                )
+                or user_dict[message.author.id]["count"] > 100
+            ):
                 # if staff ping contains mentions
                 if message.mentions:
-                    embed.description = '\n'.join([f'{NUMBER_EMOJIS[i]}: {m} {joined_to_relative_time(m)}' for i, m in enumerate(message.mentions[:10])])
-                    embed.set_footer(text=f'Minimos can click each number 3 times to ban them individually, BAN emoji 3 times to ban all of them, or ✅ to dismiss this message')
+                    embed.description = "\n".join(
+                        [
+                            f"{NUMBER_EMOJIS[i]}: {m} {joined_to_relative_time(m)}"
+                            for i, m in enumerate(message.mentions[:10])
+                        ]
+                    )
+                    embed.set_footer(
+                        text=f"Minimos can click each number 3 times to ban them individually, BAN emoji 3 times to ban all of them, or ✅ to dismiss this message"
+                    )
                     ciri_message = await message.channel.send(embed=embed)
-                    await self.reaction_ban_multiple(ciri_message, message.mentions, reason='Active Staff ping auto detection', delete_dismissed=delete_dismissed)
+                    await self.reaction_ban_multiple(
+                        ciri_message,
+                        message.mentions,
+                        reason="Active Staff ping auto detection",
+                        delete_dismissed=delete_dismissed,
+                    )
                     return
 
                 # check raid if last 4 people joined within 2 minutes
-                members_by_joined_date = sorted(message.guild.members, key=lambda m: m.joined_at)
-                last_4_in = (members_by_joined_date[-1].joined_at - members_by_joined_date[-4].joined_at).total_seconds()
+                members_by_joined_date = sorted(
+                    message.guild.members, key=lambda m: m.joined_at
+                )
+                last_4_in = (
+                    members_by_joined_date[-1].joined_at
+                    - members_by_joined_date[-4].joined_at
+                ).total_seconds()
                 if last_4_in < 120:
                     # possible raid so just add new users who have said anything
                     new_users = dict()
                     for m in messages:
-                        joined_minutes_ago = time_since_join(m.author, unit='minute')
+                        joined_minutes_ago = time_since_join(m.author, unit="minute")
                         if joined_minutes_ago < 15:
                             clean_content = clean_and_truncate(m.clean_content)
                             if m.author.id in new_users:
-                                clean_content = new_users[m.author.id]["contents"] + NL + (clean_content or '*file*')
-                            new_users[m.author.id] = { "contents": clean_content, "user": m.author }
+                                clean_content = (
+                                    new_users[m.author.id]["contents"]
+                                    + NL
+                                    + (clean_content or "*file*")
+                                )
+                            new_users[m.author.id] = {
+                                "contents": clean_content,
+                                "user": m.author,
+                            }
 
                     bannees = [n["user"] for n in new_users.values()]
                     if not bannees:
                         return
-                    embed.description = '\n'.join(f'{NUMBER_EMOJIS[i]}: {b} {joined_to_relative_time(b)}.{NL}Messages: {new_users[b.id]["contents"]}' for i, b in enumerate(bannees[:10])) 
-                    embed.set_footer(text=f'Minimos can click each number 3 times to ban them individually, BAN emoji 3 times to ban all of them, or ✅ to dismiss this message')
+                    embed.description = "\n".join(
+                        f'{NUMBER_EMOJIS[i]}: {b} {joined_to_relative_time(b)}.{NL}Messages: {new_users[b.id]["contents"]}'
+                        for i, b in enumerate(bannees[:10])
+                    )
+                    embed.set_footer(
+                        text=f"Minimos can click each number 3 times to ban them individually, BAN emoji 3 times to ban all of them, or ✅ to dismiss this message"
+                    )
                     ciri_message = await message.channel.send(embed=embed)
-                    await self.reaction_ban_multiple(ciri_message, bannees, reason='Active Staff ping auto detection', delete_dismissed=delete_dismissed)
+                    await self.reaction_ban_multiple(
+                        ciri_message,
+                        bannees,
+                        reason="Active Staff ping auto detection",
+                        delete_dismissed=delete_dismissed,
+                    )
                     return
 
                 # read history to determine trolls
                 user_points = dict()
                 for m in messages:
                     author = m.author
-                    if author.bot or has_any_role(author, [BOOSTER_ROLE, WP_ROLE, MINIMO_ROLE, STAFF_ROLE, ADMIN_ROLE]) or user_dict[author.id]['count'] > 100:
+                    if (
+                        author.bot
+                        or has_any_role(
+                            author,
+                            [
+                                BOOSTER_ROLE,
+                                WP_ROLE,
+                                MINIMO_ROLE,
+                                STAFF_ROLE,
+                                ADMIN_ROLE,
+                            ],
+                        )
+                        or user_dict[author.id]["count"] > 100
+                    ):
                         continue
                     if author.id not in user_points:
-                        joined_hours_ago = time_since_join(author, unit='hour')
+                        joined_hours_ago = time_since_join(author, unit="hour")
                         user_points[author.id] = {
                             "points": 0,
                             "reasons": [],
-                            "user": author
+                            "user": author,
                         }
                         if joined_hours_ago < 1:
                             user_points[author.id]["points"] = 5
@@ -968,72 +1381,116 @@ class EJLX(commands.Cog):
                         elif joined_hours_ago < 24 * 7:
                             user_points[author.id]["points"] = 1
 
-                    clean_content = re.sub(REGEX_DISCORD_OBJ, '', m.content)
-                    lower_content = clean_content.lower().replace(" ", "").replace("\n", "")
+                    clean_content = re.sub(REGEX_DISCORD_OBJ, "", m.content)
+                    lower_content = (
+                        clean_content.lower().replace(" ", "").replace("\n", "")
+                    )
                     if N_WORD_REGEX.search(lower_content):
                         user_points[author.id]["points"] += 100
                         user_points[author.id]["reasons"].append("Hard R N-word")
-                    if ARABIC_REGEX.search(lower_content) or HEBREW_REGEX.search(lower_content) or HANGUL_REGEX.search(lower_content) or CYRILLIC_REGEX.search(lower_content):
+                    if (
+                        ARABIC_REGEX.search(lower_content)
+                        or HEBREW_REGEX.search(lower_content)
+                        or HANGUL_REGEX.search(lower_content)
+                        or CYRILLIC_REGEX.search(lower_content)
+                    ):
                         user_points[author.id]["points"] += 10
-                        user_points[author.id]["reasons"].append(clean_and_truncate(m.content))
-                    if REGEX_URL.search(m.content) and 'discord.gg/japanese' not in m.content:
-                        if INVITES_REGEX.search(m.content):
+                        user_points[author.id]["reasons"].append(
+                            clean_and_truncate(m.content)
+                        )
+                    url_match = REGEX_URL.search(m.content)
+                    if url_match and "discord.gg/japanese" not in m.content:
+                        inv_match = INVITES_REGEX.search(m.content)
+                        if inv_match:
                             user_points[author.id]["points"] += 5
-                            user_points[author.id]["reasons"].append(clean_and_truncate(INVITES_REGEX.search(m.content)[1]))
+                            user_points[author.id]["reasons"].append(
+                                clean_and_truncate(inv_match[1])
+                            )
                         else:
                             user_points[author.id]["points"] += 3
-                            user_points[author.id]["reasons"].append(clean_and_truncate(REGEX_URL.search(m.content)[1]))
-                    if BAD_JP_WORDS_REGEX.search(m.content):
-                        match = BAD_JP_WORDS_REGEX.search(m.content)[1]
+                            user_points[author.id]["reasons"].append(
+                                clean_and_truncate(url_match[1])
+                            )
+                    bad_jp = BAD_JP_WORDS_REGEX.search(m.content)
+                    if bad_jp:
+                        match = bad_jp[1]
                         user_points[author.id]["points"] += 4
-                        user_points[author.id]["reasons"].append(clean_and_truncate(match))
+                        user_points[author.id]["reasons"].append(
+                            clean_and_truncate(match)
+                        )
                     words = m.content.lower().split()
                     for w in words:
                         match = BAD_WORDS_REGEX.search(w)
                         if match:
                             user_points[author.id]["points"] += 4
-                            user_points[author.id]["reasons"].append(clean_and_truncate(match[1]))
+                            user_points[author.id]["reasons"].append(
+                                clean_and_truncate(match[1])
+                            )
                     if m.attachments:
                         user_points[author.id]["points"] += 2
                         user_points[author.id]["reasons"].append("FileUpload")
-                    if re.match(r'^[A-Z0-9 ?!\']$', clean_content):
+                    if re.match(r"^[A-Z0-9 ?!\']$", clean_content):
                         user_points[author.id]["points"] += 2
-                        user_points[author.id]["reasons"].append(clean_and_truncate(clean_content))
-                    elif not has_any_role(author, LANG_ROLE_IDS): 
+                        user_points[author.id]["reasons"].append(
+                            clean_and_truncate(clean_content)
+                        )
+                    elif not has_any_role(author, LANG_ROLE_IDS):
                         user_points[author.id]["points"] += 1
-                        user_points[author.id]["reasons"].append(clean_and_truncate(clean_content))
+                        user_points[author.id]["reasons"].append(
+                            clean_and_truncate(clean_content)
+                        )
 
-
-                sorted_users = sorted(user_points.values(), key=lambda u: u["points"], reverse=True)
-                filtered_users = list(filter(lambda u: u["points"] > 5, sorted_users))[:10]
+                sorted_users = sorted(
+                    user_points.values(), key=lambda u: u["points"], reverse=True
+                )
+                filtered_users = list(filter(lambda u: u["points"] > 5, sorted_users))[
+                    :10
+                ]
                 bannees = [b["user"] for b in filtered_users]
                 if not bannees:
                     return 0
                 if len(bannees) == 1:
                     b = bannees[0]
                     embed.description = f'{b["user"].mention} {joined_to_relative_time(b["user"])}.\n__Reasons__: {",".join(b["reasons"])}'
-                    embed.set_footer(text=f'Minimos can click the BAN emoji 3 times to ban them, or ✅ to dismiss this message')
+                    embed.set_footer(
+                        text=f"Minimos can click the BAN emoji 3 times to ban them, or ✅ to dismiss this message"
+                    )
                     ciri_message = await message.channel.send(embed=embed)
-                    await self.reaction_ban(ciri_message, bannees, reason='Active Staff ping auto detection', delete_dismissed=delete_dismissed)
+                    await self.reaction_ban(
+                        ciri_message,
+                        bannees,
+                        reason="Active Staff ping auto detection",
+                        delete_dismissed=delete_dismissed,
+                    )
                     return 1
 
-                embed.description = '\n'.join(f'{NUMBER_EMOJIS[i]} {b["user"].mention} {joined_to_relative_time(b["user"])}. __Reasons__: {",".join(b["reasons"])}' for i, b in enumerate(filtered_users)) 
-                embed.set_footer(text=f'Minimos can click each number 3 times to ban them individually, BAN emoji 3 times to ban all of them, or ✅ to dismiss this message')
+                embed.description = "\n".join(
+                    f'{NUMBER_EMOJIS[i]} {b["user"].mention} {joined_to_relative_time(b["user"])}. __Reasons__: {",".join(b["reasons"])}'
+                    for i, b in enumerate(filtered_users)
+                )
+                embed.set_footer(
+                    text=f"Minimos can click each number 3 times to ban them individually, BAN emoji 3 times to ban all of them, or ✅ to dismiss this message"
+                )
                 ciri_message = await message.channel.send(embed=embed)
-                await self.reaction_ban_multiple(ciri_message, bannees, reason='Active Staff ping auto detection', delete_dismissed=delete_dismissed)
+                await self.reaction_ban_multiple(
+                    ciri_message,
+                    bannees,
+                    reason="Active Staff ping auto detection",
+                    delete_dismissed=delete_dismissed,
+                )
                 return len(bannees)
 
     async def check_jap(self, message):
-        if message.content and message.content[0] in [',', '.', ';']:
+        if message.content and message.content[0] in [",", ".", ";"]:
             return
-        sanitized = re.sub(r'["`]japs?["`]', '', message.content.lower())
-        sanitized = re.sub(r'https?://\S+', '', sanitized)
-        words = re.split(r'\W+', sanitized)
+        sanitized = re.sub(r'["`]japs?["`]', "", message.content.lower())
+        sanitized = re.sub(r"https?://\S+", "", sanitized)
+        words = re.split(r"\W+", sanitized)
         bucket = self._message_cooldown.get_bucket(message)
         for word in words:
-            if word == 'jap' or word == 'japs':
+            if word == "jap" or word == "japs":
                 current = message.created_at.replace(tzinfo=timezone.utc).timestamp()
-                retry_after = bucket.update_rate_limit(current) 
+                retry_after = bucket.update_rate_limit(current)
                 if not retry_after:
                     embed = discord.Embed(colour=0xFF5500)
                     embed.description = """
@@ -1042,83 +1499,134 @@ class EJLX(commands.Cog):
                     await message.reply(embed=embed, mention_author=True)
                 return
 
-    async def moderate_stage(self, message: discord.Message):
+    async def moderate_stage(self, message: GuildMessage):
         if not has_any_role(message.author, LANG_ROLE_IDS):
             for r in INSTABAN_REGEXES:
                 m = r.search(message.content)
                 if m:
-                    await message.author.ban(delete_message_days=1, reason=f'Stage channel visitor troll {m[1]}')
+                    await message.author.ban(
+                        delete_message_days=1,
+                        reason=f"Stage channel visitor troll {m[1]}",
+                    )
                     return
-    
-    async def ban_scammers(self, message: discord.Message):
+
+    async def ban_scammers(self, message: GuildMessage):
         content = message.content.lower()
-        content = re.sub(r'[\u200B-\u200F\uFEFF]', '', content)
-        url = URL_REGEX.search(content)[0]
-        domain = re.match(r'https?://([^/]+)', url)[1]
-        tld = domain.split('.')[-1]
-        if re.match(r'(.*\.)?discord(app|status)?\.(com|gg|gifts?|media|net)$', domain) or domain in WHITE_LIST_DOMAINS:
-            return # safe legit URL
-        if '@everyone' in content or re.match(r'^(hi|hey|hello|bro)', content) or re.match(r'gifts?', tld):
-            reason = ''
-            if 'nitro' in content or 'gift' in content or 'airdrop' in content:
-                reason = 'Nitro Scam'
-            elif re.search(r'(cs:? ?go|steam)', content):
-                reason = 'CS:GO Scam'
-            elif domain.endswith('.ru') or domain.endswith('.ru.com'):
-                reason = 'Russian Link Scam'
-            elif re.search(r'gifts?', tld):
-                reason = 'Gift Link Scam'
-            elif re.search(r'(n[i1l]tro|d[il1]sc[qo0]rc?[ld])', url):
-                reason = 'Fake Discord Link Scam'
-            elif url.endswith(('.rar', '.exe') ):
-                file = url.split('/')[-1]
-                reason = f'Suspicious file: {file}'
+        content = re.sub(r"[\u200B-\u200F\uFEFF]", "", content)
+        url = URL_REGEX.search(content)[0]  # type: ignore
+        domain = re.match(r"https?://([^/]+)", url)[1]  # type: ignore
+        tld = domain.split(".")[-1]
+        if (
+            re.match(r"(.*\.)?discord(app|status)?\.(com|gg|gifts?|media|net)$", domain)
+            or domain in WHITE_LIST_DOMAINS
+        ):
+            return  # safe legit URL
+        if (
+            "@everyone" in content
+            or re.match(r"^(hi|hey|hello|bro)", content)
+            or re.match(r"gifts?", tld)
+        ):
+            reason = ""
+            if "nitro" in content or "gift" in content or "airdrop" in content:
+                reason = "Nitro Scam"
+            elif re.search(r"(cs:? ?go|steam)", content):
+                reason = "CS:GO Scam"
+            elif domain.endswith(".ru") or domain.endswith(".ru.com"):
+                reason = "Russian Link Scam"
+            elif re.search(r"gifts?", tld):
+                reason = "Gift Link Scam"
+            elif re.search(r"(n[i1l]tro|d[il1]sc[qo0]rc?[ld])", url):
+                reason = "Fake Discord Link Scam"
+            elif url.endswith((".rar", ".exe")):
+                file = url.split("/")[-1]
+                reason = f"Suspicious file: {file}"
 
             if reason:
-                await message.author.ban(delete_message_days=1, reason=f"Auto-banned: {reason}.{NL}Domain: {domain}")
-                await message.channel.send(f'{message.author.mention} has been banned automatically for: {reason}')
+                await message.author.ban(
+                    delete_message_days=1,
+                    reason=f"Auto-banned: {reason}.{NL}Domain: {domain}",
+                )
+                await message.channel.send(
+                    f"{message.author.mention} has been banned automatically for: {reason}"
+                )
                 return True
 
         if domain in KNOWN_SCAM_DOMAINS:
-            await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Scam: {domain}")
-            await message.channel.send(f'{message.author.mention} has been banned automatically for: Known Scam Link')
+            await message.author.ban(
+                delete_message_days=1, reason=f"Auto-banned. Scam: {domain}"
+            )
+            await message.channel.send(
+                f"{message.author.mention} has been banned automatically for: Known Scam Link"
+            )
             return True
 
         async def mute_potential_scammer():
-            await message.author.add_roles(message.guild.get_role(CHAT_MUTE_ROLE), reason="Possible scam detected") 
-            embed = discord.Embed(colour=0xff0000)
-            sanitized_content = re.sub(URL_REGEX, f'[REDACTED]', message.content)
-            embed.add_field(name='Suspicious Link Domain', value=domain)
+            mute_role = message.guild.get_role(CHAT_MUTE_ROLE)
+            if mute_role:
+                await message.author.add_roles(
+                    mute_role, reason="Possible scam detected"
+                )
+            embed = discord.Embed(colour=0xFF0000)
+            sanitized_content = re.sub(URL_REGEX, f"[REDACTED]", message.content)
+            embed.add_field(name="Suspicious Link Domain", value=domain)
             embed.description = f'{message.author.mention} has been **muted automatically** due to potential scam.\n> {sanitized_content[:150] + "..." if len(sanitized_content) > 150 else sanitized_content}'
-            embed.set_footer(text=f'WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them.')
-            prompt = await message.reply(f'<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>', embed=embed, mention_author=False)
-            await self.reaction_ban(prompt, [message.author], reason=f'Hacked Account Scamming: {domain}', wp=True, unmute_dismissed=True) 
+            embed.set_footer(
+                text=f"WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them."
+            )
+            prompt = await message.reply(
+                f"<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>",
+                embed=embed,
+                mention_author=False,
+            )
+            await self.reaction_ban(
+                prompt,
+                [message.author],
+                reason=f"Hacked Account Scamming: {domain}",
+                wp=True,
+                unmute_dismissed=True,
+            )
 
-
-        if (re.search(r'(cs:? ?go|n[i1l]tro|steam|skin|d[il1]sc[qo0O]rc?[ld]|bro|airdrop)', content)) and (re.search(r'(free|gift|offer|give|giving|hack|promotion|take it|is first)', content)):
-            if domain.endswith('.ru') or domain.endswith('.ru.com'):
-                await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Scam: {domain}")
-                await message.channel.send(f'{message.author.mention} has been banned automatically for: Russian Scam Link')
+        if (
+            re.search(
+                r"(cs:? ?go|n[i1l]tro|steam|skin|d[il1]sc[qo0O]rc?[ld]|bro|airdrop)",
+                content,
+            )
+        ) and (
+            re.search(
+                r"(free|gift|offer|give|giving|hack|promotion|take it|is first)",
+                content,
+            )
+        ):
+            if domain.endswith(".ru") or domain.endswith(".ru.com"):
+                await message.author.ban(
+                    delete_message_days=1, reason=f"Auto-banned. Scam: {domain}"
+                )
+                await message.channel.send(
+                    f"{message.author.mention} has been banned automatically for: Russian Scam Link"
+                )
                 return True
-            if re.search(r'd[l1i]sc[qo0]r(d|cl|l)', domain):
-                await message.author.ban(delete_message_days=1, reason=f"Auto-banned. Fake Discord Link Scam: {domain}")
-                await message.channel.send(f'{message.author.mention} has been banned automatically for: Fake Discord Link Scam')
+            if re.search(r"d[l1i]sc[qo0]r(d|cl|l)", domain):
+                await message.author.ban(
+                    delete_message_days=1,
+                    reason=f"Auto-banned. Fake Discord Link Scam: {domain}",
+                )
+                await message.channel.send(
+                    f"{message.author.mention} has been banned automatically for: Fake Discord Link Scam"
+                )
                 return True
             await mute_potential_scammer()
-    
-        if '@everyone' in content:
+
+        if "@everyone" in content:
             await mute_potential_scammer()
-
-
 
     @commands.Cog.listener()
     async def on_safe_message(self, message, **kwargs):
-        if self.bot.config.debugging:
+        if self.bot.config.debugging:  # type: ignore
             return
         if not message.guild or message.guild.id != EJLX_ID:
             return
         if URL_REGEX.search(message.content):
-            banned = await self.ban_scammers(message) 
+            banned = await self.ban_scammers(message)
             if banned:
                 # nothing more to do
                 return
@@ -1149,17 +1657,19 @@ class EJLX(commands.Cog):
         if get_text_channel_id(message.channel) in STAGE_CHATS:
             await self.moderate_stage(message)
 
-
     @commands.Cog.listener()
     async def on_message_delete(self, message):
-        if self.bot.config.debugging:
+        if self.bot.config.debugging:  # type: ignore
             return
         if not message.guild or message.guild.id != EJLX_ID:
             return
         if message.author.bot:
             return
-        if message.content.startswith(';report'):
-            await postBotLog(self.bot, f'{message.author} made a report in {message.channel}')
+        if message.content.startswith(";report"):
+            await postBotLog(
+                self.bot, f"{message.author} made a report in {message.channel}"
+            )
 
-def setup(bot):
-    bot.add_cog(EJLX(bot))
+
+async def setup(bot):
+    await bot.add_cog(EJLX(bot))

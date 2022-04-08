@@ -1,22 +1,27 @@
 import asyncio
 import discord
 
+
 class PaginatedLeaderboard:
-    def __init__(self, ctx, *, 
+    def __init__(
+        self,
+        ctx,
+        *,
         records=[],
-        title='Leaderboard',
-        description='For the last 30 days (UTC)',
-        rank_for='user_id',
+        title="Leaderboard",
+        description="For the last 30 days (UTC)",
+        rank_for="user_id",
         use_relative_rank=True,
         find_record=None,
         field_name_resolver=None,
         record_to_value=None,
-        record_to_rank=lambda r: r['rank'],
-        record_to_count=lambda r: r['count'],
+        record_to_rank=lambda r: r["rank"],
+        record_to_count=lambda r: r["count"],
         count_to_string=lambda x: x,
-        per_page=25):
+        per_page=25,
+    ):
 
-        self.ctx = ctx             
+        self.ctx = ctx
         self.bot = ctx.bot
         self.records = records
         self.rank_for = rank_for
@@ -35,7 +40,7 @@ class PaginatedLeaderboard:
             total += 1
 
         self.total_pages = total
-        self.current_page = None
+        self.current_page = 0
         if find_record:
             self.find_record_page = self.record_to_rank(find_record) // per_page
         else:
@@ -46,24 +51,28 @@ class PaginatedLeaderboard:
 
         self.paginating = len(records) > per_page
         self.reaction_emojis = [
-            ('\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', self.first_page),
-            ('\N{BLACK LEFT-POINTING TRIANGLE}', self.previous_page),
-            ('\N{BLACK RIGHT-POINTING TRIANGLE}', self.next_page),
-            ('\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}', self.last_page),
-            ('\N{ROUND PUSHPIN}', self.user_page)
+            (
+                "\N{BLACK LEFT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}",
+                self.first_page,
+            ),
+            ("\N{BLACK LEFT-POINTING TRIANGLE}", self.previous_page),
+            ("\N{BLACK RIGHT-POINTING TRIANGLE}", self.next_page),
+            (
+                "\N{BLACK RIGHT-POINTING DOUBLE TRIANGLE WITH VERTICAL BAR}",
+                self.last_page,
+            ),
+            ("\N{ROUND PUSHPIN}", self.user_page),
         ]
-
-        self.message = None
 
     def user_resolver(self, rank, user_id, record):
         user = self.bot.get_user(user_id)
-        is_user = '\N{ROUND PUSHPIN}' if user_id == self.author.id else ''
+        is_user = "\N{ROUND PUSHPIN}" if user_id == self.author.id else ""
         if user is None:
-            name = f'{rank}) @user-left({user_id})'
+            name = f"{rank}) @user-left({user_id})"
         else:
-            name = f'{is_user}{rank}) {user.name}'
+            name = f"{is_user}{rank}) {user.name}"
         return name
-    
+
     async def show_page(self, page):
         if page < 0 or page == self.total_pages or page == self.current_page:
             return
@@ -78,9 +87,11 @@ class PaginatedLeaderboard:
             record_value = self.record_to_value(record)
             rank = index + 1 if self.use_relative_rank else self.record_to_rank(record)
             name = self.name_resolver(rank, record_value, record)
-            embed.add_field(name=name, value=self.count_to_string(self.record_to_count(record)))
+            embed.add_field(
+                name=name, value=self.count_to_string(self.record_to_count(record))
+            )
 
-        embed.set_footer(text=f'Page: {page + 1}/{self.total_pages}')
+        embed.set_footer(text=f"Page: {page + 1}/{self.total_pages}")
         if self.message is not None:
             await self.message.edit(embed=embed)
         else:
@@ -114,7 +125,7 @@ class PaginatedLeaderboard:
                 self.match = func
                 return True
         return False
-    
+
     async def build(self):
         await self.first_page()
         if self.paginating:
@@ -127,7 +138,9 @@ class PaginatedLeaderboard:
 
         while self.paginating:
             try:
-                reaction, user = await self.bot.wait_for('reaction_add', check=self.react_check, timeout=20.0)
+                reaction, user = await self.bot.wait_for(
+                    "reaction_add", check=self.react_check, timeout=20.0
+                )
             except asyncio.TimeoutError:
                 self.paginating = False
                 try:
@@ -139,5 +152,5 @@ class PaginatedLeaderboard:
             try:
                 await self.message.remove_reaction(reaction, user)
             except:
-                pass # can't remove it so don't bother doing so
+                pass  # can't remove it so don't bother doing so
             await self.match()
