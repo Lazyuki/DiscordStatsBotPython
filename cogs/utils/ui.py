@@ -11,20 +11,6 @@ WP_ROLES = MINIMO_ROLES + [250907197075226625]
 CHAT_MUTE_ROLE = 259181555803619329
 
 
-def make_check_roles(wp=False, minimo=False):
-    roles = WP_ROLES if wp else MINIMO_ROLES if minimo else MOD_ROLES
-
-    async def check_roles(interaction: discord.Interaction):
-        if isinstance(interaction.user, discord.Member):
-            if interaction.user.guild_permissions.administrator:
-                return True
-            return has_any_role(interaction.user, roles)
-
-        return False
-
-    return check_roles
-
-
 class BanButton(ui.Button):
     def __init__(self, ban):
         super().__init__()
@@ -94,7 +80,6 @@ class BanDismissView(ui.View):
                     await message.channel.send(
                         f"\N{WHITE HEAVY CHECK MARK} {bannee} has been banned by {banner}"
                     )
-                    await message.channel.send("BAN TEST SUCCESSFUL")
                 except:
                     await message.channel.send(
                         f"\N{CROSS MARK} {bannee} could not be banned."
@@ -148,7 +133,13 @@ class BanDismissView(ui.View):
             self.add_item(DismissButton(dismiss=dismiss))
 
     async def interaction_check(self, interaction):
-        return make_check_roles(self.wp, self.minimo)(interaction)
+        roles = WP_ROLES if self.wp else MINIMO_ROLES if self.minimo else MOD_ROLES
+        if isinstance(interaction.user, discord.Member):
+            if interaction.user.guild_permissions.administrator:
+                return True
+            return has_any_role(interaction.user, roles)
+
+        return False
 
     async def on_timeout(self):
         self.clear_items()

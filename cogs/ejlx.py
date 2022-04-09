@@ -1269,6 +1269,7 @@ class EJLX(commands.Cog):
                         bannees=[bannee],
                         reason="Active Staff ping auto detection",
                         minimo=True,
+                        wp=False,
                         delete_dismissed=delete_dismissed,
                     )
                     await add_ban_dismiss(ciri_message, view)
