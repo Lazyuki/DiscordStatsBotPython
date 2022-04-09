@@ -8,6 +8,8 @@ import logging
 
 from collections import namedtuple
 
+from cogs.utils.ui import BanDismissView, add_ban_dismiss
+
 
 from .utils.resolver import has_role, has_any_role, get_text_channel_id
 from .utils.parser import (
@@ -979,17 +981,19 @@ class EJLX(commands.Cog):
             embed.title = f"FOR THOSE WHO GOT PINGED"
             embed.description = f'{message.author.mention} has been **muted** for pinging multiple roles: {", ".join(message.role_mentions)}{NL}{NL}While this message was most likely a spam, all of these roles are **self-assignable**. Head over to <#189585230972190720> and unreact to remove the pingable roles or type `,leave club_name` for roles not in that channel.'  # type: ignore
             embed.set_footer(
-                text=f"Minimos can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them"
+                text=f"Minimos can ban or dismiss this message and unmute them"
             )
             ciri_message = await message.reply(
                 f"<@&{ACTIVE_STAFF_ROLE}>", embed=embed, mention_author=False
             )
-            await self.reaction_ban(
-                ciri_message,
-                [message.author],
+            view = BanDismissView(
+                message=ciri_message,
+                bannees=[message.author],
                 reason="Role mention spam",
+                minimo=True,
                 unmute_dismissed=True,
             )
+            await add_ban_dismiss(ciri_message, view)
         elif len(message.mentions) > 10:
             if get_text_channel_id(message.channel) == VOICE_BOT_CHANNEL:
                 return
@@ -998,17 +1002,19 @@ class EJLX(commands.Cog):
             embed.title = f"Possible User Mention Spam"
             embed.description = f"{message.author.mention} pinged **{len(message.mentions)}** people and has been **automatically muted**."
             embed.set_footer(
-                text=f"Minimos can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them"
+                text=f"Minimos can ban or dismiss this message and unmute them"
             )
             ciri_message = await message.reply(
                 f"<@&{ACTIVE_STAFF_ROLE}>", embed=embed, mention_author=False
             )
-            await self.reaction_ban(
-                ciri_message,
-                [message.author],
+            view = BanDismissView(
+                message=ciri_message,
+                bannees=[message.author],
                 reason="User mention spam",
+                minimo=True,
                 unmute_dismissed=True,
             )
+            await add_ban_dismiss(ciri_message, view)
 
     async def troll_check(self, message):
         if get_text_channel_id(message.channel) in [BOT_CHANNEL, VOICE_BOT_CHANNEL]:
@@ -1031,19 +1037,22 @@ class EJLX(commands.Cog):
                             embed = discord.Embed(colour=0xFF0000)
                             embed.description = f'{author.mention} has been **muted automatically** due to spamming the same message 5 times in a row.\n> {content[:100] + "..." if len(content) > 100 else content}'
                             embed.set_footer(
-                                text=f"Minimos can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them."
+                                text=f"Minimos can ban or dismiss this message and unmute them"
                             )
                             prompt = await message.reply(
                                 f"<@&{ACTIVE_STAFF_ROLE}>",
                                 embed=embed,
                                 mention_author=False,
                             )
-                            await self.reaction_ban(
-                                prompt,
-                                [author],
+                            view = BanDismissView(
+                                message=prompt,
+                                bannees=[author],
                                 reason="Spamming the same message 5 times in a row",
+                                minimo=True,
                                 unmute_dismissed=True,
                             )
+                            await add_ban_dismiss(prompt, view)
+
                         nu["count"] = 1
                         nu["timestamp"] = timestamp
 
@@ -1124,20 +1133,21 @@ class EJLX(commands.Cog):
             embed = discord.Embed(colour=0xFF0000)
             embed.description = f'**New User** {author.mention} has been **muted automatically** for trying to ping everyone.\n> {content[:100] + "..." if len(content) > 100 else content}'
             embed.set_footer(
-                text=f"WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them."
+                text=f"WPs can ban or dismiss this message and unmute them."
             )
             prompt = await message.reply(
                 f"<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>",
                 embed=embed,
                 mention_author=False,
             )
-            await self.reaction_ban(
-                prompt,
-                [author],
+            view = BanDismissView(
+                message=prompt,
+                bannees=[author],
                 reason="New user trying to ping everyone",
                 wp=True,
                 unmute_dismissed=True,
             )
+            await add_ban_dismiss(prompt, view)
             return
 
         new_user_bad_word = None
@@ -1157,18 +1167,19 @@ class EJLX(commands.Cog):
             embed = discord.Embed(colour=0xFF0000)
             embed.description = f"**New User** {author.mention} has been **muted automatically** for saying {new_user_bad_word}.\n"
             embed.set_footer(
-                text=f"WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them."
+                text=f"WPs can ban or dismiss this message and unmute them."
             )
             prompt = await message.reply(
                 f"<@&{ACTIVE_STAFF_ROLE}>", embed=embed, mention_author=False
             )
-            await self.reaction_ban(
-                prompt,
-                [author],
+            view = BanDismissView(
+                message=prompt,
+                bannees=[author],
                 reason=f"New user saying {new_user_bad_word}",
                 wp=True,
                 unmute_dismissed=True,
             )
+            await add_ban_dismiss(prompt, view)
             return
 
         for nu in self.nu_troll_msgs:
@@ -1184,20 +1195,21 @@ class EJLX(commands.Cog):
                             embed = discord.Embed(colour=0xFF0000)
                             embed.description = f'**New User** {author.mention} has been **muted automatically** due to spamming the same message 3 times in a row.\n> {content[:100] + "..." if len(content) > 100 else content}'
                             embed.set_footer(
-                                text=f"WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them."
+                                text=f"WPs can ban or dismiss this message and unmute them."
                             )
                             prompt = await message.reply(
                                 f"<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>",
                                 embed=embed,
                                 mention_author=False,
                             )
-                            await self.reaction_ban(
-                                prompt,
-                                [author],
+                            view = BanDismissView(
+                                message=prompt,
+                                bannees=[author],
                                 reason="New user spamming the same message 3 times in a row",
                                 wp=True,
                                 unmute_dismissed=True,
                             )
+                            await add_ban_dismiss(prompt, view)
                         nu["count"] = 1
                         nu["timestamp"] = timestamp
 
@@ -1250,16 +1262,16 @@ class EJLX(commands.Cog):
                 if message.reference.cached_message:
                     bannee = message.reference.cached_message.author
                     embed.description = f"{bannee} {joined_to_relative_time(bannee)}"
-                    embed.set_footer(
-                        text=f"Minimos can click the BAN emoji 3 times to ban them or ✅ to dismiss this message"
-                    )
+                    embed.set_footer(text=f"Minimos can ban or dismiss this message")
                     ciri_message = await message.channel.send(embed=embed)
-                    await self.reaction_ban(
-                        ciri_message,
-                        [bannee],
+                    view = BanDismissView(
+                        message=ciri_message,
+                        bannees=[bannee],
                         reason="Active Staff ping auto detection",
+                        minimo=True,
                         delete_dismissed=delete_dismissed,
                     )
+                    await add_ban_dismiss(ciri_message, view)
                 return
 
             messages = await message.channel.history(limit=50).flatten()
@@ -1452,16 +1464,17 @@ class EJLX(commands.Cog):
                 if len(bannees) == 1:
                     b = bannees[0]
                     embed.description = f'{b["user"].mention} {joined_to_relative_time(b["user"])}.\n__Reasons__: {",".join(b["reasons"])}'
-                    embed.set_footer(
-                        text=f"Minimos can click the BAN emoji 3 times to ban them, or ✅ to dismiss this message"
-                    )
+                    embed.set_footer(text=f"Minimos can ban or dismiss this message")
                     ciri_message = await message.channel.send(embed=embed)
-                    await self.reaction_ban(
-                        ciri_message,
-                        bannees,
+
+                    view = BanDismissView(
+                        message=ciri_message,
+                        bannees=bannees,
                         reason="Active Staff ping auto detection",
                         delete_dismissed=delete_dismissed,
+                        minimo=True,
                     )
+                    await add_ban_dismiss(ciri_message, view)
                     return 1
 
                 embed.description = "\n".join(
@@ -1571,20 +1584,21 @@ class EJLX(commands.Cog):
             embed.add_field(name="Suspicious Link Domain", value=domain)
             embed.description = f'{message.author.mention} has been **muted automatically** due to potential scam.\n> {sanitized_content[:150] + "..." if len(sanitized_content) > 150 else sanitized_content}'
             embed.set_footer(
-                text=f"WPs can click the BAN emoji 3 times to ban them or ✅ to dismiss this message and unmute them."
+                text=f"WPs can ban or dismiss this message and unmute them."
             )
             prompt = await message.reply(
                 f"<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>",
                 embed=embed,
                 mention_author=False,
             )
-            await self.reaction_ban(
-                prompt,
-                [message.author],
+            view = BanDismissView(
+                message=prompt,
+                bannees=[message.author],
                 reason=f"Hacked Account Scamming: {domain}",
                 wp=True,
                 unmute_dismissed=True,
             )
+            await add_ban_dismiss(prompt, view)
 
         if (
             re.search(

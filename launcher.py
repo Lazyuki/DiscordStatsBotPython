@@ -46,11 +46,20 @@ def setup_logging():
 async def run_bot():
     log = logging.getLogger()
 
-    async with asyncpg.create_pool(**config.db, command_timeout=60) as pool:
-        bot = Cirilla(pool)
-        async with bot:
-            await bot.start(config.token)
-            print("Bot finished running")
+    # async with asyncpg.create_pool(**config.db, command_timeout=60) as pool:
+    #     bot = Cirilla(pool)
+    #     async with bot:
+    #         await bot.start(config.token)
+    #         print("Bot finished running")
+    try:
+        pool = await asyncpg.create_pool(**config.db, command_timeout=60)
+    except:
+        log.exception("Failed to initialize Postgres")
+        return
+    bot = Cirilla(pool)
+    async with bot:
+        await bot.start(config.token)
+    await pool.close()
 
 
 async def main():
@@ -61,4 +70,9 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        pass
+    except:
+        raise

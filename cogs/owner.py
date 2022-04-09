@@ -30,7 +30,7 @@ class Owner(commands.Cog):
     @commands.command(aliases=["rl", "rc"])
     async def reload(self, ctx, *, module):
         try:
-            self.bot.reload_extension(f"cogs.{module}")
+            await self.bot.reload_extension(f"cogs.{module}")
         except commands.ExtensionError as e:
             await ctx.send(f"{e.__class__.__name__}: {e}")
         except Exception as e:
@@ -82,7 +82,7 @@ class Owner(commands.Cog):
                     for cog in cogs:
                         if cog == "utils":
                             continue
-                        self.bot.reload_extension(f"cogs.{cog}")
+                        await self.bot.reload_extension(f"cogs.{cog}")
                 except commands.ExtensionError as e:
                     await ctx.send(f"{e.__class__.__name__}: {e}")
                 except Exception as e:

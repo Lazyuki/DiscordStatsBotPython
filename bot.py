@@ -110,11 +110,11 @@ class Cirilla(commands.Bot):
         if self.user:
             log.info(f"Ready: {self.user} (ID: {self.user.id})")
         for guild in self.guilds:
-            await self.pool.run(
+            await self.pool.execute(
                 """
                 INSERT INTO guilds (guild_id)
                 VALUES ($1)
-                ON CONFLICT IGNORE
+                ON CONFLICT DO NOTHING
             """,
                 guild.id,
             )

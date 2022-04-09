@@ -295,14 +295,15 @@ You must enable `Allow direct messages from server members` for this server in P
         """Notify ban"""
         # Fetch audit log to get who banned them
         banner = None
-        reason = None
-        log.info(f"Member banned {user.name}")
+        banner_name = ""
+        reason = ""
 
         await asyncio.sleep(5)
         for _ in range(3):
             async for entry in guild.audit_logs(action=discord.AuditLogAction.ban):
                 if entry.target.id == user.id:
-                    banner = entry.user
+                    banner: discord.User | None = entry.user
+                    banner_name = f"{banner}"
                     reason = entry.reason
                     break
             else:
@@ -310,9 +311,21 @@ You must enable `Allow direct messages from server members` for this server in P
                 continue
             break
 
-        log.info(f'Banned by {banner.name if banner else "Unknown"}')
+        if not banner:
+            # Couldn't determine who banned them
+            return
+        if banner.bot:
+            banner_match = re.search(r"[0-9]{17,20}", reason)
+            if banner_match:
+                real_banner = guild.get_member(int(banner_match.group(0)))
+                if real_banner:
+                    banner_name = f"{real_banner} using {banner}"
+                    reason_split = reason.split("Reason:")
+                    if len(reason_split) > 1:
+                        reason = "Reason: ".join(reason_split[1:]).strip()
+
         embed = discord.Embed(colour=0x000000)
-        embed.description = f'\N{CROSS MARK} **{user.name}#{user.discriminator}** was `banned`. ({user.id})\n\n*by* {banner.mention if banner else "Unknown"}\n**Reason:** {reason if reason else "Unknown"}'
+        embed.description = f'\N{CROSS MARK} **{user.name}#{user.discriminator}** was `banned`. ({user.id})\n\n**By**: {banner_name}\n**Reason:** {reason if reason else "Unknown"}'
         embed.timestamp = datetime.utcnow()
         avatar = (
             user.display_avatar.replace(static_format="png").url
@@ -331,28 +344,43 @@ You must enable `Allow direct messages from server members` for this server in P
         """Notify unban"""
         # Fetch audit log to get who banned them
         banner = None
-        reason = None
+        reason = ""
+        banner_name = ""
+
         await asyncio.sleep(5)
         for _ in range(3):
             async for entry in guild.audit_logs(action=discord.AuditLogAction.unban):
                 if entry.target.id == user.id:
                     banner = entry.user
+                    banner_name = f"{banner}"
                     reason = entry.reason
                     break
             else:
                 await asyncio.sleep(5)
                 continue
             break
-        unbanner = banner.name if banner else "Unknown"
+        if not banner:
+            # Couldn't determine who banned them
+            return
+        if banner.bot:
+            banner_match = re.search(r"[0-9]{17,20}", reason)
+            if banner_match:
+                real_banner = guild.get_member(int(banner_match.group(0)))
+                if real_banner:
+                    banner_name = f"{real_banner} using {banner}"
+                    reason_split = reason.split("Reason:")
+                    if len(reason_split) > 1:
+                        reason = "Reason: ".join(reason_split[1:]).strip()
+
         embed = discord.Embed(colour=0xEEEEEE)
-        embed.description = f'\N{WHITE EXCLAMATION MARK ORNAMENT} **{user.name}#{user.discriminator}** was `unbanned`. ({user.id})\n\n*by* {banner.mention if banner else "Unknown"}\n**Reason:**{reason if reason else "Unknown"}'
+        embed.description = f'\N{WHITE EXCLAMATION MARK ORNAMENT} **{user.name}#{user.discriminator}** was `unbanned`. ({user.id})\n\n**By**: {banner_name}\n**Reason**: {reason if reason else "Unknown"}'
         embed.timestamp = datetime.utcnow()
         avatar = (
             user.display_avatar.replace(static_format="png").url
             if user.display_avatar
             else user.default_avatar.replace(static_format="png").url
         )
-        embed.set_footer(text=f"User Unbanned by {unbanner}", icon_url=avatar)
+        embed.set_footer(text=f"User Unbanned", icon_url=avatar)
         chan = guild.get_channel(self.settings[guild.id].log_channel_id)
         if chan:
             await chan.send(embed=embed)
@@ -364,7 +392,9 @@ You must enable `Allow direct messages from server members` for this server in P
         """Notify kick"""
         # Fetch audit log to get who banned them
         kicker = None
-        reason = None
+        reason = ""
+        kicker_name = ""
+
         guild = member.guild
         await asyncio.sleep(5)
         now = discord.utils.utcnow()
@@ -375,6 +405,7 @@ You must enable `Allow direct messages from server members` for this server in P
                     and (now - entry.created_at).total_seconds() < 20
                 ):
                     kicker = entry.user
+                    kicker_name = f"{kicker}"
                     reason = entry.reason
                     break
             else:
@@ -383,9 +414,18 @@ You must enable `Allow direct messages from server members` for this server in P
             break
         if kicker is None:
             return
-        log.info(f'Kicked by {kicker.name if kicker else "Unknown"}')
+
+        if kicker.bot:
+            banner_match = re.search(r"[0-9]{17,20}", reason)
+            if banner_match:
+                real_banner = guild.get_member(int(banner_match.group(0)))
+                if real_banner:
+                    kicker_name = f"{real_banner} using {kicker}"
+                    reason_split = reason.split("Reason:")
+                    if len(reason_split) > 1:
+                        reason = "Reason: ".join(reason_split[1:]).strip()
         embed = discord.Embed(colour=0x000000)
-        embed.description = f'\N{CROSS MARK} **{member.name}#{member.discriminator}** was `kicked`. ({member.id})\n\n*by* {kicker.mention if kicker else "Unknown"}\n**Reason:** {reason if reason else "Unknown"}'
+        embed.description = f'\N{CROSS MARK} **{member.name}#{member.discriminator}** was `kicked`. ({member.id})\n\n**By**: {kicker_name}\n**Reason**: {reason if reason else "Unknown"}'
         embed.timestamp = datetime.utcnow()
         avatar = (
             member.display_avatar.replace(static_format="png").url
