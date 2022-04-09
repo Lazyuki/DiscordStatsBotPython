@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from discord import ui
 import discord
 import asyncio
@@ -15,9 +15,8 @@ class BanDismissView(ui.View):
     def __init__(
         self,
         *,
-        message: discord.Message,
         bannees: List[discord.Member],
-        reason=str,
+        reason: str = "Unspecified",
         unmute_dismissed=False,
         delete_dismissed=False,
         wp=False,
@@ -26,7 +25,6 @@ class BanDismissView(ui.View):
         super().__init__()
         self.timeout = 300.0
 
-        self.message = message
         self.bannees = bannees
         self.reason = reason
         self.unmute_dismissed = unmute_dismissed
@@ -43,23 +41,26 @@ class BanDismissView(ui.View):
                 return
             await interaction.response.edit_message(view=None)
             banner = interaction.user
+            message = interaction.message
+            if not message:
+                return
             for bannee in self.bannees:
                 try:
                     await bannee.ban(
                         delete_message_days=1,
-                        reason=f"Issued by: {banner.name} ({banner.id}). Reason: {self.reason}",
+                        reason=f"By: {banner} ({banner.id}). Reason: {self.reason}",
                     )
-                    await self.message.channel.send(
+                    await message.channel.send(
                         f"\N{WHITE HEAVY CHECK MARK} {bannee} has been banned by {banner}"
                     )
                 except:
-                    await self.message.channel.send(
+                    await message.channel.send(
                         f"\N{CROSS MARK} {bannee} could not be banned."
                     )
-            if len(self.message.embeds) > 0:
-                embed = self.message.embeds[0]
-                embed.set_footer(text=f"Banned by {banner.name}")
-                await self.message.edit(content=self.message.content, embed=embed)
+            if len(message.embeds) > 0:
+                embed = message.embeds[0]
+                embed.set_footer(text=f"Banned by {banner}")
+                await interaction.edit_original_message(embed=embed)
             self.stop()
 
     @ui.button(label="Dismiss", style=discord.ButtonStyle.secondary)
@@ -68,6 +69,9 @@ class BanDismissView(ui.View):
     ):
         async with self._lock:
             if self.is_finished():
+                return
+            message = interaction.message
+            if not message:
                 return
             await interaction.response.edit_message(view=None)
             if self.unmute_dismissed:
@@ -79,24 +83,24 @@ class BanDismissView(ui.View):
                                 mute_role,
                                 reason=f"Auto mute dismissed",
                             )
-                            await self.message.channel.send(
+                            await message.channel.send(
                                 f"\N{WHITE HEAVY CHECK MARK} Unmuted {bannee.name}"
                             )
                         except:
                             pass
             if self.delete_dismissed:
-                await self.message.delete()
-            elif len(self.message.embeds) > 0:
-                embed = self.message.embeds[0].copy()
+                await interaction.delete_original_message()
+            elif len(message.embeds) > 0:
+                embed = message.embeds[0].copy()
                 if self.unmute_dismissed:
                     embed.set_footer(
-                        text=f"False alarm. They have been unmuted. Dimissed by {interaction.user.name}"
+                        text=f"False alarm. They have been unmuted. Dimissed by {interaction.user}"
                     )
                 else:
                     embed.set_footer(
-                        text=f"False alarm. Dimissed by {interaction.user.name}"
+                        text=f"False alarm. Dimissed by {interaction.user}"
                     )
-                await self.message.edit(content=self.message.content, embed=embed)
+                await interaction.edit_original_message(embed=embed)
             self.stop()
 
     async def interaction_check(self, interaction):
@@ -114,13 +118,38 @@ class BanDismissView(ui.View):
 
         return allowed
 
-    async def on_timeout(self):
-        embed = None
-        if len(self.message.embeds):
-            embed = self.message.embeds[0].copy()
+
+async def button_ban(
+    channel: discord.TextChannel | discord.Thread,
+    bannees: List[discord.Member],
+    embed: discord.Embed,
+    wp: bool = False,
+    minimo: bool = False,
+    unmute_dismissed: bool = False,
+    delete_dismissed: bool = False,
+    reason: str = "Unspecified",
+    content: str = "",
+    reply_message: discord.Message = None,
+    mention_author: bool = False,
+):
+    view = BanDismissView(
+        bannees=bannees,
+        wp=wp,
+        minimo=minimo,
+        unmute_dismissed=unmute_dismissed,
+        delete_dismissed=delete_dismissed,
+        reason=reason,
+    )
+    message = None
+    if reply_message:
+        message = await reply_message.reply(
+            content=content, embed=embed, mention_author=mention_author, view=view
+        )
+    else:
+        message = await channel.send(content=content, embed=embed, view=view)
+    timed_out = await view.wait()
+    if message:
+        if timed_out and len(message.embeds) > 0:
+            embed = message.embeds[0].copy()
             embed.set_footer(text=f"Timed out after 5 minutes")
-        await self.message.edit(content=self.message.content, embed=embed, view=None)
-
-
-async def add_ban_dismiss(message: discord.Message, view: ui.View):
-    await message.edit(content=message.content, embeds=message.embeds, view=view)
+            await message.edit(content=message.content, embed=embed, view=None)

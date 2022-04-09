@@ -8,7 +8,7 @@ import logging
 
 from collections import namedtuple
 
-from cogs.utils.ui import BanDismissView, add_ban_dismiss
+from cogs.utils.ui import button_ban
 
 
 from .utils.resolver import has_role, has_any_role, get_text_channel_id
@@ -21,7 +21,6 @@ from .utils.parser import (
     REGEX_DISCORD_OBJ,
     REGEX_URL,
 )
-from .utils.user_interaction import wait_for_reaction
 from datetime import datetime, timezone, timedelta
 
 NL = "\n"
@@ -814,162 +813,6 @@ class EJLX(commands.Cog):
                 ),
             )
 
-    async def reaction_ban(
-        self,
-        message,
-        bannees,
-        reason="Unspecified",
-        minimo=True,
-        wp=False,
-        delete_dismissed=False,
-        unmute_dismissed=False,
-    ):
-        """
-        React with ban emoji to ban
-        """
-        await message.add_reaction(BAN_EMOJI)
-        await message.add_reaction("\N{WHITE HEAVY CHECK MARK}")
-        ban = wait_for_reaction(
-            self.bot,
-            message=message,
-            reaction=BAN_EMOJI,
-            minimo=minimo,
-            wp=wp,
-            triple_click=True,
-        )
-        dismiss = wait_for_reaction(
-            self.bot, message, "\N{WHITE HEAVY CHECK MARK}", minimo=minimo, wp=wp
-        )
-        done, pending = await asyncio.wait(
-            [ban, dismiss], return_when=asyncio.FIRST_COMPLETED
-        )
-        for p in pending:
-            p.cancel()
-        await message.clear_reactions()
-        (user, reaction) = done.pop().result()  # type: ignore
-        if user is not None:
-            if reaction == "\N{WHITE HEAVY CHECK MARK}":
-                if unmute_dismissed:
-                    for bannee in bannees:
-                        try:
-                            await bannee.remove_roles(
-                                message.guild.get_role(CHAT_MUTE_ROLE),
-                                reason=f"Auto mute dismissed",
-                            )
-                            await message.channel.send(
-                                f"\N{WHITE HEAVY CHECK MARK} Unmuted {bannee.name}"
-                            )
-                        except:
-                            pass
-                if delete_dismissed:
-                    await message.delete()
-                elif len(message.embeds) > 0:
-                    embed = message.embeds[0].copy()
-                    embed.set_footer(
-                        text=f"False alarm. They have been unmuted. Dimissed by {user.name}"
-                    )
-                    await message.edit(content=message.content, embed=embed)
-
-            else:
-                for bannee in bannees:
-                    try:
-                        await bannee.ban(
-                            delete_message_days=1,
-                            reason=f"Issued by: {user}. Reason: {reason}",
-                        )
-                        await message.channel.send(
-                            f"\N{WHITE HEAVY CHECK MARK} {bannee} has been banned by {user}"
-                        )
-                    except:
-                        await message.channel.send(
-                            f"\N{CROSS MARK} {bannee} could not be banned."
-                        )
-                if len(message.embeds) > 0:
-                    embed = message.embeds[0]
-                    embed.set_footer(text=f"Banned by {user.name}")
-                    await message.edit(content=message.content, embed=embed)
-        elif len(message.embeds) > 0:
-            embed = message.embeds[0]
-            embed.set_footer(text=f"Timed out after 5 minutes")
-            await message.edit(content=message.content, embed=embed)
-
-        return True
-
-    async def reaction_ban_multiple(
-        self,
-        message,
-        bannees,
-        reason="Unspecified",
-        minimo=True,
-        wp=False,
-        delete_dismissed=False,
-        unmute_dismissed=False,
-    ):
-        """
-        Ban multiple members
-        """
-        individual_bans = []
-
-        async def _individual_ban(bannee, emoji):
-            banner = await wait_for_reaction(
-                self.bot,
-                message=message,
-                reaction=emoji,
-                minimo=minimo,
-                wp=wp,
-                triple_click=True,
-            )
-            if banner is not None:
-                try:
-                    await bannee.ban(
-                        delete_message_days=1,
-                        reason=f"Issued by: {banner}. Reason: {reason}",
-                    )
-                    await message.channel.send(
-                        f"\N{WHITE HEAVY CHECK MARK} {bannee} has been banned by {banner}."
-                    )
-                except:
-                    await message.channel.send(
-                        f"\N{CROSS MARK} {bannee} could not be banned."
-                    )
-            return False
-
-        for i, bannee in enumerate(bannees):
-            if i == 10:
-                break
-            emoji = NUMBER_EMOJIS[i]
-            await message.add_reaction(emoji)
-            individual_bans.append(asyncio.create_task(_individual_ban(bannee, emoji)))
-
-        finished = False
-        banned_count = 0
-        ban_all_or_dismiss = asyncio.create_task(
-            self.reaction_ban(
-                message, bannees, reason, minimo, wp, delete_dismissed, unmute_dismissed
-            )
-        )
-
-        for coro in asyncio.as_completed(individual_bans + [ban_all_or_dismiss]):
-            try:
-                next_result = await coro
-                # ban_all_or_dismiss returns True upon completion
-                if next_result:
-                    for t in individual_bans:
-                        t.cancel()
-                elif next_result is not None:
-                    banned_count += 1
-                    if banned_count == len(bannees) or banned_count == 10:
-                        # individually banned all
-                        await message.clear_reactions()
-                        ban_all_or_dismiss.cancel()
-                        if len(message.embeds) > 0:
-                            embed = message.embeds[0]
-                            embed.set_footer(text=f"Done")
-                            await message.edit(content=message.content, embed=embed)
-
-            except:
-                pass
-
     async def mention_spam(self, message: GuildMessage):
         mute_role = message.guild.get_role(CHAT_MUTE_ROLE)
         if not mute_role:
@@ -983,17 +826,17 @@ class EJLX(commands.Cog):
             embed.set_footer(
                 text=f"Minimos can ban or dismiss this message and unmute them"
             )
-            ciri_message = await message.reply(
-                f"<@&{ACTIVE_STAFF_ROLE}>", embed=embed, mention_author=False
-            )
-            view = BanDismissView(
-                message=ciri_message,
+            await button_ban(
+                channel=message.channel,
+                reply_message=message,
+                content=f"<@&{ACTIVE_STAFF_ROLE}>",
+                embed=embed,
+                mention_author=False,
                 bannees=[message.author],
                 reason="Role mention spam",
                 minimo=True,
                 unmute_dismissed=True,
             )
-            await add_ban_dismiss(ciri_message, view)
         elif len(message.mentions) > 10:
             if get_text_channel_id(message.channel) == VOICE_BOT_CHANNEL:
                 return
@@ -1004,17 +847,17 @@ class EJLX(commands.Cog):
             embed.set_footer(
                 text=f"Minimos can ban or dismiss this message and unmute them"
             )
-            ciri_message = await message.reply(
-                f"<@&{ACTIVE_STAFF_ROLE}>", embed=embed, mention_author=False
-            )
-            view = BanDismissView(
-                message=ciri_message,
+            await button_ban(
+                channel=message.channel,
+                reply_message=message,
+                content=f"<@&{ACTIVE_STAFF_ROLE}>",
+                embed=embed,
+                mention_author=False,
                 bannees=[message.author],
                 reason="User mention spam",
                 minimo=True,
                 unmute_dismissed=True,
             )
-            await add_ban_dismiss(ciri_message, view)
 
     async def troll_check(self, message):
         if get_text_channel_id(message.channel) in [BOT_CHANNEL, VOICE_BOT_CHANNEL]:
@@ -1039,19 +882,17 @@ class EJLX(commands.Cog):
                             embed.set_footer(
                                 text=f"Minimos can ban or dismiss this message and unmute them"
                             )
-                            prompt = await message.reply(
-                                f"<@&{ACTIVE_STAFF_ROLE}>",
+                            await button_ban(
+                                channel=message.channel,
+                                reply_message=message,
+                                content=f"<@&{ACTIVE_STAFF_ROLE}>",
                                 embed=embed,
                                 mention_author=False,
-                            )
-                            view = BanDismissView(
-                                message=prompt,
                                 bannees=[author],
                                 reason="Spamming the same message 5 times in a row",
                                 minimo=True,
                                 unmute_dismissed=True,
                             )
-                            await add_ban_dismiss(prompt, view)
 
                         nu["count"] = 1
                         nu["timestamp"] = timestamp
@@ -1135,19 +976,17 @@ class EJLX(commands.Cog):
             embed.set_footer(
                 text=f"WPs can ban or dismiss this message and unmute them."
             )
-            prompt = await message.reply(
-                f"<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>",
+            await button_ban(
+                channel=message.channel,
+                reply_message=message,
+                content=f"<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>",
                 embed=embed,
                 mention_author=False,
-            )
-            view = BanDismissView(
-                message=prompt,
                 bannees=[author],
                 reason="New user trying to ping everyone",
                 wp=True,
                 unmute_dismissed=True,
             )
-            await add_ban_dismiss(prompt, view)
             return
 
         new_user_bad_word = None
@@ -1169,17 +1008,17 @@ class EJLX(commands.Cog):
             embed.set_footer(
                 text=f"WPs can ban or dismiss this message and unmute them."
             )
-            prompt = await message.reply(
-                f"<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>", embed=embed, mention_author=False
-            )
-            view = BanDismissView(
-                message=prompt,
+            await button_ban(
+                channel=message.channel,
+                reply_message=message,
+                content=f"<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>",
+                embed=embed,
+                mention_author=False,
                 bannees=[author],
                 reason=f"New user saying {new_user_bad_word}",
                 wp=True,
                 unmute_dismissed=True,
             )
-            await add_ban_dismiss(prompt, view)
             return
 
         for nu in self.nu_troll_msgs:
@@ -1197,19 +1036,17 @@ class EJLX(commands.Cog):
                             embed.set_footer(
                                 text=f"WPs can ban or dismiss this message and unmute them."
                             )
-                            prompt = await message.reply(
-                                f"<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>",
+                            await button_ban(
+                                channel=message.channel,
+                                reply_message=message,
+                                content=f"<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>",
                                 embed=embed,
                                 mention_author=False,
-                            )
-                            view = BanDismissView(
-                                message=prompt,
                                 bannees=[author],
                                 reason="New user spamming the same message 3 times in a row",
                                 wp=True,
                                 unmute_dismissed=True,
                             )
-                            await add_ban_dismiss(prompt, view)
                         nu["count"] = 1
                         nu["timestamp"] = timestamp
 
@@ -1261,15 +1098,16 @@ class EJLX(commands.Cog):
                     bannee = message.reference.cached_message.author
                     embed.description = f"{bannee} {joined_to_relative_time(bannee)}"
                     embed.set_footer(text=f"Minimos can ban or dismiss this message")
-                    ciri_message = await message.channel.send(embed=embed)
-                    view = BanDismissView(
-                        message=ciri_message,
+                    await button_ban(
+                        channel=message.channel,
+                        reply_message=message,
+                        embed=embed,
+                        mention_author=False,
                         bannees=[bannee],
                         reason="Active Staff ping auto detection",
                         minimo=True,
                         delete_dismissed=delete_dismissed,
                     )
-                    await add_ban_dismiss(ciri_message, view)
                 return
 
             messages = await message.channel.history(limit=50).flatten()
@@ -1301,19 +1139,19 @@ class EJLX(commands.Cog):
                             for i, m in enumerate(message.mentions[:10])
                         ]
                     )
-                    embed.set_footer(
-                        text=f"Minimos can click each number 3 times to ban them individually, BAN emoji 3 times to ban all of them, or ✅ to dismiss this message"
-                    )
-                    ciri_message = await message.channel.send(embed=embed)
-                    await self.reaction_ban_multiple(
-                        ciri_message,
-                        message.mentions,
+                    embed.set_footer(text=f"Minimos can ban or dismiss this message")
+                    await button_ban(
+                        channel=message.channel,
+                        embed=embed,
+                        mention_author=False,
+                        bannees=message.mentions,
                         reason="Active Staff ping auto detection",
+                        minimo=True,
                         delete_dismissed=delete_dismissed,
                     )
                     return
 
-                # check raid if last 4 people joined within 2 minutes
+                # check raid if last 4 people joined within 3 minutes
                 members_by_joined_date = sorted(
                     message.guild.members, key=lambda m: m.joined_at
                 )
@@ -1321,7 +1159,7 @@ class EJLX(commands.Cog):
                     members_by_joined_date[-1].joined_at
                     - members_by_joined_date[-4].joined_at
                 ).total_seconds()
-                if last_4_in < 120:
+                if last_4_in < 180:
                     # possible raid so just add new users who have said anything
                     new_users = dict()
                     for m in messages:
@@ -1347,13 +1185,15 @@ class EJLX(commands.Cog):
                         for i, b in enumerate(bannees[:10])
                     )
                     embed.set_footer(
-                        text=f"Minimos can click each number 3 times to ban them individually, BAN emoji 3 times to ban all of them, or ✅ to dismiss this message"
+                        text=f"Minimos can ban or dismiss this message"
                     )
-                    ciri_message = await message.channel.send(embed=embed)
-                    await self.reaction_ban_multiple(
-                        ciri_message,
-                        bannees,
+                    await button_ban(
+                        channel=message.channel,
+                        embed=embed,
+                        mention_author=False,
+                        bannees=bannees,
                         reason="Active Staff ping auto detection",
+                        minimo=True,
                         delete_dismissed=delete_dismissed,
                     )
                     return
@@ -1463,30 +1303,30 @@ class EJLX(commands.Cog):
                     b = bannees[0]
                     embed.description = f'{b["user"].mention} {joined_to_relative_time(b["user"])}.\n__Reasons__: {",".join(b["reasons"])}'
                     embed.set_footer(text=f"Minimos can ban or dismiss this message")
-                    ciri_message = await message.channel.send(embed=embed)
-
-                    view = BanDismissView(
-                        message=ciri_message,
+                    await button_ban(
+                        channel=message.channel,
+                        embed=embed,
+                        mention_author=False,
                         bannees=bannees,
                         reason="Active Staff ping auto detection",
                         delete_dismissed=delete_dismissed,
                         minimo=True,
                     )
-                    await add_ban_dismiss(ciri_message, view)
+
                     return 1
 
                 embed.description = "\n".join(
                     f'{NUMBER_EMOJIS[i]} {b["user"].mention} {joined_to_relative_time(b["user"])}. __Reasons__: {",".join(b["reasons"])}'
                     for i, b in enumerate(filtered_users)
                 )
-                embed.set_footer(
-                    text=f"Minimos can click each number 3 times to ban them individually, BAN emoji 3 times to ban all of them, or ✅ to dismiss this message"
-                )
-                ciri_message = await message.channel.send(embed=embed)
-                await self.reaction_ban_multiple(
-                    ciri_message,
-                    bannees,
+                embed.set_footer(text=f"Minimos can ban or dismiss this message")
+                await button_ban(
+                    channel=message.channel,
+                    embed=embed,
+                    mention_author=False,
+                    bannees=bannees,
                     reason="Active Staff ping auto detection",
+                    minimo=True,
                     delete_dismissed=delete_dismissed,
                 )
                 return len(bannees)
@@ -1584,19 +1424,17 @@ class EJLX(commands.Cog):
             embed.set_footer(
                 text=f"WPs can ban or dismiss this message and unmute them."
             )
-            prompt = await message.reply(
-                f"<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>",
+            await button_ban(
+                channel=message.channel,
+                content=f"<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>",
+                reply_message=message,
                 embed=embed,
                 mention_author=False,
-            )
-            view = BanDismissView(
-                message=prompt,
                 bannees=[message.author],
                 reason=f"Hacked Account Scamming: {domain}",
                 wp=True,
                 unmute_dismissed=True,
             )
-            await add_ban_dismiss(prompt, view)
 
         if (
             re.search(
