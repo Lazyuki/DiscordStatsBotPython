@@ -61,7 +61,7 @@ class Owner(commands.Cog):
         await ctx.send("Restarting...")
         self.bot.config.debugging = True
         await asyncio.create_subprocess_shell(
-            "(sleep 3 && . ~/.venv/bin/activate && nohup python3.10 launcher.py) &",
+            "(sleep 3 && . ~/.venv/bin/activate && nohup python3 launcher.py) &",
             close_fds=True,
         )
         await self.bot.close()

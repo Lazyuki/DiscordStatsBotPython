@@ -6,6 +6,7 @@ black==22.3.0
 chardet==4.0.0
 click==8.1.2
 dateparser==1.1.1
+# use `python -m pip install -U git+https://github.com/Rapptz/discord.py` to install the d.py master branch which supports threads
 discord.py @ git+https://github.com/Rapptz/discord.py@723584ca19e34604798043d6fa265785af794ebd
 emoji==1.7.0
 idna==3.3
