@@ -9,6 +9,7 @@ import traceback
 import re
 import io
 from contextlib import redirect_stdout
+from cogs.utils.ui import BanDismissView, add_ban_dismiss
 
 
 class Owner(commands.Cog):
@@ -185,6 +186,32 @@ class Owner(commands.Cog):
             result = await self.bot.loop.run_in_executor(None, process.communicate)
 
         return [output.decode() for output in result]
+
+    @commands.command(aliases=["bt"])
+    async def button_test(self, ctx, *, perm):
+        embed = discord.Embed(colour=0xFF0000)
+        embed.description = f"TEST"
+        wp = perm == "wp"
+        minimo = perm == "minimo"
+        mods = perm == "mods"
+
+        embed.set_footer(
+            text=f"{'WP' if wp else 'MINIMO' if minimo else 'MOD'}s can ban or dismiss this message and unmute them."
+        )
+        prompt = await ctx.reply(
+            f"test",
+            embed=embed,
+            mention_author=False,
+        )
+        view = BanDismissView(
+            message=prompt,
+            bannees=[ctx.author],
+            reason="New user trying to ping everyone",
+            wp=wp,
+            minimo=minimo,
+            unmute_dismissed=True,
+        )
+        await add_ban_dismiss(prompt, view)
 
 
 async def setup(bot):

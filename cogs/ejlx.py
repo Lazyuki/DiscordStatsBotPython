@@ -1170,7 +1170,7 @@ class EJLX(commands.Cog):
                 text=f"WPs can ban or dismiss this message and unmute them."
             )
             prompt = await message.reply(
-                f"<@&{ACTIVE_STAFF_ROLE}>", embed=embed, mention_author=False
+                f"<@&{ACTIVE_STAFF_ROLE}><@&{WP_ROLE}>", embed=embed, mention_author=False
             )
             view = BanDismissView(
                 message=prompt,
@@ -1247,8 +1247,6 @@ class EJLX(commands.Cog):
     async def staff_ping(
         self, message, title="Active Staff Ping Ban Menu", delete_dismissed=True
     ):
-        msg_content = re.sub(REGEX_DISCORD_OBJ, "", message.content)
-
         # new users shouldn't trigger ban detections
         if (
             has_any_role(message.author, LANG_ROLE_IDS)
@@ -1269,7 +1267,6 @@ class EJLX(commands.Cog):
                         bannees=[bannee],
                         reason="Active Staff ping auto detection",
                         minimo=True,
-                        wp=False,
                         delete_dismissed=delete_dismissed,
                     )
                     await add_ban_dismiss(ciri_message, view)
