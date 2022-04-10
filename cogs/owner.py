@@ -10,6 +10,7 @@ import re
 import io
 from contextlib import redirect_stdout
 from cogs.utils.ui import button_ban
+from cogs.utils.app_commands import init_ejlx_commands, delete_ejlx_commands
 
 
 class Owner(commands.Cog):
@@ -210,6 +211,16 @@ class Owner(commands.Cog):
             reply_message=ctx.message,
             mention_author=False,
         )
+
+    @commands.command(aliases=["cm"])
+    async def context_menu(self, ctx, *, on_off=""):
+        on = on_off == "on"
+        if on:
+            await init_ejlx_commands(ctx.bot)
+            await ctx.send("Turned on EJLX context menu")
+        else:
+            await delete_ejlx_commands(ctx.bot)
+            await ctx.send("Turned off EJLX context menu")
 
 
 async def setup(bot):

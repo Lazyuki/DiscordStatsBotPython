@@ -319,7 +319,9 @@ You must enable `Allow direct messages from server members` for this server in P
             if banner_match:
                 real_banner = guild.get_member(int(banner_match.group(0)))
                 if real_banner:
-                    banner_name = f"{real_banner} using {banner}"
+                    banner_name = (
+                        f"{real_banner.mention} ({real_banner}) using {banner.mention}"
+                    )
                     reason_split = reason.split("Reason:")
                     if len(reason_split) > 1:
                         reason = "Reason: ".join(reason_split[1:]).strip()
