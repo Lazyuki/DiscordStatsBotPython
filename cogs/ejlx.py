@@ -198,18 +198,6 @@ async def send_music_bot_notif(message):
     )
 
 
-async def jp_only(message):
-    pass
-
-
-async def check_kanji(message):
-    pass
-
-
-async def check_lang_switch(message):
-    pass
-
-
 def is_in_ejlx():
     async def predicate(ctx):
         return ctx.guild and ctx.guild.id == EJLX_ID
@@ -774,10 +762,7 @@ class EJLX(commands.Cog):
         msg = reaction.message
         if has_any_role(msg.author, LANG_ROLE_IDS):
             if msg.channel.id == INTRO:
-                await asyncio.gather(
-                    reaction.remove(user),
-                    reaction.remove(self.bot.user),
-                )
+                await reaction.clear()
             else:
                 await msg.clear_reactions()
             return
@@ -804,7 +789,7 @@ class EJLX(commands.Cog):
             self._recently_tagged = None
 
         if msg.channel.id == INTRO:
-            await asyncio.gather(reaction.remove(user), reaction.remove(self.bot.user))
+            await reaction.clear()
         else:
             await asyncio.gather(
                 msg.clear_reactions(),
@@ -1184,9 +1169,7 @@ class EJLX(commands.Cog):
                         f'{NUMBER_EMOJIS[i]}: {b} {joined_to_relative_time(b)}.{NL}Messages: {new_users[b.id]["contents"]}'
                         for i, b in enumerate(bannees[:10])
                     )
-                    embed.set_footer(
-                        text=f"Minimos can ban or dismiss this message"
-                    )
+                    embed.set_footer(text=f"Minimos can ban or dismiss this message")
                     await button_ban(
                         channel=message.channel,
                         embed=embed,
@@ -1492,12 +1475,7 @@ class EJLX(commands.Cog):
             else:
                 await self.troll_check(message)
         await self.mention_spam(message)
-        if get_text_channel_id(message.channel) == JP_CHAT:
-            await jp_only(message)
-        elif get_text_channel_id(message.channel) == JP_BEGINNER:
-            await check_kanji(message)
-        elif get_text_channel_id(message.channel) == LANG_SWITCH:
-            await check_lang_switch(message)
+
         if len(message.role_mentions) > 0:
             await self.check_role_mentions(message)
         if get_text_channel_id(message.channel) == BOT_CHANNEL:
