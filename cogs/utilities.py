@@ -23,7 +23,7 @@ class Utilities(commands.Cog):
         self.bot = bot
         self.settings = bot.settings
 
-    @commands.command()
+    @commands.command(aliases=["booster", "boost", "boosts"])
     async def boosters(self, ctx):
         """Show Nitro Boosters"""
         embed = discord.Embed(colour=BOOSTER_COLOR)
@@ -199,8 +199,8 @@ You must enable `Allow direct messages from server members` for this server in P
 
                 asyncio.ensure_future(unmute())
 
-    @commands.command()
-    async def date(self, ctx: commands.Context, *, arg=None):
+    @commands.command(aliases=["date", "time", "ts"])
+    async def timestamp(self, ctx: commands.Context, *, arg=None):
         """
         Converts human readable date-time text or Discord ID into a timezone aware Discord timestamp.
         Flags:
