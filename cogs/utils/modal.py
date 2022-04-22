@@ -40,4 +40,7 @@ async def send_modal(
 ):
     modal = Questionnaire(title="EJLX Questionnaire", timeout=300.0)
     view = ButtonView(modal=modal)
-    await channel.send(content=content, view=view)
+    message = await channel.send(content=content, view=view)
+    timed_out = await view.wait()
+    if timed_out:
+        await message.edit(content="timed out")

@@ -58,3 +58,5 @@ async def send_dropdown(
             embed = message.embeds[0].copy()
             embed.set_footer(text=f"Timed out after 5 minutes")
             await message.edit(content=message.content, embed=embed, view=None)
+        else:
+            await message.edit(content="expired")
