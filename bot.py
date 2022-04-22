@@ -38,9 +38,7 @@ async def safe_message(message):
     pass
 
 
-PREFIX_OVERRIDES_REGEX = re.compile(
-    rf'^,(?:h(elp)?\s)?({"|".join(config.ciri_overrides)})(?:\s|$)'
-)
+PREFIX_OVERRIDES_REGEX = re.compile(rf'^,({"|".join(config.ciri_overrides)})(?:\s|$)')
 
 
 def dynamic_prefix(bot, message):

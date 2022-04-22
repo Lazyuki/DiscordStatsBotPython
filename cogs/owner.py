@@ -10,6 +10,8 @@ import re
 import io
 from contextlib import redirect_stdout
 from cogs.utils.ui import button_ban
+from cogs.utils.dropdown import send_dropdown
+from cogs.utils.modal import send_modal
 from cogs.utils.app_commands import init_ejlx_commands, delete_ejlx_commands
 
 
@@ -221,6 +223,14 @@ class Owner(commands.Cog):
         else:
             await delete_ejlx_commands(ctx.bot)
             await ctx.send("Turned off EJLX context menu")
+
+    @commands.command(aliases=["dd"])
+    async def dropdown_test(self, ctx):
+        await send_dropdown(ctx.channel, "Dropdown Test")
+
+    @commands.command(aliases=["md"])
+    async def modal_test(self, ctx):
+        await send_modal(ctx.channel, "Modal Test")
 
 
 async def setup(bot):
