@@ -29,7 +29,7 @@ class DropdownView(ui.View):
     @ui.select(placeholder="Language Role", options=options)
     async def select(self, interaction: discord.Interaction, menu: discord.ui.Select):
         await interaction.response.send_message(
-            f"You have chosen <@{menu.values[0]}>", ephemeral=True
+            f"You have chosen <@&{menu.values[0]}>", ephemeral=True
         )
 
     async def interaction_check(self, interaction):
