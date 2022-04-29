@@ -129,7 +129,7 @@ async def button_ban(
     delete_dismissed: bool = False,
     reason: str = "Unspecified",
     content: str = "",
-    reply_message: discord.Message = None,
+    reply_message: discord.Message | None = None,
     mention_author: bool = False,
 ):
     view = BanDismissView(

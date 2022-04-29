@@ -290,7 +290,7 @@ class EJLX(commands.Cog):
             asyncio.ensure_future(init_invites(self))
 
     async def cog_check(self, ctx):
-        return ctx.guild.id == EJLX_ID
+        return ctx.guild and ctx.guild.id == EJLX_ID
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -844,22 +844,71 @@ class EJLX(commands.Cog):
                 unmute_dismissed=True,
             )
 
-    async def troll_check(self, message):
+    async def troll_check(self, message: GuildMessage):
         if get_text_channel_id(message.channel) in [BOT_CHANNEL, VOICE_BOT_CHANNEL]:
+            return
+        mute_role = message.guild.get_role(CHAT_MUTE_ROLE)
+        if not mute_role:
             return
         author = message.author
         content = message.clean_content.lower()
         timestamp = message.created_at
         msg_len = len(re.sub(REGEX_DISCORD_OBJ, "", message.content))
+        urlMatch = URL_REGEX.search(content)
+
+        if "@everyone" in message.content and urlMatch:
+            await author.add_roles(
+                mute_role,
+                reason="Possible spam detected. This user tried to ping everyone with a link",
+            )
+            embed = discord.Embed(colour=0xFF0000)
+            embed.description = f'{author.mention} has been **muted automatically** for trying to ping everyone with a link.\n> {content[:100] + "..." if len(content) > 100 else content}'
+            embed.set_footer(
+                text=f"Minimo can ban or dismiss this message and unmute them."
+            )
+            await button_ban(
+                channel=message.channel,
+                reply_message=message,
+                content=f"<@&{ACTIVE_STAFF_ROLE}>",
+                embed=embed,
+                mention_author=False,
+                bannees=[author],
+                reason="User trying to ping everyone with a link",
+                wp=False,
+                minimo=True,
+                unmute_dismissed=True,
+            )
+            return
 
         for nu in self.troll_msgs:
             if nu["id"] == author.id:
                 if nu["content"] == content or nu["content"] + nu["content"] == content:
                     nu["count"] += 1
-                    if nu["count"] >= 5:
+                    if nu["count"] >= 3 and "@everyone" in nu["content"]:
+                        await author.add_roles(
+                            mute_role,
+                            reason="Possible spam detected. The user has sent the same message 3 times in a row",
+                        )
+                        embed = discord.Embed(colour=0xFF0000)
+                        embed.description = f'{author.mention} has been **muted automatically** due to spamming the same message 5 times in a row.\n> {content[:100] + "..." if len(content) > 100 else content}'
+                        embed.set_footer(
+                            text=f"Minimos can ban or dismiss this message and unmute them"
+                        )
+                        await button_ban(
+                            channel=message.channel,
+                            reply_message=message,
+                            content=f"<@&{ACTIVE_STAFF_ROLE}>",
+                            embed=embed,
+                            mention_author=False,
+                            bannees=[author],
+                            reason="Spamming the same message 3 times in a row",
+                            minimo=True,
+                            unmute_dismissed=True,
+                        )
+                    elif nu["count"] >= 5:
                         if (timestamp - nu["timestamp"]).total_seconds() <= 30:
                             await author.add_roles(
-                                message.guild.get_role(CHAT_MUTE_ROLE),
+                                mute_role,
                                 reason="Possible spam detected. The user has sent the same message 5 times in a row",
                             )
                             embed = discord.Embed(colour=0xFF0000)
@@ -1095,7 +1144,7 @@ class EJLX(commands.Cog):
                     )
                 return
 
-            messages = await message.channel.history(limit=50).flatten()
+            messages = (await message.channel.history(limit=50)).flatten()
             user_set = set([m.author for m in messages if not m.author.bot])
             user_dict = {u.id: {"user": u, "count": 0} for u in user_set}
             stats = self.bot.get_cog("Stats")  # type: ignore
