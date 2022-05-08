@@ -114,10 +114,12 @@ KNOWN_SCAM_DOMAINS = [
     "discord-me.com",
     "discqrde.com",
     "disczrd.com",
+    "dlscrod-app.com",
 ]
 WHITE_LIST_DOMAINS = [
     "discord.me",
     "steamcommunity.com",
+    "steampowered.com",
     "dis.gd",
     "www.youtube.com",
     "discordmerch.com",
@@ -1468,18 +1470,17 @@ class EJLX(commands.Cog):
                 unmute_dismissed=True,
             )
 
-        if (
-            re.search(
-                r"(cs:? ?go|n[i1l]tro|steam|skin|d[il1]sc[qo0O]rc?[ld]|bro|airdrop)",
-                content,
-            )
-        ) and (
+        if (re.search(r"(cs:? ?go|n[i1l]tro|steam|airdrop)", content)) and (
             re.search(
                 r"(free|gift|offer|give|giving|hack|promotion|take it|is first)",
                 content,
             )
         ):
-            if domain.endswith(".ru") or domain.endswith(".ru.com"):
+            if (
+                domain.endswith(".ru")
+                or domain.endswith(".ru.com")
+                or re.search(r"(get (free )?(discord )?nitro)", content)
+            ):
                 await message.author.ban(
                     delete_message_days=1, reason=f"Auto-banned. Scam: {domain}"
                 )
