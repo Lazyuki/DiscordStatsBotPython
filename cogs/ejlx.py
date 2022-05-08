@@ -474,6 +474,12 @@ class EJLX(commands.Cog):
 
         await ctx.send("")
 
+    @commands.command(aliases=["scam", "scamtest"])
+    @commands.check(has_manage_guild)
+    async def test_scam(self, ctx):
+        if URL_REGEX.search(ctx.message.content):
+            await self.ban_scammers(ctx.message, True)
+
     async def check_role_mentions(self, message: GuildMessage):
         clubs = self.settings[message.guild.id].clubs
         for role in message.role_mentions:
@@ -1395,8 +1401,11 @@ class EJLX(commands.Cog):
                     )
                     return
 
-    async def ban_scammers(self, message: GuildMessage):
+    async def ban_scammers(self, message: GuildMessage, test=False):
         content = message.content.lower()
+        if content.startswith(",") and not test:
+            # test command processed as a message
+            return False
         content = re.sub(r"[\u200B-\u200F\uFEFF]", "", content)
         url = URL_REGEX.search(content)[0]  # type: ignore
         domain = re.match(r"https?://([^/]+)", url)[1]  # type: ignore
@@ -1427,6 +1436,9 @@ class EJLX(commands.Cog):
                 reason = f"Suspicious file: {file}"
 
             if reason:
+                if test:
+                    await message.channel.send(f"Scam Test: Banned for {reason}")
+                    return True
                 await message.author.ban(
                     delete_message_days=1,
                     reason=f"Auto-banned: {reason}.{NL}Domain: {domain}",
@@ -1437,6 +1449,9 @@ class EJLX(commands.Cog):
                 return True
 
         if domain in KNOWN_SCAM_DOMAINS:
+            if test:
+                await message.channel.send(f"Scam Test: Banned for: known scam domain")
+                return True
             await message.author.ban(
                 delete_message_days=1, reason=f"Auto-banned. Scam: {domain}"
             )
@@ -1447,6 +1462,9 @@ class EJLX(commands.Cog):
 
         async def mute_potential_scammer():
             mute_role = message.guild.get_role(CHAT_MUTE_ROLE)
+            if test:
+                await message.channel.send(f"Scam Test: muted")
+                return True
             if mute_role:
                 await message.author.add_roles(
                     mute_role, reason="Possible scam detected"
@@ -1476,11 +1494,12 @@ class EJLX(commands.Cog):
                 content,
             )
         ):
-            if (
-                domain.endswith(".ru")
-                or domain.endswith(".ru.com")
-                or re.search(r"(get (free )?(discord )?nitro)", content)
-            ):
+            if domain.endswith(".ru") or domain.endswith(".ru.com"):
+                if test:
+                    await message.channel.send(
+                        f"Scam Test: Banned for russian scam link"
+                    )
+                    return True
                 await message.author.ban(
                     delete_message_days=1, reason=f"Auto-banned. Scam: {domain}"
                 )
@@ -1488,7 +1507,26 @@ class EJLX(commands.Cog):
                     f"{message.author.mention} has been banned automatically for: Russian Scam Link"
                 )
                 return True
+            if re.search(r"(get (free )?(discord )?nitro)", content):
+                if test:
+                    await message.channel.send(
+                        f"Scam Test: Banned for free nitro scam link"
+                    )
+                    return True
+                await message.author.ban(
+                    delete_message_days=1, reason=f"Auto-banned. Scam: {domain}"
+                )
+                await message.channel.send(
+                    f"{message.author.mention} has been banned automatically for: Free Nitro Scam"
+                )
+                return True
+
             if re.search(r"d[l1i]sc[qo0]r(d|cl|l)", domain):
+                if test:
+                    await message.channel.send(
+                        f"Scam Test: Banned for fake discord link"
+                    )
+                    return True
                 await message.author.ban(
                     delete_message_days=1,
                     reason=f"Auto-banned. Fake Discord Link Scam: {domain}",
