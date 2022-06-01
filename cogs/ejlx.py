@@ -131,7 +131,7 @@ INSTABAN_REGEXES = [
         r"\b(fag(got)?s?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|n[i1](?P<nixxer>\S)(?P=nixxer)([e3]r|a|let)s?|penis|cum|hitler|pussy)\b"
     ),
     re.compile(r"(o?chin ?chin)"),
-    re.compile(r"(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ|死ね)"),
+    re.compile(r"(ニガー|セックス|[チマ]ンコ(?!(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ|死ね)"),
 ]
 WARN_REGEXES = [
     re.compile(r"\b(japs?|rape|discord\.gg|simps?)\b"),
