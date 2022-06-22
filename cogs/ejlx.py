@@ -1410,17 +1410,20 @@ class EJLX(commands.Cog):
         url = URL_REGEX.search(content)[0]  # type: ignore
         domain = re.match(r"https?://([^/]+)", url)[1]  # type: ignore
         tld = domain.split(".")[-1]
+        reason = ""
         if (
             re.match(r"(.*\.)?discord(app|status)?\.(com|gg|gifts?|media|net)$", domain)
             or domain in WHITE_LIST_DOMAINS
         ):
-            return  # safe legit URL
+            if domain == "discord.gg" and "@everyone" in content:
+                reason = "everyone ping + invite"
+            else:
+                return  # safe legit URL
         if (
             "@everyone" in content
             or re.match(r"^(hi|hey|hello|bro)", content)
             or re.match(r"gifts?", tld)
         ):
-            reason = ""
             if "nitro" in content or "gift" in content or "airdrop" in content:
                 reason = "Nitro Scam"
             elif re.search(r"(cs:? ?go|steam)", content):
@@ -1435,18 +1438,18 @@ class EJLX(commands.Cog):
                 file = url.split("/")[-1]
                 reason = f"Suspicious file: {file}"
 
-            if reason:
-                if test:
-                    await message.channel.send(f"Scam Test: Banned for {reason}")
-                    return True
-                await message.author.ban(
-                    delete_message_days=1,
-                    reason=f"Auto-banned: {reason}.{NL}Domain: {domain}",
-                )
-                await message.channel.send(
-                    f"{message.author.mention} has been banned automatically for: {reason}"
-                )
+        if reason:
+            if test:
+                await message.channel.send(f"Scam Test: Banned for {reason}")
                 return True
+            await message.author.ban(
+                delete_message_days=1,
+                reason=f"Auto-banned: {reason}.{NL}Domain: {domain}",
+            )
+            await message.channel.send(
+                f"{message.author.mention} has been banned automatically for: {reason}"
+            )
+            return True
 
         if domain in KNOWN_SCAM_DOMAINS:
             if test:
