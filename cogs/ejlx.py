@@ -93,7 +93,7 @@ CYRILLIC_REGEX = re.compile(r"^[\u0400-\u04FF]+$")
 N_WORD_REGEX = re.compile(r"n[i1]gg[ae3]r?s?")
 RACIST_REGEX = re.compile(r"ching ch[oa]ng")
 BAD_WORDS_REGEX = re.compile(
-    r"(fags?|faggots?|chinks?|(ch[iao]ng ch[iao]ng)|hiroshima|nagasaki|nanking|niggas?)"
+    r"(fags?|faggots?|\bchinks?\b|(ch[iao]ng ch[iao]ng)|hiroshima|nagasaki|nanking|niggas?)"
 )
 BAD_JP_WORDS_REGEX = re.compile(r"(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ)")
 INVITES_REGEX = re.compile(
