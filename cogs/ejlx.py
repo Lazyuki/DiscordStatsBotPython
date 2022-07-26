@@ -892,13 +892,15 @@ class EJLX(commands.Cog):
             if nu["id"] == author.id:
                 if nu["content"] == content or nu["content"] + nu["content"] == content:
                     nu["count"] += 1
-                    if nu["count"] >= 3 and "@everyone" in nu["content"]:
+                    if nu["count"] >= 3 and (
+                        "@everyone" in nu["content"] or "discord.gg" in nu["content"]
+                    ):
                         await author.add_roles(
                             mute_role,
                             reason="Possible spam detected. The user has sent the same message 3 times in a row",
                         )
                         embed = discord.Embed(colour=0xFF0000)
-                        embed.description = f'{author.mention} has been **muted automatically** due to spamming the same message 5 times in a row.\n> {content[:100] + "..." if len(content) > 100 else content}'
+                        embed.description = f'{author.mention} has been **muted automatically** due to spamming the same message 3 times in a row.\n> {content[:100] + "..." if len(content) > 100 else content}'
                         embed.set_footer(
                             text=f"Minimos can ban or dismiss this message and unmute them"
                         )
