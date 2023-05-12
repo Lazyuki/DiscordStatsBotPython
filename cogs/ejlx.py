@@ -90,6 +90,7 @@ ARABIC_REGEX = re.compile(r"^[\u0600-\u06FF\u200f\u200e0-9]+$")
 HEBREW_REGEX = re.compile(r"^[\u0590-\u05FF\u200f\u200e]+$")
 HANGUL_REGEX = re.compile(r"^[\u3131-\uD79D]+$")
 CYRILLIC_REGEX = re.compile(r"^[\u0400-\u04FF]+$")
+ZERO_WIDTH_REGEX = re.compile(r"[\udb40\udc17\udc18\udc15]")
 N_WORD_REGEX = re.compile(r"n[i1]gg[ae3]r?s?")
 RACIST_REGEX = re.compile(r"ching ch[oa]ng")
 BAD_WORDS_REGEX = re.compile(
@@ -121,7 +122,8 @@ WHITE_LIST_DOMAINS = [
     "steamcommunity.com",
     "steampowered.com",
     "dis.gd",
-    "www.youtube.com",
+    "youtube.com",
+    "youtu.be",
     "discordmerch.com",
 ]
 
@@ -1410,7 +1412,7 @@ class EJLX(commands.Cog):
             return False
         content = re.sub(r"[\u200B-\u200F\uFEFF]", "", content)
         url = URL_REGEX.search(content)[0]  # type: ignore
-        domain = re.match(r"https?://([^/]+)", url)[1]  # type: ignore
+        domain = ".".join(re.match(r"https?://([^/]+)", url)[1].split('.')[-2:])  # type: ignore
         tld = domain.split(".")[-1]
         reason = ""
         if (
