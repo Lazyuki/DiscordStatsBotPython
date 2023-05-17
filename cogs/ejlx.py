@@ -94,7 +94,7 @@ ZERO_WIDTH_REGEX = re.compile(r"[\udb40\udc17\udc18\udc15]")
 N_WORD_REGEX = re.compile(r"n[i1]gg[ae3]r?s?")
 RACIST_REGEX = re.compile(r"ching ch[oa]ng")
 BAD_WORDS_REGEX = re.compile(
-    r"(fags?|faggots?|\bchinks?\b|(ch[iao]ng ch[iao]ng)|hiroshima|nagasaki|nanking|niggas?)"
+    r"(fags?|faggots?|\bchinks?\b|(ch[iao]ng ch[iao]ng)|nanking|niggas?)"
 )
 BAD_JP_WORDS_REGEX = re.compile(r"(ニガー|セックス|[チマ]ンコ(?!.(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ)")
 INVITES_REGEX = re.compile(
@@ -130,7 +130,7 @@ WHITE_LIST_DOMAINS = [
 # stage chanel regexes
 INSTABAN_REGEXES = [
     re.compile(
-        r"\b(fag(got)?s?|chinks?|ch[iao]ng|hiroshima|nagasaki|nanking|n[i1](?P<nixxer>\S)(?P=nixxer)([e3]r|a|let)s?|penis|cum|hitler|pussy)\b"
+        r"\b(fag(got)?s?|chinks?|ch[iao]ng|nanking|n[i1](?P<nixxer>\S)(?P=nixxer)([e3]r|a|let)s?|penis|cum|hitler|pussy)\b"
     ),
     re.compile(r"(o?chin ?chin)"),
     re.compile(r"(ニガー|セックス|[チマ]ンコ(?!(?<=[ガパカ]チンコ))|ちんちん|死ね|[ちまう]んこ|死ね)"),
