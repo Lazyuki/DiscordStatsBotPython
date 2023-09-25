@@ -125,6 +125,9 @@ WHITE_LIST_DOMAINS = [
     "youtube.com",
     "youtu.be",
     "discordmerch.com",
+    "github.com",
+    "google.com",
+    "co.jp",
 ]
 
 # stage chanel regexes
