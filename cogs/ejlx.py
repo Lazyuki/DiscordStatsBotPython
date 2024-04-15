@@ -91,7 +91,7 @@ HEBREW_REGEX = re.compile(r"^[\u0590-\u05FF\u200f\u200e]+$")
 HANGUL_REGEX = re.compile(r"^[\u3131-\uD79D]+$")
 CYRILLIC_REGEX = re.compile(r"^[\u0400-\u04FF]+$")
 ZERO_WIDTH_REGEX = re.compile(r"[\udb40\udc17\udc18\udc15]")
-N_WORD_REGEX = re.compile(r"n[i1]gg[ae3]r?s?")
+N_WORD_REGEX = re.compile(r"[Νnν][i1]gg[ae3е]r?s?")
 RACIST_REGEX = re.compile(r"ching ch[oa]ng")
 BAD_WORDS_REGEX = re.compile(
     r"(fags?|faggots?|\bchinks?\b|(ch[iao]ng ch[iao]ng)|nanking|niggas?)"
