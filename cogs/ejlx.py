@@ -1422,8 +1422,11 @@ class EJLX(commands.Cog):
             re.match(r"(.*\.)?discord(app|status)?\.(com|gg|gifts?|media|net)$", domain)
             or domain in WHITE_LIST_DOMAINS
         ):
-            if domain == "discord.gg" and "@everyone" in content:
-                reason = "everyone ping + invite"
+            if (domain == "discord.gg" or domain == "discord.com"):
+                if "@everyone" in content or "@here" in content: 
+                    reason = "everyone ping + invite"
+                if "porn" in content or "leak" in content or "nude" in content:
+                    reason = "NSFW invite"
             else:
                 return  # safe legit URL
         if (
@@ -1449,6 +1452,7 @@ class EJLX(commands.Cog):
             if test:
                 await message.channel.send(f"Scam Test: Banned for {reason}")
                 return True
+            await message.delete()
             await message.author.ban(
                 delete_message_days=1,
                 reason=f"Auto-banned: {reason}.{NL}Domain: {domain}",
