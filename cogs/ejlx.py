@@ -1426,7 +1426,9 @@ class EJLX(commands.Cog):
                 if "@everyone" in content or "@here" in content: 
                     reason = "everyone ping + invite"
                 if "porn" in content or "leak" in content or "nude" in content:
-                    reason = "NSFW invite"
+                    reason = "NSFW scam invite"
+                if "assignment" in content and ("wa.me" in content or "whatsapp" in content or "plagiarism" in content):
+                    reason = "assignment scam invite"
             else:
                 return  # safe legit URL
         if (
