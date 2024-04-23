@@ -100,7 +100,7 @@ BAD_JP_WORDS_REGEX = re.compile(r"(ニガー|セックス|[チマ]ンコ(?!.(?<=
 INVITES_REGEX = re.compile(
     r"(https?://)?(www.)?(discord.(gg|io|me|li)|discord(app)?.com/invite)/.+[a-z]"
 )
-URL_REGEX = re.compile(r"(https?://\S+)")
+URL_REGEX = re.compile(r"((?:https?://|discord.gg/)\S+)")
 KNOWN_SCAM_DOMAINS = [
     "discordgift.ru.com",
     "discord-airdrop.com",
@@ -1415,14 +1415,14 @@ class EJLX(commands.Cog):
             return False
         content = re.sub(r"[\u200B-\u200F\uFEFF]", "", content)
         url = URL_REGEX.search(content)[0]  # type: ignore
-        domain = ".".join(re.match(r"https?://([^/]+)", url)[1].split('.')[-2:])  # type: ignore
+        domain = (url.startswith("discord") and "discord.gg") or ".".join(re.match(r"https?://([^/]+)", url)[1].split('.')[-2:])  # type: ignore
         tld = domain.split(".")[-1]
         reason = ""
         if (
             re.match(r"(.*\.)?discord(app|status)?\.(com|gg|gifts?|media|net)$", domain)
             or domain in WHITE_LIST_DOMAINS
         ):
-            if (domain == "discord.gg" or "discord.com/invite" in url):
+            if (domain == "discord.gg" or "//discord.com/invite" in url):
                 if "@everyone" in content or "@here" in content: 
                     reason = "everyone ping + invite"
                 if "porn" in content or "leak" in content or "nude" in content:
