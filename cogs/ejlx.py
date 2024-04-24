@@ -100,7 +100,7 @@ BAD_JP_WORDS_REGEX = re.compile(r"(ニガー|セックス|[チマ]ンコ(?!.(?<=
 INVITES_REGEX = re.compile(
     r"(https?://)?(www.)?(discord.(gg|io|me|li)|discord(app)?.com/invite)/.+[a-z]"
 )
-URL_REGEX = re.compile(r"((?:https?://|discord.gg/)\S+)")
+URL_REGEX = re.compile(r"((?:https?://|discord\.gg/)\S+)")
 KNOWN_SCAM_DOMAINS = [
     "discordgift.ru.com",
     "discord-airdrop.com",
@@ -484,6 +484,7 @@ class EJLX(commands.Cog):
     async def test_scam(self, ctx):
         if URL_REGEX.search(ctx.message.content):
             await self.ban_scammers(ctx.message, True)
+        
 
     async def check_role_mentions(self, message: GuildMessage):
         clubs = self.settings[message.guild.id].clubs
@@ -1425,7 +1426,7 @@ class EJLX(commands.Cog):
             if (domain == "discord.gg" or "//discord.com/invite" in url):
                 if "@everyone" in content or "@here" in content: 
                     reason = "everyone ping + invite"
-                if "porn" in content or "leak" in content or "nude" in content:
+                if "porn" in content or "leak" in content or "nude" in content or "18+" in content or "onlyfans" in content:
                     reason = "NSFW scam invite"
                 if "assignment" in content and ("wa.me" in content or "whatsapp" in content or "plagiarism" in content):
                     reason = "assignment scam invite"
@@ -1475,6 +1476,10 @@ class EJLX(commands.Cog):
                 f"{message.author.mention} has been banned automatically for: Known Scam Link"
             )
             return True
+        if test:
+            await message.channel.send(f"Scam Test: no scam detected")
+            return True
+
 
         async def mute_potential_scammer():
             mute_role = message.guild.get_role(CHAT_MUTE_ROLE)
