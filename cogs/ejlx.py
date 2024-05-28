@@ -1423,7 +1423,7 @@ class EJLX(commands.Cog):
             re.match(r"(.*\.)?discord(app|status)?\.(com|gg|gifts?|media|net)$", domain)
             or domain in WHITE_LIST_DOMAINS
         ):
-            if (domain == "discord.gg" or "//discord.com/invite" in url):
+            if (domain == "discord.gg" or "//discord.com/invite" in url or domain == 'wa.me'):
                 if "@everyone" in content or "@here" in content: 
                     reason = "everyone ping + invite"
                 if "porn" in content or "leak" in content or "nude" in content or "18+" in content or "onlyfans" in content:
