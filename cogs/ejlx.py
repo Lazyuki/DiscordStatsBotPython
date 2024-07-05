@@ -1556,6 +1556,20 @@ class EJLX(commands.Cog):
                     f"{message.author.mention} has been banned automatically for: Fake Discord Link Scam"
                 )
                 return True
+            if re.search(r"\[steamcommunity\.com/gift/\S+\]\(\S+\)", content):
+                if test:
+                    await message.channel.send(
+                        f"Scam Test: Banned for steam gift scam"
+                    )
+                    return True
+                await message.author.ban(
+                    delete_message_days=1,
+                    reason=f"Auto-banned. Steam Gift Scam: {domain}",
+                )
+                await message.channel.send(
+                    f"{message.author.mention} has been banned automatically for: Steam Gift Scam"
+                )
+                return True
             await mute_potential_scammer()
 
         if "@everyone" in content:
