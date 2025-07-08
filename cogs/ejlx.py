@@ -90,8 +90,9 @@ ARABIC_REGEX = re.compile(r"^[\u0600-\u06FF\u200f\u200e0-9]+$")
 HEBREW_REGEX = re.compile(r"^[\u0590-\u05FF\u200f\u200e]+$")
 HANGUL_REGEX = re.compile(r"^[\u3131-\uD79D]+$")
 CYRILLIC_REGEX = re.compile(r"^[\u0400-\u04FF]+$")
-ZERO_WIDTH_REGEX = re.compile(r"[\udb40\udc17\udc18\udc15\ufff0-\uffff]")
+ZERO_WIDTH_REGEX = re.compile(r"[\udb40\udc17\udc18\udc15\u200a-\u200f\u2060\ufeff\u202a-\u202f\ufff0-\uffff]")
 N_WORD_REGEX = re.compile(r"[Νnν][i1]gg[ae3е]r?s?")
+HARD_N_WORD_REGEX = re.compile(r"[Νnν][i1l]gg[e3е]r")
 RACIST_REGEX = re.compile(r"ching ch[oa]ng")
 BAD_WORDS_REGEX = re.compile(
     r"(fags?|faggots?|\bchinks?\b|(ch[iao]ng ch[iao]ng)|nanking|niggas?)"
@@ -485,7 +486,6 @@ class EJLX(commands.Cog):
         if URL_REGEX.search(ctx.message.content):
             await self.ban_scammers(ctx.message, True)
         
-
     async def check_role_mentions(self, message: GuildMessage):
         clubs = self.settings[message.guild.id].clubs
         for role in message.role_mentions:
@@ -1415,7 +1415,7 @@ class EJLX(commands.Cog):
         if content.startswith(",") and not test:
             # test command processed as a message
             return False
-        content = re.sub(r"[\u200B-\u200F\uFEFF]", "", content)
+        content = re.sub(ZERO_WIDTH_REGEX, "", content)
         url = URL_REGEX.search(content)[0]  # type: ignore
         domain = (url.startswith("discord") and "discord.gg") or ".".join(re.match(r"https?://([^/]+)", url)[1].split('.')[-2:])  # type: ignore
         tld = domain.split(".")[-1]
