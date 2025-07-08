@@ -90,7 +90,7 @@ ARABIC_REGEX = re.compile(r"^[\u0600-\u06FF\u200f\u200e0-9]+$")
 HEBREW_REGEX = re.compile(r"^[\u0590-\u05FF\u200f\u200e]+$")
 HANGUL_REGEX = re.compile(r"^[\u3131-\uD79D]+$")
 CYRILLIC_REGEX = re.compile(r"^[\u0400-\u04FF]+$")
-ZERO_WIDTH_REGEX = re.compile(r"[\udb40\udc17\udc18\udc15]")
+ZERO_WIDTH_REGEX = re.compile(r"[\udb40\udc17\udc18\udc15\ufff0-\uffff]")
 N_WORD_REGEX = re.compile(r"[Νnν][i1]gg[ae3е]r?s?")
 RACIST_REGEX = re.compile(r"ching ch[oa]ng")
 BAD_WORDS_REGEX = re.compile(
@@ -974,6 +974,7 @@ class EJLX(commands.Cog):
         safe_content = re.sub(
             r'"[^"]+"', "", message.content.lower()
         )  # Ignore quoted messages
+        safe_content = re.sub(ZERO_WIDTH_REGEX, "", safe_content)
         author = message.author
         content = message.clean_content
         timestamp = discord.utils.snowflake_time(message.id)
